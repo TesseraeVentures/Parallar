@@ -30,4 +30,9 @@
   - **M3 (bridge):** `allocation_root` mismatch — guest folds raw key, contract folds `addr.to_xdr` → under the real verifier (June 22) every settlement reverts.
   - **M4 + minors/nits: FIXED in R6.**
 - **Root cause:** factory `config_hash = sha256(InstrumentConfig.to_xdr)` and settlement `allocation_root` via `addr.to_xdr` use full Soroban XDR — not reproducible in a RISC Zero guest.
-- **Next (DECISION PENDING — see options):** close M1/M2/M3 via a guest-reproducible canonical encoding (recommended: changes factory/settlement *derivation* only, NOT the frozen journal/registry surfaces), built WITH the host so encodings parity-test against real soroban. Then Rosetta Groth16 generation + replace the `mock-verify` stub. The journal-binding alternative is REJECTED (touches the frozen 116-byte journal, law #2).
+- **DECISION (resolved):** flat canonical encoding + host parity (chosen; journal-binding alternative rejected per law #2). **R7–R9 DONE:**
+  - **R7** — factory `config_hash` → flat guest-reproducible encoding.
+  - **R8** — guest soundness binding (re-derive config_hash→instrument_id, bind snapshot/rate/deadline to committed config) + Address-XDR payees; **22/22 guest tests** incl. fabricated-config/snapshot/rate/deadline all rejected.
+  - **R9** — prover host (`address_xdr`/`symbol_xdr` bridge) + **byte-exact parity tests vs the REAL contracts**: guest config_hash == factory, guest instrument_id == factory, guest allocation_root == settlement (**3/3**, real Stellar Address XDR).
+  - ⇒ **All three adversarial-review blockers (M1/M2 soundness, M3 bridge) CLOSED & VERIFIED.** Workspace: contracts 22/22, guest 22/22, host 3/3.
+- **Next:** the proving infrastructure — RISC Zero zkVM guest binary wrapping `settle_credit_v1` (methods crate + `env::read` inputs / `env::commit` the 116-byte journal), host CLI (`prove`/`submit`/`history_builder`), the local Rosetta x86 Docker Groth16-generation spike to produce a real proof, then **replace the settlement `mock-verify` stub with on-chain Groth16 verification (June 22)** + a full testnet `deploy_instrument` → settle. Human-only: DoraHacks/#zk-chat/Telegram (founder).
