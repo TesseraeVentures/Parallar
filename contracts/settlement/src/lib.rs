@@ -66,8 +66,8 @@ fn read_b32(env: &Env, j: &Bytes, off: u32) -> BytesN<32> {
 }
 
 /// allocation_root = sha256 fold over (addr.to_xdr ‖ amount_be) per allocation.
-/// The settlement guest reproduces this exact encoding (alignment finalized in Sprint 2).
-fn hash_allocations(env: &Env, allocations: &Vec<(Address, i128)>) -> BytesN<32> {
+/// `pub` so the prover host can parity-test the guest's `allocation_root` against it.
+pub fn hash_allocations(env: &Env, allocations: &Vec<(Address, i128)>) -> BytesN<32> {
     let mut acc = BytesN::from_array(env, &[0u8; 32]);
     for pair in allocations.iter() {
         let (addr, amt) = pair;

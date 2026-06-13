@@ -3,4 +3,4 @@
 # guest logic as Sprint 2 proceeds.
 [workspace]
 resolver = "2"
-members = ["guests/settle_credit_v1"]
+members = ["guests/settle_credit_v1", "host"]

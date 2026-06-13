@@ -81,7 +81,7 @@ pub struct ParallarFactory;
 /// `instrument_id`. Layout: reference_asset_xdr ‖ terms_hash(32) ‖ schedule_root(32) ‖
 /// snapshot_root(32) ‖ collateral_token_xdr ‖ premium_bps(4 BE) ‖ deadlines_len(4 BE) ‖
 /// {epoch(4 BE) ‖ deadline(8 BE)}*.
-fn hash_config(env: &Env, c: &InstrumentConfig) -> BytesN<32> {
+pub fn hash_config(env: &Env, c: &InstrumentConfig) -> BytesN<32> {
     let mut buf = Bytes::new(env);
     buf.append(&c.reference_asset.clone().to_xdr(env));
     buf.append(&Bytes::from_array(env, &c.terms_hash.to_array()));
@@ -99,7 +99,7 @@ fn hash_config(env: &Env, c: &InstrumentConfig) -> BytesN<32> {
 }
 
 /// instrument_id = H(type_id ‖ rules_version ‖ config_hash) — what guests bind proofs to.
-fn derive_instrument_id(env: &Env, type_id: &Symbol, rules_version: u32, config_hash: &BytesN<32>) -> BytesN<32> {
+pub fn derive_instrument_id(env: &Env, type_id: &Symbol, rules_version: u32, config_hash: &BytesN<32>) -> BytesN<32> {
     let mut buf = Bytes::new(env);
     buf.append(&type_id.clone().to_xdr(env));
     buf.append(&Bytes::from_array(env, &rules_version.to_be_bytes()));

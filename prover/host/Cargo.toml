@@ -1,0 +1,18 @@
+[package]
+name = "parallar-prover-host"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# Soroban-aware encoding bridge: produces the canonical Address-XDR bytes the guest folds,
+# so guest config_hash/allocation_root match the contracts byte-for-byte. The prove/submit/
+# history_builder CLI is added with the zkVM wrapper.
+
+[dependencies]
+soroban-sdk = "25.3.0"
+
+[dev-dependencies]
+soroban-sdk = { version = "25.3.0", features = ["testutils"] }
+settle-credit-v1 = { path = "../guests/settle_credit_v1" }
+parallar-factory = { path = "../../contracts/factory" }
+parallar-settlement = { path = "../../contracts/settlement" }
