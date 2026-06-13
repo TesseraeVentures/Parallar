@@ -2,7 +2,7 @@
 # external/ (cloned examples) and spikes/ (Sprint 0 derisk crates) are standalone.
 [workspace]
 resolver = "2"
-members = ["contracts/bond"]
+members = ["contracts/bond", "contracts/vault"]
 exclude = ["external", "spikes"]
 
 [workspace.dependencies]
