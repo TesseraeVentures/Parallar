@@ -90,4 +90,53 @@ mod test {
         ];
         assert_eq!(contract_root.to_array(), allocation_root(&guest_allocs));
     }
+
+    /// The zkVM guest, run in the executor (no proof), must commit the SAME 116-byte journal
+    /// as native `settle()` — confirming the cross-compiled circuit matches the reference logic.
+    #[test]
+    fn zkvm_guest_journal_matches_native_settle() {
+        use parallar_methods::SETTLE_CREDIT_V1_GUEST_ELF;
+        use risc0_zkvm::{default_executor, ExecutorEnv};
+        use settle_credit_v1::{
+            position_root, settle, snapshot_root, terms_hash, Holder, Inputs, Position, Terms,
+        };
+
+        // valid full-miss settlement: 1 holder owed 1000, unpaid; buyer cover 800
+        let holders = vec![Holder { id: [1; 32], balance: 10_000, has_trustline: true, frozen: false }];
+        let positions = vec![Position { buyer: vec![0x12u8; 40], cover: 800, salt: [7; 32] }];
+        let terms = Terms { coupon_rate_bps: 1000 };
+        let config = ConfigFields {
+            reference_asset_xdr: vec![0xAA, 1, 2, 3],
+            terms_hash: terms_hash(&terms),
+            schedule_root: [0x55; 32],
+            snapshot_root: snapshot_root(&holders),
+            collateral_token_xdr: vec![0xBB, 4, 5, 6],
+            premium_bps: 200,
+            epoch_deadlines: vec![(1u32, 500u64)],
+        };
+        let type_id_xdr = vec![0xCCu8, 1, 2, 3, 4];
+        let proot = position_root(&positions);
+        let instrument_id = settle_credit_v1::derive_instrument_id(&type_id_xdr, 1, &config_hash(&config));
+        let inputs = Inputs {
+            type_id_xdr,
+            rules_version: 1,
+            config,
+            instrument_id,
+            epoch: 1,
+            deadline: 500,
+            terms,
+            collateral: 1000,
+            snapshot: holders,
+            payments: vec![],
+            positions,
+            position_root: proot,
+        };
+
+        let native_journal = settle(&inputs).unwrap().1.to_bytes();
+
+        let exec_env = ExecutorEnv::builder().write(&inputs).unwrap().build().unwrap();
+        let session = default_executor().execute(exec_env, SETTLE_CREDIT_V1_GUEST_ELF).unwrap();
+
+        assert_eq!(session.journal.bytes.as_slice(), &native_journal[..]);
+    }
 }

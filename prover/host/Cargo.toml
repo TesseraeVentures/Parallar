@@ -16,3 +16,5 @@ soroban-sdk = { version = "25.3.0", features = ["testutils"] }
 settle-credit-v1 = { path = "../guests/settle_credit_v1" }
 parallar-factory = { path = "../../contracts/factory" }
 parallar-settlement = { path = "../../contracts/settlement" }
+risc0-zkvm = "3.0"
+parallar-methods = { path = "../methods" }

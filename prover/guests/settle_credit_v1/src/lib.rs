@@ -30,7 +30,7 @@ use zkhash::poseidon2::poseidon2_instance_bn256::POSEIDON2_BN256_PARAMS;
 
 pub const BPS_DENOM: i128 = 10_000;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Holder {
     pub id: [u8; 32],
     pub balance: i128,
@@ -38,7 +38,7 @@ pub struct Holder {
     pub frozen: bool,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Payment {
     pub holder: [u8; 32],
     pub amount: i128,
@@ -46,7 +46,7 @@ pub struct Payment {
     pub clawed_back: bool,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Position {
     /// Canonical Address XDR of the buyer (host-provided; bound via the position commitment).
     pub buyer: Vec<u8>,
@@ -56,14 +56,14 @@ pub struct Position {
 
 /// The bond's coupon terms — the preimage of the committed `terms_hash`. Opening it binds
 /// the coupon rate to what the instrument committed at deploy.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Terms {
     pub coupon_rate_bps: u32,
 }
 
 /// The flat, guest-reproducible image of the on-chain `InstrumentConfig` (see factory
 /// `hash_config`). The two Address fields are canonical XDR bytes (host-provided).
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct ConfigFields {
     pub reference_asset_xdr: Vec<u8>,
     pub terms_hash: [u8; 32],
@@ -74,7 +74,7 @@ pub struct ConfigFields {
     pub epoch_deadlines: Vec<(u32, u64)>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct Inputs {
     // --- instrument binding (public) ---
     pub type_id_xdr: Vec<u8>,
@@ -93,14 +93,14 @@ pub struct Inputs {
     pub position_root: [u8; 32],
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Allocation {
     /// Canonical Address XDR of the payee (matches what the contract folds + pays).
     pub buyer: Vec<u8>,
     pub amount: i128,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Journal {
     pub instrument_id: [u8; 32],
     pub epoch: u32,
@@ -125,7 +125,7 @@ impl Journal {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum SettleError {
     /// Σ shortfall == 0: the trigger did not occur — no proof can exist (guest panics).
     NoDefault,
