@@ -74,8 +74,28 @@ pub trait SettlementInit {
 #[contract]
 pub struct ParallarFactory;
 
+/// config_hash = sha256 over a FLAT canonical encoding of the config fields, so the
+/// off-chain settlement guest can reproduce it byte-for-byte (the struct-XDR form was not
+/// guest-reproducible). The two `Address` fields use their canonical XDR — the only
+/// irreducible piece — which the guest receives as host-provided bytes, bound through
+/// `instrument_id`. Layout: reference_asset_xdr ‖ terms_hash(32) ‖ schedule_root(32) ‖
+/// snapshot_root(32) ‖ collateral_token_xdr ‖ premium_bps(4 BE) ‖ deadlines_len(4 BE) ‖
+/// {epoch(4 BE) ‖ deadline(8 BE)}*.
 fn hash_config(env: &Env, c: &InstrumentConfig) -> BytesN<32> {
-    env.crypto().sha256(&c.clone().to_xdr(env)).to_bytes()
+    let mut buf = Bytes::new(env);
+    buf.append(&c.reference_asset.clone().to_xdr(env));
+    buf.append(&Bytes::from_array(env, &c.terms_hash.to_array()));
+    buf.append(&Bytes::from_array(env, &c.schedule_root.to_array()));
+    buf.append(&Bytes::from_array(env, &c.snapshot_root.to_array()));
+    buf.append(&c.collateral_token.clone().to_xdr(env));
+    buf.append(&Bytes::from_array(env, &c.premium_bps.to_be_bytes()));
+    buf.append(&Bytes::from_array(env, &c.epoch_deadlines.len().to_be_bytes()));
+    for pair in c.epoch_deadlines.iter() {
+        let (epoch, deadline) = pair;
+        buf.append(&Bytes::from_array(env, &epoch.to_be_bytes()));
+        buf.append(&Bytes::from_array(env, &deadline.to_be_bytes()));
+    }
+    env.crypto().sha256(&buf).to_bytes()
 }
 
 /// instrument_id = H(type_id ‖ rules_version ‖ config_hash) — what guests bind proofs to.

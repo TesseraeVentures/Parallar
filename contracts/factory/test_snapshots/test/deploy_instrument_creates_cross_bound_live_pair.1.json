@@ -146,7 +146,7 @@
         {
           "function": {
             "contract_fn": {
-              "contract_address": "CA7AU7AG6HWRQFXVBZLTNGKA57DG6XYVT2SCUW76N6K6C73MCN2SXPXI",
+              "contract_address": "CDOCTYPXO3ETX6ITI3HH4CGMQH2AV5Q7KMLHUFUJRV4XHHI3DA6SAGNR",
               "function_name": "deposit",
               "args": [
                 {
@@ -169,7 +169,7 @@
                       "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
                     },
                     {
-                      "address": "CA7AU7AG6HWRQFXVBZLTNGKA57DG6XYVT2SCUW76N6K6C73MCN2SXPXI"
+                      "address": "CDOCTYPXO3ETX6ITI3HH4CGMQH2AV5Q7KMLHUFUJRV4XHHI3DA6SAGNR"
                     },
                     {
                       "i128": "1000"
@@ -316,7 +316,7 @@
                     "symbol": "Instrument"
                   },
                   {
-                    "bytes": "5919f3762a624e6564e1076ef73c762f9058f8f35fc8c1c1fd09dd6f16553f21"
+                    "bytes": "aa50d1998a3d10d61b60dc4fdb118d2954e1b232c3f8edd33e7183cbf8102f64"
                   }
                 ]
               },
@@ -328,7 +328,7 @@
                       "symbol": "config_hash"
                     },
                     "val": {
-                      "bytes": "f7bb43f6237683df6f0ffbef08a79d6498048fb751ded778ab165ee56b3c0628"
+                      "bytes": "ad4718f1df3f458b33316d7d7248c8d536726f0f130a726d77faddbf0b7b5d73"
                     }
                   },
                   {
@@ -336,7 +336,7 @@
                       "symbol": "settlement"
                     },
                     "val": {
-                      "address": "CANTBOFTXGKNOR36SZQ5NMSO6UORVX3TS4A33WF2MQKI2QDLVC23ZCRG"
+                      "address": "CATSQVBMBH46OOIIBGEMJLVT6POO2QDH4IQ2AQIBOXI3KP5G6BRYZFU2"
                     }
                   },
                   {
@@ -352,7 +352,7 @@
                       "symbol": "vault"
                     },
                     "val": {
-                      "address": "CA7AU7AG6HWRQFXVBZLTNGKA57DG6XYVT2SCUW76N6K6C73MCN2SXPXI"
+                      "address": "CDOCTYPXO3ETX6ITI3HH4CGMQH2AV5Q7KMLHUFUJRV4XHHI3DA6SAGNR"
                     }
                   }
                 ]
@@ -513,7 +513,7 @@
           "data": {
             "contract_data": {
               "ext": "v0",
-              "contract": "CANTBOFTXGKNOR36SZQ5NMSO6UORVX3TS4A33WF2MQKI2QDLVC23ZCRG",
+              "contract": "CATSQVBMBH46OOIIBGEMJLVT6POO2QDH4IQ2AQIBOXI3KP5G6BRYZFU2",
               "key": "ledger_key_contract_instance",
               "durability": "persistent",
               "val": {
@@ -558,7 +558,7 @@
                         ]
                       },
                       "val": {
-                        "bytes": "5919f3762a624e6564e1076ef73c762f9058f8f35fc8c1c1fd09dd6f16553f21"
+                        "bytes": "aa50d1998a3d10d61b60dc4fdb118d2954e1b232c3f8edd33e7183cbf8102f64"
                       }
                     },
                     {
@@ -570,118 +570,7 @@
                         ]
                       },
                       "val": {
-                        "address": "CA7AU7AG6HWRQFXVBZLTNGKA57DG6XYVT2SCUW76N6K6C73MCN2SXPXI"
-                      }
-                    }
-                  ]
-                }
-              }
-            }
-          },
-          "ext": "v0"
-        },
-        "live_until": 4095
-      },
-      {
-        "entry": {
-          "last_modified_ledger_seq": 0,
-          "data": {
-            "contract_data": {
-              "ext": "v0",
-              "contract": "CA7AU7AG6HWRQFXVBZLTNGKA57DG6XYVT2SCUW76N6K6C73MCN2SXPXI",
-              "key": "ledger_key_contract_instance",
-              "durability": "persistent",
-              "val": {
-                "contract_instance": {
-                  "executable": {
-                    "wasm": "784e9bb16ea33816c856b0b7cb69b1be6bc57927ed3dfe1aced3b62f259f30a0"
-                  },
-                  "storage": [
-                    {
-                      "key": {
-                        "vec": [
-                          {
-                            "symbol": "CollateralToken"
-                          }
-                        ]
-                      },
-                      "val": {
-                        "address": "CCABDO7UZXYE4W6GVSEGSNNZTKSLFQGKXXQTH6OX7M7GKZ4Z6CUJNGZN"
-                      }
-                    },
-                    {
-                      "key": {
-                        "vec": [
-                          {
-                            "symbol": "Frozen"
-                          }
-                        ]
-                      },
-                      "val": {
-                        "bool": false
-                      }
-                    },
-                    {
-                      "key": {
-                        "vec": [
-                          {
-                            "symbol": "PositionRoot"
-                          }
-                        ]
-                      },
-                      "val": {
-                        "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
-                      }
-                    },
-                    {
-                      "key": {
-                        "vec": [
-                          {
-                            "symbol": "Seller"
-                          },
-                          {
-                            "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
-                          }
-                        ]
-                      },
-                      "val": {
-                        "i128": "1000"
-                      }
-                    },
-                    {
-                      "key": {
-                        "vec": [
-                          {
-                            "symbol": "Settlement"
-                          }
-                        ]
-                      },
-                      "val": {
-                        "address": "CANTBOFTXGKNOR36SZQ5NMSO6UORVX3TS4A33WF2MQKI2QDLVC23ZCRG"
-                      }
-                    },
-                    {
-                      "key": {
-                        "vec": [
-                          {
-                            "symbol": "TotalCollateral"
-                          }
-                        ]
-                      },
-                      "val": {
-                        "i128": "1000"
-                      }
-                    },
-                    {
-                      "key": {
-                        "vec": [
-                          {
-                            "symbol": "TotalCover"
-                          }
-                        ]
-                      },
-                      "val": {
-                        "i128": "0"
+                        "address": "CDOCTYPXO3ETX6ITI3HH4CGMQH2AV5Q7KMLHUFUJRV4XHHI3DA6SAGNR"
                       }
                     }
                   ]
@@ -758,7 +647,7 @@
                     "symbol": "Balance"
                   },
                   {
-                    "address": "CA7AU7AG6HWRQFXVBZLTNGKA57DG6XYVT2SCUW76N6K6C73MCN2SXPXI"
+                    "address": "CDOCTYPXO3ETX6ITI3HH4CGMQH2AV5Q7KMLHUFUJRV4XHHI3DA6SAGNR"
                   }
                 ]
               },
@@ -899,6 +788,117 @@
           "ext": "v0"
         },
         "live_until": 120960
+      },
+      {
+        "entry": {
+          "last_modified_ledger_seq": 0,
+          "data": {
+            "contract_data": {
+              "ext": "v0",
+              "contract": "CDOCTYPXO3ETX6ITI3HH4CGMQH2AV5Q7KMLHUFUJRV4XHHI3DA6SAGNR",
+              "key": "ledger_key_contract_instance",
+              "durability": "persistent",
+              "val": {
+                "contract_instance": {
+                  "executable": {
+                    "wasm": "784e9bb16ea33816c856b0b7cb69b1be6bc57927ed3dfe1aced3b62f259f30a0"
+                  },
+                  "storage": [
+                    {
+                      "key": {
+                        "vec": [
+                          {
+                            "symbol": "CollateralToken"
+                          }
+                        ]
+                      },
+                      "val": {
+                        "address": "CCABDO7UZXYE4W6GVSEGSNNZTKSLFQGKXXQTH6OX7M7GKZ4Z6CUJNGZN"
+                      }
+                    },
+                    {
+                      "key": {
+                        "vec": [
+                          {
+                            "symbol": "Frozen"
+                          }
+                        ]
+                      },
+                      "val": {
+                        "bool": false
+                      }
+                    },
+                    {
+                      "key": {
+                        "vec": [
+                          {
+                            "symbol": "PositionRoot"
+                          }
+                        ]
+                      },
+                      "val": {
+                        "bytes": "0000000000000000000000000000000000000000000000000000000000000000"
+                      }
+                    },
+                    {
+                      "key": {
+                        "vec": [
+                          {
+                            "symbol": "Seller"
+                          },
+                          {
+                            "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
+                          }
+                        ]
+                      },
+                      "val": {
+                        "i128": "1000"
+                      }
+                    },
+                    {
+                      "key": {
+                        "vec": [
+                          {
+                            "symbol": "Settlement"
+                          }
+                        ]
+                      },
+                      "val": {
+                        "address": "CATSQVBMBH46OOIIBGEMJLVT6POO2QDH4IQ2AQIBOXI3KP5G6BRYZFU2"
+                      }
+                    },
+                    {
+                      "key": {
+                        "vec": [
+                          {
+                            "symbol": "TotalCollateral"
+                          }
+                        ]
+                      },
+                      "val": {
+                        "i128": "1000"
+                      }
+                    },
+                    {
+                      "key": {
+                        "vec": [
+                          {
+                            "symbol": "TotalCover"
+                          }
+                        ]
+                      },
+                      "val": {
+                        "i128": "0"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "ext": "v0"
+        },
+        "live_until": 4095
       },
       {
         "entry": {
