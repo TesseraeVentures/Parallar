@@ -968,6 +968,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "parallar-settlement"
+version = "0.0.0"
+dependencies = [
+ "parallar-vault",
+ "soroban-sdk",
+]
+
+[[package]]
 name = "parallar-vault"
 version = "0.0.0"
 dependencies = [

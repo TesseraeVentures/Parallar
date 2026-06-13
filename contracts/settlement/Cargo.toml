@@ -1,0 +1,24 @@
+[package]
+name = "parallar-settlement"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+doctest = false
+
+[features]
+# mock-verify: stub the Groth16 check (Sprint 1 only). Real verification is wired
+# June 22 and becomes the default then (CLAUDE.md stub discipline).
+default = ["mock-verify"]
+mock-verify = []
+
+[dependencies]
+soroban-sdk = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }
+# integration tests deploy a real vault to exercise the cross-call (test-only; not
+# linked into the settlement wasm, which talks to the vault via the VaultClient interface).
+parallar-vault = { path = "../vault" }
