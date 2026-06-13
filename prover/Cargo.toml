@@ -1,0 +1,6 @@
+# Parallar prover workspace (RISC Zero / native toolchain — separate from the
+# soroban contracts workspace). Host + zkVM methods crates are added alongside the
+# guest logic as Sprint 2 proceeds.
+[workspace]
+resolver = "2"
+members = ["guests/settle_credit_v1"]

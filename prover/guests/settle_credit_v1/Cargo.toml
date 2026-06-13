@@ -1,0 +1,14 @@
+[package]
+name = "settle-credit-v1"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# The determination + payout logic for instrument #1 (TECH_SPEC §4). Pure Rust so it
+# is testable natively AND runs inside the RISC Zero guest. Hashing uses the parity-
+# settled Poseidon2 (zkhash) for commitments and sha256 for the accumulators.
+
+[dependencies]
+sha2 = "0.10"
+zkhash = "0.2"
+ark-ff = "0.4"

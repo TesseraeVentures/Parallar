@@ -3,7 +3,7 @@
 [workspace]
 resolver = "2"
 members = ["contracts/bond", "contracts/vault", "contracts/settlement", "contracts/factory"]
-exclude = ["external", "spikes"]
+exclude = ["external", "spikes", "prover"]
 
 [workspace.dependencies]
 soroban-sdk = "25.3.0"
