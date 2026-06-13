@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parallar — Default protection that is funded before it is promised</title>
+<meta name="description" content="Parallar is a verifiable settlement layer on Stellar. Default protection for tokenized bonds: funded in advance, settled by mathematics, confidential by construction.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,200;0,300;0,400;1,200;1,300&family=Instrument+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<style>
+:root{
+  --ink:#0B1026;
+  --ink-2:#0E1430;
+  --ink-3:#131A3A;
+  --paper:#EDEFF6;
+  --dim:#7C87A6;
+  --faint:#525E80;
+  --brass:#C9A961;
+  --brass-bright:#E2C57E;
+  --brass-dim:#8a7440;
+  --red:#C96A61;
+  --hairline:#1D2546;
+  --max:1240px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--ink);color:var(--paper);font-family:'Instrument Sans',system-ui,sans-serif;font-size:17px;line-height:1.68;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+::selection{background:var(--brass);color:var(--ink)}
+h1,h2,h3,.serif{font-family:'Spectral',serif;font-weight:200;line-height:1.06;letter-spacing:-0.012em}
+.mono{font-family:'Spline Sans Mono',monospace;font-weight:300;letter-spacing:.05em}
+a{color:var(--brass);text-decoration:none}
+a:hover{text-decoration:underline;text-underline-offset:3px}
+a:focus-visible,button:focus-visible{outline:1.5px solid var(--brass);outline-offset:3px;border-radius:2px}
+img,svg{display:block}
+
+/* ============ THE MARK ============
+   Parallar's wordmark: the double-l rendered as two displaced
+   strokes — the parallax measurement itself, made letterform.   */
+.wordmark{display:inline-flex;align-items:baseline;font-family:'Spectral',serif;font-weight:300;letter-spacing:.045em;color:var(--paper)}
+.wordmark .ll{display:inline-flex;align-items:flex-end;margin:0 .04em;position:relative;top:.02em}
+.wordmark .ll i{display:block;width:.085em;background:var(--paper);height:.92em;border-radius:.5px}
+.wordmark .ll i+i{margin-left:.14em;background:var(--brass);height:.78em;transform:translateY(-.14em)}
+.logomark{display:inline-flex;align-items:flex-end;gap:4px}
+.logomark i{display:block;width:2.5px;background:var(--paper);height:20px}
+.logomark i+i{background:var(--brass);height:16px;transform:translateY(-4px)}
+
+/* ============ chrome ============ */
+.runner{position:fixed;z-index:70;left:0;right:0;display:flex;justify-content:space-between;padding:10px 28px;font-family:'Spline Sans Mono',monospace;font-size:9.5px;letter-spacing:.26em;color:var(--faint);text-transform:uppercase;pointer-events:none}
+.runner.bottom{bottom:0;border-top:1px solid var(--hairline);background:rgba(11,16,38,.85);backdrop-filter:blur(3px)}
+.runner.bottom .plate{color:var(--brass-dim)}
+nav{position:fixed;top:0;left:0;right:0;z-index:60;display:flex;align-items:center;justify-content:space-between;padding:22px 48px;background:linear-gradient(to bottom,rgba(11,16,38,.94) 30%,rgba(11,16,38,0))}
+nav .wordmark{font-size:22px}
+nav .links{display:flex;gap:30px;font-size:12px;letter-spacing:.14em;text-transform:uppercase}
+nav .links a{color:var(--dim)}
+nav .links a:hover{color:var(--brass);text-decoration:none}
+
+/* ============ hero — asymmetric instrument ============ */
+.hero{position:relative;min-height:100vh;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);align-items:center;overflow:hidden;padding:120px 48px 80px;max-width:1440px;margin:0 auto}
+.star-layer{position:absolute;inset:-14% -8%;pointer-events:none;will-change:transform;z-index:0}
+.star-layer svg{width:100%;height:100%}
+.hero-copy{position:relative;z-index:2;max-width:620px}
+.kicker{font-family:'Spline Sans Mono',monospace;font-size:11.5px;letter-spacing:.3em;text-transform:uppercase;color:var(--brass);margin-bottom:30px;display:flex;align-items:center;gap:14px}
+.kicker::before{content:"";width:30px;height:1px;background:var(--brass-dim)}
+.hero h1{font-size:clamp(42px,5.6vw,76px);margin-bottom:30px}
+.hero h1 em{font-style:italic;color:var(--brass)}
+.hero .plain{font-size:clamp(17px,1.55vw,20px);color:var(--dim);margin-bottom:18px;max-width:520px}
+.hero .plain b{color:var(--paper);font-weight:500}
+.hero .plainer{font-size:15px;color:var(--faint);max-width:480px;margin-bottom:42px}
+.hero-ctas{display:flex;gap:16px;flex-wrap:wrap}
+.btn{display:inline-block;font-family:'Spline Sans Mono',monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;padding:15px 30px;border:1px solid var(--brass);color:var(--brass);transition:background .25s,color .25s}
+.btn:hover{background:var(--brass);color:var(--ink);text-decoration:none}
+.btn.ghost{border-color:var(--hairline);color:var(--dim)}
+.btn.ghost:hover{background:transparent;border-color:var(--brass);color:var(--brass)}
+.hero-instrument{position:relative;z-index:1;display:flex;align-items:center;justify-content:center}
+.hero-instrument svg{width:min(560px,44vw);height:auto}
+.readout-chip{position:absolute;bottom:8%;right:4%;font-family:'Spline Sans Mono',monospace;font-size:11px;color:var(--dim);border:1px solid var(--hairline);background:rgba(14,20,48,.7);padding:9px 16px;letter-spacing:.1em}
+.readout-chip .v{color:var(--brass)}
+.scroll-cue{position:absolute;bottom:42px;left:48px;z-index:3;font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:.3em;color:var(--faint);text-transform:uppercase;display:flex;align-items:center;gap:12px}
+.scroll-cue::after{content:"";width:52px;height:1px;background:linear-gradient(90deg,var(--brass),transparent)}
+
+/* ============ section scaffolding — editorial rail ============ */
+section{position:relative;padding:150px 48px}
+.rail{max-width:var(--max);margin:0 auto;display:grid;grid-template-columns:220px minmax(0,1fr);gap:64px}
+.rail-label{position:sticky;top:120px;align-self:start;font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--brass);line-height:2.1}
+.rail-label .plate{color:var(--faint);display:block}
+h2{font-size:clamp(31px,4vw,54px);margin-bottom:24px;max-width:760px}
+h2 em{font-style:italic;color:var(--brass)}
+.lede{font-size:clamp(16px,1.5vw,19.5px);color:var(--dim);max-width:620px}
+.lede b{color:var(--paper);font-weight:500}
+.plainterm{margin-top:34px;border-left:2px solid var(--brass-dim);padding:6px 0 6px 24px;max-width:560px}
+.plainterm .t{font-family:'Spline Sans Mono',monospace;font-size:10.5px;letter-spacing:.24em;color:var(--brass);text-transform:uppercase;display:block;margin-bottom:8px}
+.plainterm p{font-size:15.5px;color:var(--dim)}
+.plainterm p b{color:var(--paper);font-weight:500}
+.reveal{opacity:0;transform:translateY(26px)}
+
+/* ============ one-minute story ============ */
+.story-steps{margin-top:64px;display:grid;gap:0}
+.story-step{display:grid;grid-template-columns:64px 1fr;gap:30px;padding:34px 0;border-top:1px solid var(--hairline)}
+.story-step:last-child{border-bottom:1px solid var(--hairline)}
+.story-step .glyph{padding-top:4px}
+.story-step .glyph svg{width:44px;height:44px}
+.story-step h3{font-size:23px;font-weight:300;margin-bottom:8px}
+.story-step p{font-size:15.5px;color:var(--dim);max-width:600px}
+.story-step p b{color:var(--paper);font-weight:500}
+.story-step .tech{font-family:'Spline Sans Mono',monospace;font-size:11px;color:var(--faint);letter-spacing:.08em;margin-top:10px}
+
+/* ============ the reserve ============ */
+.reserve{background:var(--ink-2);border-top:1px solid var(--hairline);border-bottom:1px solid var(--hairline)}
+.pullquote{font-family:'Spectral',serif;font-weight:200;font-style:italic;font-size:clamp(24px,3.1vw,40px);line-height:1.3;color:var(--paper);max-width:780px;margin:0 0 18px}
+.pullquote em{color:var(--brass);font-style:italic}
+.pull-attr{font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:.2em;color:var(--faint);text-transform:uppercase;margin-bottom:64px}
+.gauge-wrap{border:1px solid var(--hairline);background:var(--ink);padding:46px 48px 40px;margin-bottom:56px}
+.gauge-title{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:30px}
+.gauge-title h3{font-size:21px;font-weight:300}
+.gauge-title .mono{font-size:10.5px;color:var(--faint);letter-spacing:.2em;text-transform:uppercase}
+.gauge-row{margin-bottom:26px}
+.gauge-row .lab{display:flex;justify-content:space-between;font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:.12em;color:var(--dim);margin-bottom:9px}
+.gauge-row .lab .amt{color:var(--brass)}
+.gauge-track{height:14px;border:1px solid var(--hairline);position:relative;background:var(--ink-2)}
+.gauge-fill{position:absolute;inset:0;width:0%;background:linear-gradient(90deg,var(--brass-dim),var(--brass))}
+.gauge-fill.cover{background:transparent;border-right:2px solid var(--paper)}
+.gauge-fill.cover::after{content:"";position:absolute;inset:3px;background:repeating-linear-gradient(135deg,transparent,transparent 5px,rgba(237,239,246,.28) 5px,rgba(237,239,246,.28) 6px)}
+.gauge-cap{position:absolute;top:-7px;bottom:-7px;width:1px;background:var(--red);right:0%}
+.gauge-cap::after{content:"HARD CAP";position:absolute;top:-20px;right:-2px;font-family:'Spline Sans Mono',monospace;font-size:8.5px;letter-spacing:.18em;color:var(--red)}
+.gauge-note{font-size:14px;color:var(--faint);margin-top:22px;max-width:640px}
+.gauge-note b{color:var(--dim);font-weight:500}
+.reserve-rules{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--hairline);border:1px solid var(--hairline)}
+.rrule{background:var(--ink);padding:34px 30px}
+.rrule .n{font-family:'Spline Sans Mono',monospace;font-size:10.5px;color:var(--brass-dim);letter-spacing:.2em;margin-bottom:16px;display:block}
+.rrule h3{font-size:19px;font-weight:300;margin-bottom:10px;font-family:'Instrument Sans',sans-serif;font-weight:500;letter-spacing:0}
+.rrule p{font-size:14px;color:var(--dim)}
+.rrule p b{color:var(--paper);font-weight:500}
+
+/* ============ method chart (pinned) ============ */
+.chart-section{padding:0 48px}
+.chart-pin{min-height:100vh;display:flex;align-items:center}
+.chart-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:80px;align-items:center;max-width:var(--max);margin:0 auto;width:100%}
+.chart-steps .csh{margin-bottom:30px}
+.chart-steps .step{padding:24px 0;border-bottom:1px solid var(--hairline);opacity:.2;transition:opacity .45s ease}
+.chart-steps .step:first-of-type{border-top:1px solid var(--hairline)}
+.chart-steps .step.active{opacity:1}
+.chart-steps .k{font-family:'Spline Sans Mono',monospace;font-size:10.5px;letter-spacing:.2em;color:var(--brass);text-transform:uppercase;margin-bottom:7px}
+.chart-steps h3{font-size:20px;font-weight:300;margin-bottom:7px}
+.chart-steps p{font-size:14px;color:var(--dim)}
+.chart-steps p b{color:var(--paper);font-weight:500}
+.chart-figure svg{width:100%;height:auto}
+
+/* ============ impossibility ============ */
+.impossible{min-height:86vh;display:flex;align-items:center;justify-content:center;text-align:center;background:radial-gradient(ellipse 68% 54% at 50% 50%,rgba(201,169,97,.06),transparent 70%)}
+.impossible h2{font-size:clamp(34px,5.2vw,70px);max-width:960px;margin:0 auto 28px}
+.impossible .plain-note{font-size:16px;color:var(--dim);max-width:560px;margin:0 auto 20px}
+.impossible .mono-note{font-family:'Spline Sans Mono',monospace;font-size:12px;color:var(--faint);letter-spacing:.08em}
+.impossible .mono-note .fail{color:var(--red)}
+
+/* ============ factory ============ */
+.deploy-line{font-family:'Spline Sans Mono',monospace;font-size:clamp(12px,1.4vw,15px);border:1px solid var(--hairline);background:var(--ink-2);padding:22px 26px;margin:50px 0 12px;color:var(--dim);overflow-x:auto;white-space:nowrap}
+.deploy-line .fn{color:var(--brass)}
+.deploy-line .arg{color:var(--paper)}
+.deploy-line .cursor{display:inline-block;width:8px;height:15px;background:var(--brass);vertical-align:-2px;animation:blink 1.1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.deploy-note{font-family:'Spline Sans Mono',monospace;font-size:11px;color:var(--brass-dim);letter-spacing:.1em;margin-bottom:50px}
+.types{display:grid;grid-template-columns:1fr 1fr;gap:26px}
+.type-card{border:1px solid var(--hairline);padding:34px 32px;position:relative;background:var(--ink-2)}
+.type-card .status{position:absolute;top:24px;right:26px;font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase}
+.type-card .status.live{color:var(--brass)}
+.type-card .status.next{color:var(--faint)}
+.type-card .tid{font-family:'Spline Sans Mono',monospace;font-size:12.5px;color:var(--brass);margin-bottom:16px;letter-spacing:.06em}
+.type-card h3{font-size:22px;font-weight:300;margin-bottom:12px}
+.type-card p{font-size:14.5px;color:var(--dim)}
+.type-card p b{color:var(--paper);font-weight:500}
+.type-card .pin{margin-top:22px;padding-top:18px;border-top:1px solid var(--hairline);font-family:'Spline Sans Mono',monospace;font-size:10.5px;color:var(--faint);letter-spacing:.08em}
+
+/* ============ trust ============ */
+.trust-plate{border:1px solid var(--brass-dim);padding:54px 56px;position:relative;background:linear-gradient(180deg,rgba(201,169,97,.045),transparent);max-width:860px}
+.trust-plate::before{content:"WHAT THE MATHEMATICS GUARANTEES — AND WHAT IT DOESN'T";position:absolute;top:-9px;left:34px;background:var(--ink);padding:0 14px;font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:.22em;color:var(--brass)}
+.trust-plate p{font-size:clamp(17px,1.65vw,20.5px);font-family:'Spectral',serif;font-weight:300;line-height:1.62}
+.trust-plate p+p{margin-top:20px}
+.trust-plate em{color:var(--brass);font-style:italic}
+.trust-plate .fine{font-family:'Instrument Sans',sans-serif;font-size:14px;color:var(--dim);margin-top:26px;line-height:1.7}
+
+/* ============ substrate ============ */
+.facts{border-top:1px solid var(--hairline);margin-top:54px}
+.fact{padding:30px 0;border-bottom:1px solid var(--hairline);display:grid;grid-template-columns:215px 1fr;gap:30px}
+.fact .m{font-family:'Spline Sans Mono',monospace;font-size:11.5px;color:var(--brass);letter-spacing:.1em;padding-top:3px}
+.fact p{font-size:15px;color:var(--dim);max-width:640px}
+.fact p b{color:var(--paper);font-weight:500}
+
+/* ============ footer ============ */
+footer{border-top:1px solid var(--hairline);padding:120px 48px 90px;text-align:center}
+footer .logomark{margin:0 auto 30px;transform:scale(1.4)}
+footer h2{margin:0 auto 18px}
+footer .lede{margin:0 auto 46px;text-align:center}
+.cta-row{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-bottom:84px}
+.colophon{font-family:'Spline Sans Mono',monospace;font-size:10.5px;color:var(--faint);letter-spacing:.12em;line-height:2.1}
+.colophon .b{color:var(--brass-dim)}
+
+@media (max-width:980px){
+  .hero{grid-template-columns:1fr;padding:130px 26px 110px;gap:50px}
+  .hero-instrument svg{width:min(420px,80vw)}
+  .readout-chip{position:static;display:inline-flex;gap:14px;margin-top:18px}
+  .rail{grid-template-columns:1fr;gap:26px}
+  .rail-label{position:static}
+  nav{padding:18px 22px}
+  nav .links{display:none}
+  section{padding:104px 26px}
+  .chart-section{padding:0 26px}
+  .chart-grid{grid-template-columns:1fr;gap:44px}
+  .reserve-rules{grid-template-columns:1fr}
+  .types{grid-template-columns:1fr}
+  .fact{grid-template-columns:1fr;gap:8px}
+  .gauge-wrap{padding:32px 24px 28px}
+  .trust-plate{padding:40px 26px}
+  .runner{display:none}
+  .scroll-cue{left:26px}
+}
+@media (prefers-reduced-motion:reduce){
+  .reveal{opacity:1!important;transform:none!important}
+  .cursor{animation:none}
+}
+</style>
+</head>
+<body>
+
+<div class="runner bottom" aria-hidden="true">
+  <span>Parallar Survey · Verifiable Settlement</span>
+  <span class="plate" id="plateNo">PLATE 01 — THE INSTRUMENT</span>
+  <span>Stellar Testnet · 2026</span>
+</div>
+
+<nav>
+  <a href="#top" class="wordmark" aria-label="Parallar home">Para<span class="ll" aria-hidden="true"><i></i><i></i></span>ar</a>
+  <div class="links">
+    <a href="#story">In one minute</a>
+    <a href="#reserve">The reserve</a>
+    <a href="#method">The method</a>
+    <a href="#trust">Trust</a>
+  </div>
+</nav>
+
+<!-- ================= HERO ================= -->
+<header class="hero" id="top">
+  <div class="star-layer" id="starFar" aria-hidden="true">
+    <svg viewBox="0 0 1400 900" preserveAspectRatio="xMidYMid slice"><g fill="#39436A">
+      <circle cx="120" cy="140" r="1"/><circle cx="320" cy="90" r="1.3"/><circle cx="540" cy="210" r="1"/><circle cx="760" cy="120" r="1.2"/><circle cx="980" cy="180" r="1"/><circle cx="1220" cy="100" r="1.3"/><circle cx="200" cy="380" r="1.1"/><circle cx="460" cy="430" r="1"/><circle cx="700" cy="360" r="1.2"/><circle cx="940" cy="440" r="1"/><circle cx="1180" cy="380" r="1.1"/><circle cx="90" cy="620" r="1.2"/><circle cx="350" cy="680" r="1"/><circle cx="620" cy="640" r="1.1"/><circle cx="880" cy="700" r="1"/><circle cx="1120" cy="650" r="1.2"/><circle cx="1330" cy="560" r="1"/><circle cx="60" cy="840" r="1"/><circle cx="420" cy="820" r="1.1"/><circle cx="1020" cy="850" r="1"/>
+    </g></svg>
+  </div>
+  <div class="star-layer" id="starNear" aria-hidden="true">
+    <svg viewBox="0 0 1400 900" preserveAspectRatio="xMidYMid slice"><g fill="#C9A961" opacity="0.85">
+      <circle cx="430" cy="300" r="2.2"/><circle cx="1010" cy="350" r="2"/><circle cx="700" cy="170" r="1.8"/><circle cx="220" cy="660" r="2"/><circle cx="1190" cy="640" r="2.2"/>
+    </g></svg>
+  </div>
+
+  <div class="hero-copy">
+    <p class="kicker">A verifiable settlement layer on Stellar</p>
+    <h1>Default protection, <em>funded</em> before it is <em>promised.</em></h1>
+    <p class="plain">Parallar is insurance for tokenized bonds. If the bond stops paying, protection holders are paid <b>automatically</b> — from money that was set aside in advance, by a calculation that is <b>mathematically proven correct</b> before a single unit moves.</p>
+    <p class="plainer">No claims process. No committee. No one to trust — and no one able to cheat, including us.</p>
+    <div class="hero-ctas">
+      <a class="btn" href="#story">How it works, in one minute</a>
+      <a class="btn ghost" href="#">View the repo</a>
+    </div>
+  </div>
+
+  <div class="hero-instrument" aria-hidden="true">
+    <svg viewBox="0 0 640 640">
+      <g stroke="#26305A" stroke-width="1" fill="none">
+        <circle cx="320" cy="320" r="296"/><circle cx="320" cy="320" r="222"/>
+      </g>
+      <g stroke="#C9A961" stroke-width="0.8" fill="none" opacity="0.7">
+        <line x1="320" y1="10" x2="320" y2="60"/><line x1="320" y1="580" x2="320" y2="630"/>
+        <line x1="10" y1="320" x2="60" y2="320"/><line x1="580" y1="320" x2="630" y2="320"/>
+      </g>
+      <!-- the two displaced sightlines: the mark, at instrument scale -->
+      <g id="sightlines">
+        <line x1="250" y1="180" x2="250" y2="460" stroke="#EDEFF6" stroke-width="2.5"/>
+        <line x1="390" y1="160" x2="390" y2="440" stroke="#C9A961" stroke-width="2.5"/>
+        <path d="M250,320 Q320,290 390,300" fill="none" stroke="#7C87A6" stroke-width="0.8" stroke-dasharray="3 4"/>
+        <circle cx="320" cy="297" r="2.6" fill="#C9A961"/>
+      </g>
+      <g font-family="'Spline Sans Mono',monospace" font-size="10" fill="#7C87A6" letter-spacing="2">
+        <text x="250" y="490" text-anchor="middle">OBSERVED</text>
+        <text x="390" y="470" text-anchor="middle">PROVEN</text>
+      </g>
+    </svg>
+    <div class="readout-chip" role="status"><span>DISPLACEMENT <span class="v" id="dispVal">0.000″</span></span></div>
+  </div>
+  <div class="scroll-cue">Scroll to measure</div>
+</header>
+
+<!-- ================= ONE MINUTE ================= -->
+<section id="story">
+  <div class="rail">
+    <div class="rail-label reveal"><span class="plate">PLATE 02</span>In one minute<br>— no jargon</div>
+    <div>
+      <h2 class="reveal">A bond is a promise to pay. Parallar is what happens <em>when it doesn’t.</em></h2>
+      <p class="lede reveal">Here is the entire product, in four sentences a layperson can check.</p>
+
+      <div class="story-steps">
+        <div class="story-step reveal">
+          <div class="glyph"><svg viewBox="0 0 44 44"><g fill="#7C87A6"><circle cx="10" cy="14" r="3"/><circle cx="22" cy="10" r="3"/><circle cx="34" cy="15" r="3"/><circle cx="16" cy="30" r="3"/><circle cx="30" cy="32" r="3"/></g></svg></div>
+          <div>
+            <h3>A company borrows from many people at once.</h3>
+            <p>That’s a bond. On Stellar, the bond is digital, and its scheduled interest payments — <b>coupons</b> — are real transfers everyone can see, made to every single bondholder.</p>
+            <p class="tech">tokenized issuance · coupons as genuine on-ledger payments to N holders</p>
+          </div>
+        </div>
+        <div class="story-step reveal">
+          <div class="glyph"><svg viewBox="0 0 44 44"><rect x="6" y="10" width="32" height="24" fill="none" stroke="#C9A961" stroke-width="1.5"/><path d="M6 18 h32" stroke="#C9A961" stroke-width="1"/><path d="M14 26 h16" stroke="#7C87A6" stroke-width="1.5"/></svg></div>
+          <div>
+            <h3>Bondholders buy protection. Underwriters fund it — in advance.</h3>
+            <p>Before any protection is sold, underwriters deposit real money into a shared <b>reserve</b>. Parallar will never promise a payout it isn’t already holding. <b>How much</b> protection each holder bought stays private — sealed, like a bid in an envelope.</p>
+            <p class="tech">fully-funded vault · positions as Poseidon commitments</p>
+          </div>
+        </div>
+        <div class="story-step reveal">
+          <div class="glyph"><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="15" fill="none" stroke="#C9A961" stroke-width="1.5"/><path d="M22 7 v6 M22 31 v6 M7 22 h6 M31 22 h6" stroke="#C9A961" stroke-width="1.5"/></svg></div>
+          <div>
+            <h3>If a payment is missed, mathematics notices.</h3>
+            <p>Anyone can run Parallar’s settlement program. It reads the public payment record, confirms who wasn’t paid, opens each sealed position privately, and calculates every payout by a <b>formula published in advance</b>. Then it produces a compact mathematical certificate that the whole calculation was done exactly right.</p>
+            <p class="tech">RISC Zero zkVM · one Groth16 proof for determination + allocation</p>
+          </div>
+        </div>
+        <div class="story-step reveal">
+          <div class="glyph"><svg viewBox="0 0 44 44"><path d="M8 24 l9 9 L37 12" fill="none" stroke="#C9A961" stroke-width="2"/></svg></div>
+          <div>
+            <h3>Stellar checks the certificate. The reserve pays.</h3>
+            <p>The blockchain verifies the certificate in seconds and releases each payout from the reserve. <b>There is no other way to move that money.</b> No claims department, no determination committee, no administrator override — by construction, not by policy.</p>
+            <p class="tech">on-chain verification is the sole authorization path</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="plainterm reveal">
+        <span class="t">Why “Parallar”</span>
+        <p>Astronomers measure a star’s true distance by <b>parallax</b> — observing it from two positions and trusting the displacement, not anyone’s word. Parallar settles financial promises the same way: <b>truth by measurement, not by trust.</b> Parallax × Stellar.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= THE RESERVE ================= -->
+<section class="reserve" id="reserve">
+  <div class="rail">
+    <div class="rail-label reveal"><span class="plate">PLATE 03</span>The reserve<br>— where payouts<br>come from</div>
+    <div>
+      <p class="pullquote reveal">In 2008, the world learned what default protection looks like when it’s a promise without reserves. Parallar is built as the <em>inversion:</em> every unit of protection is backed by a unit already in the vault.</p>
+      <p class="pull-attr reveal">Fully funded by construction — not by policy</p>
+
+      <div class="gauge-wrap reveal" aria-label="Reserve funding gauge: protection sold can never exceed reserves deposited">
+        <div class="gauge-title">
+          <h3>The funding rule, live</h3>
+          <span class="mono">cover ≤ reserves · enforced at purchase</span>
+        </div>
+        <div class="gauge-row">
+          <div class="lab"><span>RESERVES — deposited by underwriters, before anything is sold</span><span class="amt" id="resAmt">0</span></div>
+          <div class="gauge-track"><div class="gauge-fill" id="resFill"></div></div>
+        </div>
+        <div class="gauge-row">
+          <div class="lab"><span>PROTECTION SOLD — total cover outstanding</span><span class="amt" id="covAmt">0</span></div>
+          <div class="gauge-track"><div class="gauge-fill cover" id="covFill"></div><div class="gauge-cap" id="capLine"></div></div>
+        </div>
+        <p class="gauge-note">A purchase that would push protection past reserves <b>fails at the till.</b> Individual cover amounts stay sealed — the system enforces the total without ever seeing the parts.</p>
+      </div>
+
+      <div class="reserve-rules">
+        <div class="rrule reveal">
+          <span class="n">RULE 1 — FUNDED FIRST</span>
+          <h3>Money in before promises out</h3>
+          <p>Underwriters deposit reserves to earn premiums. Total protection sold can <b>never exceed total reserves</b> — checked the moment anyone tries to buy.</p>
+        </div>
+        <div class="rrule reveal">
+          <span class="n">RULE 2 — UNTOUCHABLE</span>
+          <h3>The reserve can’t be pulled</h3>
+          <p>Reserves are held only in assets <b>no issuer can claw back or freeze</b> — Parallar’s factory refuses anything else at deployment. And while a payment deadline is being judged, underwriter withdrawals are <b>locked</b>.</p>
+        </div>
+        <div class="rrule reveal">
+          <span class="n">RULE 3 — ONE EXIT</span>
+          <h3>Only a proof moves money</h3>
+          <p>The single path out of the reserve to protection holders is a <b>verified settlement certificate</b>. Not us, not an admin key, not a court order to a claims department. If the bond paid on time, that certificate <b>cannot exist</b>.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= METHOD (pinned chart) ================= -->
+<section class="chart-section" id="method">
+  <div class="chart-pin">
+    <div class="chart-grid">
+      <div class="chart-steps">
+        <div class="csh">
+          <p class="kicker" style="margin-bottom:14px">Plate 04 — The method</p>
+          <h2 style="font-size:clamp(26px,3vw,40px);margin-bottom:6px">One default, measured <em>four ways down.</em></h2>
+        </div>
+        <div class="step" data-step="0">
+          <p class="k">01 · Observe</p>
+          <h3>Read the public record</h3>
+          <p>A coupon means paying <b>every</b> bondholder. After the deadline, anyone gathers the ledger’s payment record — counting honestly: payments later clawed back by the issuer <b>don’t count</b>.</p>
+        </div>
+        <div class="step" data-step="1">
+          <p class="k">02 · Determine</p>
+          <h3>Run the published rules</h3>
+          <p>The settlement program finds who was shorted, opens each <b>sealed position privately</b>, and computes payouts in proportion to the damage.</p>
+        </div>
+        <div class="step" data-step="2">
+          <p class="k">03 · Prove</p>
+          <h3>Compress it to a certificate</h3>
+          <p>The entire calculation becomes one compact proof. <b>Only the exact published rules</b> can produce a valid one.</p>
+        </div>
+        <div class="step" data-step="3">
+          <p class="k">04 · Settle</p>
+          <h3>Verify on Stellar. Pay from the reserve.</h3>
+          <p>The contract checks the certificate and releases the payouts. <b>No other path exists.</b></p>
+        </div>
+      </div>
+
+      <div class="chart-figure" aria-hidden="true">
+        <svg viewBox="0 0 520 560" id="chartSvg">
+          <defs><marker id="arr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L8,4 L0,8" fill="none" stroke="#C9A961" stroke-width="1.2"/></marker></defs>
+          <g stroke="#1D2546" stroke-width="1" fill="none"><rect x="10" y="10" width="500" height="540"/><line x1="10" y1="145" x2="510" y2="145"/><line x1="10" y1="280" x2="510" y2="280"/><line x1="10" y1="415" x2="510" y2="415"/></g>
+          <g id="fig0">
+            <g fill="#7C87A6"><circle cx="70" cy="60" r="3.5"/><circle cx="135" cy="95" r="3.5"/><circle cx="205" cy="55" r="3.5"/><circle cx="275" cy="100" r="3.5"/><circle cx="345" cy="62" r="3.5"/><circle cx="415" cy="92" r="3.5"/><circle cx="465" cy="58" r="3.5"/></g>
+            <g fill="#C96A61"><circle cx="275" cy="100" r="3.5"/><circle cx="415" cy="92" r="3.5"/><circle cx="135" cy="95" r="3.5"/></g>
+            <text x="36" y="130" font-family="'Spline Sans Mono',monospace" font-size="10.5" fill="#7C87A6" letter-spacing="1.5">PAYMENT RECORD · EPOCH 1 · 7 OF 10 PAID</text>
+          </g>
+          <g id="fig1">
+            <path id="scanPath" d="M70,60 L135,95 L205,55 L275,100 L345,62 L415,92 L465,58 L465,170 L260,170 L260,200" fill="none" stroke="#C9A961" stroke-width="1.1"/>
+            <rect x="150" y="200" width="220" height="56" fill="#0E1430" stroke="#C9A961" stroke-width="0.8"/>
+            <text x="260" y="226" text-anchor="middle" font-family="'Spline Sans Mono',monospace" font-size="11" fill="#EDEFF6" letter-spacing="1.5">settle_credit_v1</text>
+            <text x="260" y="244" text-anchor="middle" font-family="'Spline Sans Mono',monospace" font-size="9.5" fill="#7C87A6" letter-spacing="1">THE PUBLISHED RULES · RUN OFF-CHAIN</text>
+          </g>
+          <g id="fig2">
+            <line x1="260" y1="256" x2="260" y2="318" stroke="#C9A961" stroke-width="1.1" marker-end="url(#arr)"/>
+            <circle cx="260" cy="352" r="26" fill="none" stroke="#C9A961" stroke-width="1"/>
+            <circle cx="260" cy="352" r="18" fill="none" stroke="#C9A961" stroke-width="0.6" opacity="0.6"/>
+            <text x="260" y="356" text-anchor="middle" font-family="'Spline Sans Mono',monospace" font-size="9" fill="#C9A961" letter-spacing="1">π</text>
+            <text x="304" y="356" font-family="'Spline Sans Mono',monospace" font-size="10" fill="#7C87A6" letter-spacing="1">THE CERTIFICATE · CONSTANT SIZE</text>
+          </g>
+          <g id="fig3">
+            <line x1="260" y1="378" x2="260" y2="438" stroke="#C9A961" stroke-width="1.1" marker-end="url(#arr)"/>
+            <rect x="150" y="440" width="220" height="46" fill="#0E1430" stroke="#C9A961" stroke-width="0.8"/>
+            <text x="260" y="468" text-anchor="middle" font-family="'Spline Sans Mono',monospace" font-size="10.5" fill="#EDEFF6" letter-spacing="1.5">STELLAR VERIFIES ✓</text>
+            <g stroke="#C9A961" stroke-width="0.9"><line x1="200" y1="486" x2="170" y2="524" marker-end="url(#arr)"/><line x1="260" y1="486" x2="260" y2="524" marker-end="url(#arr)"/><line x1="320" y1="486" x2="350" y2="524" marker-end="url(#arr)"/></g>
+            <text x="260" y="546" text-anchor="middle" font-family="'Spline Sans Mono',monospace" font-size="10" fill="#7C87A6" letter-spacing="1.5">PAID FROM THE RESERVE · AMOUNTS SEALED</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= IMPOSSIBILITY ================= -->
+<section class="impossible" id="impossible">
+  <div>
+    <p class="kicker reveal" style="justify-content:center">Plate 05 — The property that matters</p>
+    <h2 class="reveal">If the bond paid on time,<br><em>no settlement certificate can exist.</em></h2>
+    <p class="plain-note reveal">Most systems <b>reject</b> false claims. In Parallar, a false claim is <b>unprovable</b> — the mathematics refuses to produce the certificate at all.</p>
+    <p class="mono-note reveal">settle_credit_v1 :: fully_paid(history) → <span class="fail">panic!</span></p>
+  </div>
+</section>
+
+<!-- ================= FACTORY ================= -->
+<section id="factory">
+  <div class="rail">
+    <div class="rail-label reveal"><span class="plate">PLATE 06</span>The factory<br>— one layer,<br>many instruments</div>
+    <div>
+      <h2 class="reveal">A new protected instrument is <em>one transaction.</em></h2>
+      <p class="lede reveal">Settlement rules register once, version-pinned forever. From there, launching protection on a new bond is <b>replication, not engineering</b> — and once an instrument is live, its rules can never be changed by anyone. That’s a guarantee a counterparty can underwrite against.</p>
+      <div class="deploy-line reveal"><span class="fn">factory.deploy_instrument</span>(<span class="arg">credit_v1</span>, <span class="arg">config</span>) → vault ✓ settlement ✓ bound ✓ <span class="cursor"></span></div>
+      <p class="deploy-note reveal">// the factory refuses clawbackable or freezable assets as reserves — the payout pool can never be pulled</p>
+      <div class="types">
+        <div class="type-card reveal">
+          <span class="status live">● Live · testnet</span>
+          <p class="tid">credit_v1</p>
+          <h3>Bond default protection</h3>
+          <p>The economics of a credit default swap, with none of its committees: a missed or short-paid coupon — measured across <b>every holder</b>, net of clawbacks — pays protection holders pro-rata to the shortfall.</p>
+          <p class="pin">payout = cover × (Σ shortfall / Σ owed) · rules immutable</p>
+        </div>
+        <div class="type-card reveal">
+          <span class="status next">○ Specified · next</span>
+          <p class="tid">weather_v1</p>
+          <h3>Weather &amp; event protection</h3>
+          <p>The same reserve, the same certificates, a different trigger: an index measured over an observation window against a strike. Crop, catastrophe, and event cover on unchanged infrastructure.</p>
+          <p class="pin">same vault · same verifier · different published rules</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TRUST ================= -->
+<section id="trust">
+  <div class="rail">
+    <div class="rail-label reveal"><span class="plate">PLATE 07</span>Trust model<br>— stated plainly</div>
+    <div>
+      <div class="trust-plate reveal">
+        <p>Each certificate guarantees the settlement <em>calculation</em> followed the published rules — exactly, completely, over the sealed positions. Within that boundary, no party, <em>including us,</em> can inflate, favor, omit, or fabricate a payout.</p>
+        <p>It does not yet guarantee that the payment record fed into the calculation is complete. Anyone can settle with the true record, and deadlines are checked independently on-chain — but closing this gap fully means <em>attested data feeds,</em> and that work is named, scheduled, and published.</p>
+        <p class="fine">We state this because the institutions this is built for will ask — and because the honest answer is engineering, not hand-waving. The full register of what stands between this demonstration and a live issuance — data attestation, buyer-held keys, independent audit — is public in the repo.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SUBSTRATE ================= -->
+<section id="substrate">
+  <div class="rail">
+    <div class="rail-label reveal"><span class="plate">PLATE 08</span>Why Stellar</div>
+    <div>
+      <h2 class="reveal">Built where real money already moves.</h2>
+      <p class="lede reveal">Stellar settles stablecoins, remittances, and tokenized bonds for institutions today — and its recent upgrades quietly added exactly the cryptography a settlement layer needs.</p>
+      <div class="facts">
+        <div class="fact reveal"><span class="m">FINAL IN ~5 SECONDS</span><p><b>Stellar transactions are irreversible the moment they settle.</b> A payment deadline is a crisp fact, not a probability — there is no “wait for confirmations” and no rollback, ever.</p></div>
+        <div class="fact reveal"><span class="m">PROOF-NATIVE</span><p><b>Protocols 25–26 added native proof-verification machinery</b> (BN254, Poseidon) so checking a settlement certificate on-chain is fast and cheap enough to gate every payout.</p></div>
+        <div class="fact reveal"><span class="m">ISSUER-POWER AWARE</span><p>Regulated assets on Stellar give issuers real powers — clawback, freezing. <b>Parallar’s rules account for them</b>: clawed-back coupons count as default, frozen holders count as shorted, and reserves must be held in assets nobody can touch.</p></div>
+        <div class="fact reveal"><span class="m">RWA GRAVITY</span><p><b>The paper is arriving here first.</b> Tokenized bonds and institutional settlement are Stellar’s identity — Parallar builds the layer above the assets, where the protection lives.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <span class="logomark" aria-hidden="true"><i></i><i></i></span>
+  <h2 class="reveal">Truth by measurement,<br>not by <em>trust.</em></h2>
+  <p class="lede reveal">Open source, running on Stellar testnet. Every claim on this page is demonstrated in the repo — including the ones about what we can’t do.</p>
+  <div class="cta-row reveal">
+    <a class="btn" href="#">View the repo</a>
+    <a class="btn ghost" href="#">Watch the 3-minute demo</a>
+    <a class="btn ghost" href="#">Production register</a>
+  </div>
+  <p class="colophon">
+    PARALLAR — PARALLAX × STELLAR · A VERIFIABLE SETTLEMENT LAYER<br>
+    STELLAR HACKS: REAL-WORLD ZK · JUNE 2026<br>
+    <span class="b">TESTNET DEMONSTRATION · NOT AN OFFER OF INSURANCE OR SECURITIES</span>
+  </p>
+</footer>
+
+<script>
+(function(){
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reveals = document.querySelectorAll('.reveal');
+  if (typeof gsap === 'undefined') { reveals.forEach(el=>{el.style.opacity=1;el.style.transform='none';}); return; }
+  gsap.registerPlugin(ScrollTrigger);
+
+  /* hero parallax + live displacement */
+  if(!reduced){
+    gsap.to('#starFar',{yPercent:7,ease:'none',scrollTrigger:{trigger:'.hero',start:'top top',end:'bottom top',scrub:.4}});
+    gsap.to('#starNear',{yPercent:24,ease:'none',scrollTrigger:{trigger:'.hero',start:'top top',end:'bottom top',scrub:.4}});
+    gsap.to('#sightlines',{x:-14,ease:'none',scrollTrigger:{trigger:'.hero',start:'top top',end:'bottom top',scrub:.4}});
+    const disp=document.getElementById('dispVal');
+    ScrollTrigger.create({trigger:'.hero',start:'top top',end:'bottom top',scrub:true,
+      onUpdate:s=>{disp.textContent=(s.progress*4.273).toFixed(3)+'″';}});
+  }
+
+  /* reveals */
+  gsap.utils.toArray('.reveal').forEach(el=>{
+    gsap.to(el,{opacity:1,y:0,duration:.9,ease:'power2.out',scrollTrigger:{trigger:el,start:'top 87%'}});
+  });
+
+  /* running plate number */
+  const plate=document.getElementById('plateNo');
+  if(plate){
+    const plates=[['#top','PLATE 01 — THE INSTRUMENT'],['#story','PLATE 02 — IN ONE MINUTE'],['#reserve','PLATE 03 — THE RESERVE'],['#method','PLATE 04 — THE METHOD'],['#impossible','PLATE 05 — THE PROPERTY'],['#factory','PLATE 06 — THE FACTORY'],['#trust','PLATE 07 — TRUST MODEL'],['#substrate','PLATE 08 — WHY STELLAR']];
+    plates.forEach(([sel,label])=>{
+      ScrollTrigger.create({trigger:sel,start:'top 55%',end:'bottom 55%',
+        onEnter:()=>plate.textContent=label,onEnterBack:()=>plate.textContent=label});
+    });
+  }
+
+  /* reserve gauge: reserves fill, cover rises but stops at the cap */
+  const resFill=document.getElementById('resFill'),covFill=document.getElementById('covFill'),
+        resAmt=document.getElementById('resAmt'),covAmt=document.getElementById('covAmt'),
+        capLine=document.getElementById('capLine');
+  if(resFill){
+    const RES=82, COV=74;             /* % of track: cover approaches but never passes reserves */
+    capLine.style.right=(100-RES)+'%';
+    const g={r:0,c:0};
+    gsap.to(g,{r:RES,duration:1.4,ease:'power2.out',
+      scrollTrigger:{trigger:'.gauge-wrap',start:'top 75%'},
+      onUpdate:()=>{resFill.style.width=g.r+'%';resAmt.textContent=Math.round(g.r*12200).toLocaleString()+' XLM';}});
+    gsap.to(g,{c:COV,duration:1.7,delay:.5,ease:'power2.out',
+      scrollTrigger:{trigger:'.gauge-wrap',start:'top 75%'},
+      onUpdate:()=>{covFill.style.width=g.c+'%';covAmt.textContent=Math.round(g.c*12200).toLocaleString()+' XLM';}});
+  }
+
+  /* pinned method chart */
+  const steps=gsap.utils.toArray('.chart-steps .step');
+  const figs=['#fig0','#fig1','#fig2','#fig3'];
+  figs.forEach((f,i)=>{if(i>0)gsap.set(f,{opacity:0});});
+  steps[0].classList.add('active');
+  const sp=document.getElementById('scanPath');
+  const scanLen=sp?sp.getTotalLength():0;
+  if(scanLen)gsap.set('#scanPath',{strokeDasharray:scanLen,strokeDashoffset:scanLen});
+  if(!reduced){
+    const tl=gsap.timeline({scrollTrigger:{trigger:'.chart-section',start:'top top',end:'+=2300',pin:true,scrub:.5,
+      onUpdate:s=>{const i=Math.min(3,Math.floor(s.progress*4));steps.forEach((st,j)=>st.classList.toggle('active',j===i));}}});
+    tl.to('#fig1',{opacity:1,duration:.5},0.8)
+      .to('#scanPath',{strokeDashoffset:0,duration:1.6,ease:'none'},0.8)
+      .to('#fig2',{opacity:1,duration:.5},2.4)
+      .to('#fig3',{opacity:1,duration:.6},3.4);
+  }else{
+    figs.forEach(f=>gsap.set(f,{opacity:1}));
+    if(scanLen)gsap.set('#scanPath',{strokeDashoffset:0});
+    steps.forEach(s=>s.classList.add('active'));
+  }
+})();
+</script>
+</body>
+</html>

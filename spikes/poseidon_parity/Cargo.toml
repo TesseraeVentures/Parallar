@@ -1,0 +1,14 @@
+[package]
+name = "poseidon-parity"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# Sprint 0 Spike 2 — guest↔host Poseidon parity (derisk artifact, not production).
+# The RISC Zero guest will hash with HorizenLabs `zkhash` (the code Soroban's
+# poseidon2 host fn was adapted from). This crate checks zkhash reproduces
+# Soroban's published host-fn output vector byte-for-byte.
+
+[dependencies]
+zkhash = "0.2"
+ark-ff = "0.4"

@@ -1,0 +1,34 @@
+# secrets — friendbot/testnet keys live in .env, NEVER committed (CLAUDE.md)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+keys/
+
+# rust / soroban build output
+/target
+**/target/
+
+# node / frontend
+node_modules/
+frontend/dist/
+.vite/
+
+# external examples cloned for Sprint 0 derisk (pin commits in STATUS.md, don't vendor)
+external/
+
+# project-local stellar-cli keystore (testnet identities; never commit)
+.stellar/
+
+# os / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# pptx lock files
+~$*.pptx
+
+# confidential seed materials — keep out of the (public-bound) submission repo
+deck/
