@@ -139,4 +139,71 @@ mod test {
 
         assert_eq!(session.journal.bytes.as_slice(), &native_journal[..]);
     }
+
+    /// SPIKE (slow, needs Docker): generate a REAL Groth16 proof via the STARK→SNARK wrap
+    /// (x86 image under Rosetta), verify it against the image_id, confirm the journal, and
+    /// print the (seal, image_id, journal_digest) the on-chain verifier consumes.
+    /// Run explicitly: `cargo test -p parallar-prover-host -- --ignored --nocapture groth16`.
+    #[test]
+    #[ignore = "slow: real Groth16 proof via Rosetta x86 Docker"]
+    fn groth16_proof_generates_and_verifies() {
+        use parallar_methods::{SETTLE_CREDIT_V1_GUEST_ELF, SETTLE_CREDIT_V1_GUEST_ID};
+        use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts};
+        use settle_credit_v1::{
+            position_root, settle, snapshot_root, terms_hash, Holder, Inputs, Position, Terms,
+        };
+        use sha2::{Digest, Sha256};
+
+        let holders = vec![Holder { id: [1; 32], balance: 10_000, has_trustline: true, frozen: false }];
+        let positions = vec![Position { buyer: vec![0x12u8; 40], cover: 800, salt: [7; 32] }];
+        let terms = Terms { coupon_rate_bps: 1000 };
+        let config = ConfigFields {
+            reference_asset_xdr: vec![0xAA, 1, 2, 3],
+            terms_hash: terms_hash(&terms),
+            schedule_root: [0x55; 32],
+            snapshot_root: snapshot_root(&holders),
+            collateral_token_xdr: vec![0xBB, 4, 5, 6],
+            premium_bps: 200,
+            epoch_deadlines: vec![(1u32, 500u64)],
+        };
+        let type_id_xdr = vec![0xCCu8, 1, 2, 3, 4];
+        let proot = position_root(&positions);
+        let instrument_id = settle_credit_v1::derive_instrument_id(&type_id_xdr, 1, &config_hash(&config));
+        let inputs = Inputs {
+            type_id_xdr,
+            rules_version: 1,
+            config,
+            instrument_id,
+            epoch: 1,
+            deadline: 500,
+            terms,
+            collateral: 1000,
+            snapshot: holders,
+            payments: vec![],
+            positions,
+            position_root: proot,
+        };
+        let native_journal = settle(&inputs).unwrap().1.to_bytes();
+
+        let env = ExecutorEnv::builder().write(&inputs).unwrap().build().unwrap();
+        let receipt = default_prover()
+            .prove_with_opts(env, SETTLE_CREDIT_V1_GUEST_ELF, &ProverOpts::groth16())
+            .unwrap()
+            .receipt;
+
+        receipt.verify(SETTLE_CREDIT_V1_GUEST_ID).unwrap();
+        assert_eq!(receipt.journal.bytes.as_slice(), &native_journal[..]);
+
+        // the values the on-chain verifier consumes. The raw Groth16 seal comes straight off
+        // the receipt; wrapping it with the router selector for Stellar is the verifier-wiring step.
+        let seal = receipt.inner.groth16().expect("groth16 receipt").seal.clone();
+        let image_id = risc0_zkvm::sha::Digest::from(SETTLE_CREDIT_V1_GUEST_ID);
+        let journal_digest: [u8; 32] = Sha256::digest(&receipt.journal.bytes).into();
+        println!(
+            "GROTH16 OK | seal={}B image_id=0x{} journal_digest=0x{}",
+            seal.len(),
+            hex::encode(image_id.as_bytes()),
+            hex::encode(journal_digest)
+        );
+    }
 }

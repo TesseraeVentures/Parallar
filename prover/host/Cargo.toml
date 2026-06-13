@@ -18,3 +18,5 @@ parallar-factory = { path = "../../contracts/factory" }
 parallar-settlement = { path = "../../contracts/settlement" }
 risc0-zkvm = "3.0"
 parallar-methods = { path = "../methods" }
+sha2 = "0.10"
+hex = "0.4"
