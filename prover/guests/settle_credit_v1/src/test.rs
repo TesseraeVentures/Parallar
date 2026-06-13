@@ -160,3 +160,49 @@ fn commitment_and_root_are_deterministic() {
         out
     });
 }
+
+#[test]
+fn negative_committed_balance_rejected() {
+    // A negative balance is not real Stellar state; reject rather than div-by-zero / skew.
+    let inp = mk(vec![holder(1, -1000), holder(2, 1000)], 1000, 500, 1000, vec![], vec![pos(100, 100)]);
+    assert_eq!(settle(&inp), Err(SettleError::BadInput));
+}
+
+#[test]
+fn negative_payment_amount_rejected() {
+    let inp = mk(vec![holder(1, 1000)], 1000, 500, 1000, vec![pay(1, -50, 400)], vec![pos(100, 100)]);
+    assert_eq!(settle(&inp), Err(SettleError::BadInput));
+}
+
+#[test]
+fn non_positive_cover_rejected() {
+    // Full miss reaches the pro-rata loop; a zero/negative-cover position is rejected.
+    let inp = mk(vec![holder(1, 10_000)], 1000, 500, 1000, vec![], vec![pos(100, 0)]);
+    assert_eq!(settle(&inp), Err(SettleError::BadInput));
+}
+
+#[test]
+fn mixed_payment_representations_aggregate() {
+    // §10.2: several payment records for one holder (classic op + SAC transfer) sum toward owed.
+    // 40 + 60 = 100 == owed -> fully paid -> NoDefault.
+    let paid = mk(vec![holder(1, 1000)], 1000, 500, 100, vec![pay(1, 40, 300), pay(1, 60, 400)], vec![pos(100, 100)]);
+    assert_eq!(settle(&paid), Err(SettleError::NoDefault));
+    // 40 + 50 = 90 < 100 -> short 10 -> default
+    let short = mk(vec![holder(1, 1000)], 1000, 500, 100, vec![pay(1, 40, 300), pay(1, 50, 400)], vec![pos(100, 100)]);
+    let (allocs, _) = settle(&short).unwrap();
+    assert_eq!(allocs, vec![Allocation { buyer: id(100), amount: 10 }]);
+}
+
+#[test]
+fn journal_serializes_to_116_byte_layout() {
+    let inp = mk(vec![holder(1, 10_000)], 1000, 500, 1000, vec![], vec![pos(100, 800)]);
+    let (_, j) = settle(&inp).unwrap();
+    let b = j.to_bytes();
+    assert_eq!(b.len(), 116);
+    assert_eq!(&b[0..32], &j.instrument_id);
+    assert_eq!(&b[32..36], &j.epoch.to_be_bytes());
+    assert_eq!(&b[36..44], &j.deadline.to_be_bytes());
+    assert_eq!(&b[44..76], &j.position_root);
+    assert_eq!(&b[76..108], &j.allocation_root);
+    assert_eq!(&b[108..116], &j.total_payout.to_be_bytes());
+}

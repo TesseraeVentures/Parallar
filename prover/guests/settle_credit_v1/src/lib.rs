@@ -75,6 +75,22 @@ pub struct Journal {
     pub total_payout: u64,
 }
 
+impl Journal {
+    /// Serialize to the generic journal's fixed 116-byte big-endian layout (TECH_SPEC §3.4):
+    /// instrument_id(32) ‖ epoch(4) ‖ deadline(8) ‖ position_root(32) ‖ allocation_root(32) ‖ total_payout(8).
+    /// This is the exact byte string the SettlementContract decodes (`settlement::read_*`).
+    pub fn to_bytes(&self) -> [u8; 116] {
+        let mut b = [0u8; 116];
+        b[0..32].copy_from_slice(&self.instrument_id);
+        b[32..36].copy_from_slice(&self.epoch.to_be_bytes());
+        b[36..44].copy_from_slice(&self.deadline.to_be_bytes());
+        b[44..76].copy_from_slice(&self.position_root);
+        b[76..108].copy_from_slice(&self.allocation_root);
+        b[108..116].copy_from_slice(&self.total_payout.to_be_bytes());
+        b
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum SettleError {
     /// Σ shortfall == 0: the trigger did not occur — no proof can exist (guest panics).
@@ -83,6 +99,9 @@ pub enum SettleError {
     PositionMismatch,
     Insolvent,
     Overflow,
+    /// A committed input is out of its valid domain (e.g. negative balance/amount/cover).
+    /// Stellar balances are non-negative by protocol; the guest rejects rather than trust it.
+    BadInput,
 }
 
 // ---------- commitments & accumulators ----------
@@ -172,6 +191,11 @@ pub fn settle(inputs: &Inputs) -> Result<(Vec<Allocation>, Journal), SettleError
     let mut sum_owed: i128 = 0;
     let mut sum_short: i128 = 0;
     for h in &inputs.snapshot {
+        // Negative balances are not real Stellar ledger state and would break the
+        // `sum_owed > 0` guarantee (div-by-zero / skewed-but-provable payout). Reject.
+        if h.balance < 0 {
+            return Err(SettleError::BadInput);
+        }
         if !h.has_trustline {
             continue; // excluded from owed — holder-side failure is not issuer default
         }
@@ -183,16 +207,17 @@ pub fn settle(inputs: &Inputs) -> Result<(Vec<Allocation>, Journal), SettleError
         sum_owed = sum_owed.checked_add(owed).ok_or(SettleError::Overflow)?;
 
         // frozen holder cannot receive -> paid is 0 -> full owed is shortfall
-        let paid: i128 = if h.frozen {
-            0
-        } else {
-            inputs
-                .payments
-                .iter()
-                .filter(|p| p.holder == h.id && p.paid_at <= inputs.deadline && !p.clawed_back)
-                .map(|p| p.amount)
-                .sum()
-        };
+        let mut paid: i128 = 0;
+        if !h.frozen {
+            for p in &inputs.payments {
+                if p.holder == h.id && p.paid_at <= inputs.deadline && !p.clawed_back {
+                    if p.amount < 0 {
+                        return Err(SettleError::BadInput); // a negative "payment" is not a payment
+                    }
+                    paid = paid.checked_add(p.amount).ok_or(SettleError::Overflow)?;
+                }
+            }
+        }
         let short = if owed > paid { owed - paid } else { 0 };
         sum_short = sum_short.checked_add(short).ok_or(SettleError::Overflow)?;
     }
@@ -203,10 +228,13 @@ pub fn settle(inputs: &Inputs) -> Result<(Vec<Allocation>, Journal), SettleError
     }
     // sum_owed > 0 here: sum_short > 0 implies some included holder was owed.
 
-    // 4. pro-rata payout per buyer, capped at cover (integer floor)
+    // 4. pro-rata payout per buyer, capped at cover (integer floor; remainder favours sellers)
     let mut allocs = Vec::new();
     let mut total: i128 = 0;
     for p in &inputs.positions {
+        if p.cover <= 0 {
+            return Err(SettleError::BadInput); // matches the vault's cover > 0 gate
+        }
         let raw = p
             .cover
             .checked_mul(sum_short)
@@ -219,7 +247,9 @@ pub fn settle(inputs: &Inputs) -> Result<(Vec<Allocation>, Journal), SettleError
         }
     }
 
-    // 5. Σ payouts ≤ collateral
+    // 5. Σ payouts ≤ collateral. Defensive only — the BINDING solvency check is on-chain
+    // (vault.pay_allocations vs the live collateral balance); `inputs.collateral` is a free
+    // input here, so this assertion proves nothing inside the proof boundary.
     if total > inputs.collateral {
         return Err(SettleError::Insolvent);
     }
@@ -230,7 +260,7 @@ pub fn settle(inputs: &Inputs) -> Result<(Vec<Allocation>, Journal), SettleError
         deadline: inputs.deadline,
         position_root: pos_root,
         allocation_root: allocation_root(&allocs),
-        total_payout: total as u64,
+        total_payout: u64::try_from(total).map_err(|_| SettleError::Overflow)?,
     };
     Ok((allocs, journal))
 }
