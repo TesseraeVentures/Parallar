@@ -49,6 +49,7 @@ pub struct Instrument {
 #[derive(Clone)]
 enum DataKey {
     Admin,
+    Verifier,
     Type(Symbol),
     Instrument(BytesN<32>),
     Eligible(Address),
@@ -68,7 +69,7 @@ pub trait VaultInit {
 }
 #[contractclient(name = "SettlementInitClient")]
 pub trait SettlementInit {
-    fn init(env: Env, image_id: BytesN<32>, instrument_id: BytesN<32>, vault: Address, deadlines: Vec<(u32, u64)>);
+    fn init(env: Env, image_id: BytesN<32>, instrument_id: BytesN<32>, vault: Address, deadlines: Vec<(u32, u64)>, verifier_router: Address);
 }
 
 #[contract]
@@ -116,8 +117,13 @@ fn salt(env: &Env, instrument_id: &BytesN<32>, tag: u8) -> BytesN<32> {
 
 #[contractimpl]
 impl ParallarFactory {
-    pub fn __constructor(env: Env, admin: Address) {
+    /// `verifier_router` is the network's RISC Zero verifier router (the Nethermind stack).
+    /// It is system-level infrastructure shared by every instrument this factory deploys —
+    /// not a per-type field (the registry `InstrumentType` surface stays frozen, Law #2) —
+    /// and is plumbed into each settlement instance at deploy time.
+    pub fn __constructor(env: Env, admin: Address, verifier_router: Address) {
         env.storage().instance().set(&DataKey::Admin, &admin);
+        env.storage().instance().set(&DataKey::Verifier, &verifier_router);
     }
 
     /// Register an instrument type. Admin-gated; a registered type is immutable (a new
@@ -169,12 +175,14 @@ impl ParallarFactory {
             .with_address(here, salt(&env, &instrument_id, 1))
             .deploy_v2(t.settlement_wasm.clone(), no_args);
 
+        let verifier: Address = env.storage().instance().get(&DataKey::Verifier).unwrap();
         VaultInitClient::new(&env, &vault_addr).init(&settlement_addr, &config.collateral_token);
         SettlementInitClient::new(&env, &settlement_addr).init(
             &t.image_id,
             &instrument_id,
             &vault_addr,
             &config.epoch_deadlines,
+            &verifier,
         );
 
         let instrument = Instrument {
@@ -197,6 +205,9 @@ impl ParallarFactory {
     }
     pub fn admin(env: Env) -> Address {
         env.storage().instance().get(&DataKey::Admin).unwrap()
+    }
+    pub fn verifier(env: Env) -> Address {
+        env.storage().instance().get(&DataKey::Verifier).unwrap()
     }
 }
 

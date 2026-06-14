@@ -17,15 +17,17 @@ fn type_id(env: &Env) -> Symbol {
 }
 
 /// Factory + uploaded vault/settlement hashes + an eligible collateral SAC.
-fn setup(env: &Env) -> (ParallarFactoryClient<'static>, BytesN<32>, BytesN<32>, Address) {
+fn setup(env: &Env) -> (ParallarFactoryClient<'static>, BytesN<32>, BytesN<32>, Address, Address) {
     env.mock_all_auths();
     let admin = Address::generate(env);
-    let factory = ParallarFactoryClient::new(env, &env.register(ParallarFactory, (admin,)));
+    let verifier = Address::generate(env); // the network's RISC Zero verifier router
+    let factory =
+        ParallarFactoryClient::new(env, &env.register(ParallarFactory, (admin, verifier.clone())));
     let vault_hash = env.deployer().upload_contract_wasm(vault_wasm::WASM);
     let settlement_hash = env.deployer().upload_contract_wasm(settlement_wasm::WASM);
     let coll = env.register_stellar_asset_contract_v2(Address::generate(env)).address();
     factory.set_collateral_eligible(&coll, &true);
-    (factory, vault_hash, settlement_hash, coll)
+    (factory, vault_hash, settlement_hash, coll, verifier)
 }
 
 fn register_credit(env: &Env, f: &ParallarFactoryClient, vhash: &BytesN<32>, shash: &BytesN<32>, image_id: &BytesN<32>) {
@@ -57,7 +59,7 @@ fn mk_config(env: &Env, collateral: &Address, tag: u8) -> InstrumentConfig {
 #[test]
 fn deploy_instrument_creates_cross_bound_live_pair() {
     let env = Env::default();
-    let (factory, vhash, shash, coll) = setup(&env);
+    let (factory, vhash, shash, coll, verifier) = setup(&env);
     let image_id = BytesN::from_array(&env, &[9u8; 32]);
     register_credit(&env, &factory, &vhash, &shash, &image_id);
 
@@ -78,6 +80,7 @@ fn deploy_instrument_creates_cross_bound_live_pair() {
     assert_eq!(s.vault(), vault_addr, "settlement bound to vault");
     assert_eq!(s.instrument_id(), iid);
     assert_eq!(s.image_id(), image_id, "instance pinned to type image_id");
+    assert_eq!(s.verifier(), verifier, "settlement bound to the factory's verifier router");
     assert_eq!(s.deadline(&1u32), 500u64);
 
     // the deployed vault is live
@@ -92,7 +95,7 @@ fn deploy_instrument_creates_cross_bound_live_pair() {
 fn second_deploy_is_an_independent_instance() {
     // The replication beat: a second deploy_instrument yields a distinct, separate pair.
     let env = Env::default();
-    let (factory, vhash, shash, coll) = setup(&env);
+    let (factory, vhash, shash, coll, _verifier) = setup(&env);
     register_credit(&env, &factory, &vhash, &shash, &BytesN::from_array(&env, &[9u8; 32]));
 
     let (iid1, v1, s1) = factory.deploy_instrument(&type_id(&env), &mk_config(&env, &coll, 1));
@@ -108,7 +111,7 @@ fn second_deploy_is_an_independent_instance() {
 #[should_panic(expected = "not eligible")]
 fn ineligible_collateral_rejected() {
     let env = Env::default();
-    let (factory, vhash, shash, _coll) = setup(&env);
+    let (factory, vhash, shash, _coll, _verifier) = setup(&env);
     register_credit(&env, &factory, &vhash, &shash, &BytesN::from_array(&env, &[9u8; 32]));
 
     // a fresh SAC that was never marked eligible (could be clawback-enabled)
@@ -120,7 +123,7 @@ fn ineligible_collateral_rejected() {
 #[should_panic(expected = "type not registered")]
 fn unregistered_type_rejected() {
     let env = Env::default();
-    let (factory, _vhash, _shash, coll) = setup(&env);
+    let (factory, _vhash, _shash, coll, _verifier) = setup(&env);
     // no register_type
     factory.deploy_instrument(&Symbol::new(&env, "weather_v1"), &mk_config(&env, &coll, 1));
 }
@@ -129,7 +132,7 @@ fn unregistered_type_rejected() {
 #[should_panic(expected = "already registered")]
 fn register_type_is_immutable() {
     let env = Env::default();
-    let (factory, vhash, shash, _coll) = setup(&env);
+    let (factory, vhash, shash, _coll, _verifier) = setup(&env);
     let image_id = BytesN::from_array(&env, &[9u8; 32]);
     register_credit(&env, &factory, &vhash, &shash, &image_id);
     register_credit(&env, &factory, &vhash, &shash, &image_id); // re-register -> panic

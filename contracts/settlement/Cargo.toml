@@ -8,12 +8,6 @@ publish = false
 crate-type = ["cdylib", "rlib"]
 doctest = false
 
-[features]
-# mock-verify: stub the Groth16 check (Sprint 1 only). Real verification is wired
-# June 22 and becomes the default then (CLAUDE.md stub discipline).
-default = ["mock-verify"]
-mock-verify = []
-
 [dependencies]
 soroban-sdk = { workspace = true }
 

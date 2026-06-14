@@ -4,12 +4,29 @@ extern crate std;
 use super::*;
 use parallar_vault::{VaultContract, VaultContractClient};
 use soroban_sdk::{
+    contract, contractimpl,
     testutils::{Address as _, Ledger},
     token, Address, Bytes, BytesN, Env, Vec,
 };
 
 const DEADLINE: u64 = 500;
 const EPOCH: u32 = 1;
+
+/// Test double for the RISC Zero verifier router. Mirrors the real router's
+/// `verify(seal, image_id, journal)` shape and accepts any seal EXCEPT the 4-byte forged
+/// sentinel `[0xFF; 4]`, which it rejects (traps). This exercises the settlement's proof
+/// gate — including the forged-proof revert — without a real 34-minute Groth16 proof; the
+/// real verifier stack is exercised separately by the on-chain integration test.
+#[contract]
+struct MockRouter;
+#[contractimpl]
+impl MockRouter {
+    pub fn verify(env: Env, seal: Bytes, _image_id: BytesN<32>, _journal: BytesN<32>) {
+        if seal == Bytes::from_array(&env, &[0xFFu8; 4]) {
+            panic!("mock router: invalid proof");
+        }
+    }
+}
 
 struct Ctx {
     settlement_id: Address,
@@ -34,10 +51,17 @@ fn setup(env: &Env) -> Ctx {
 
     vault.init(&settlement_id, &sac.address());
 
+    let router_id = env.register(MockRouter, ());
     let instrument_id = BytesN::from_array(env, &[5u8; 32]);
     let mut deadlines = Vec::new(env);
     deadlines.push_back((EPOCH, DEADLINE));
-    settlement.init(&BytesN::from_array(env, &[9u8; 32]), &instrument_id, &vault_id, &deadlines);
+    settlement.init(
+        &BytesN::from_array(env, &[9u8; 32]),
+        &instrument_id,
+        &vault_id,
+        &deadlines,
+        &router_id,
+    );
 
     let seller = Address::generate(env);
     collateral_admin.mint(&seller, &1_000);
@@ -96,6 +120,27 @@ fn settle_verifies_bindings_and_pays_through_vault() {
     assert_eq!(collateral.balance(&payee), 300, "buyer paid via vault");
     assert!(settlement.is_settled(&EPOCH));
     assert_eq!(vault.total_collateral(), 700, "collateral reduced by payout");
+}
+
+#[test]
+#[should_panic]
+fn forged_proof_reverts() {
+    // A seal the verifier rejects must trap inside the router call — BEFORE any binding is
+    // read or any payout flows. With no verified proof there is no path to a payout (law #1).
+    let env = Env::default();
+    let c = setup(&env);
+    let vault = VaultContractClient::new(&env, &c.vault_id);
+    let settlement = SettlementContractClient::new(&env, &c.settlement_id);
+    let collateral = token::Client::new(&env, &c.coll);
+
+    let payee = Address::generate(&env);
+    let alloc = one_alloc(&env, &payee, 300);
+    let alloc_root = hash_allocations(&env, &alloc);
+    let journal = make_journal(&env, &c.instrument_id, EPOCH, DEADLINE, &vault.position_root(), &alloc_root, 300);
+
+    let forged = Bytes::from_array(&env, &[0xFFu8; 4]); // sentinel the mock router rejects
+    assert_eq!(collateral.balance(&payee), 0);
+    settlement.settle(&forged, &journal, &alloc); // router traps -> settle reverts
 }
 
 #[test]

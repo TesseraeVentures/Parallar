@@ -18,12 +18,22 @@ pub trait VaultInterface {
     fn pay_allocations(env: Env, epoch: u32, allocations: Vec<(Address, i128)>);
 }
 
+/// Minimal cross-contract client for the RISC Zero verifier router (the Nethermind
+/// verifier stack: router → groth16-verifier). `verify` traps on a bad proof / wrong
+/// selector / unknown verifier — that trap IS the settlement gate. The router takes the
+/// journal as its sha256 digest and the 4-byte selector embedded in the seal prefix.
+#[contractclient(name = "VerifierRouterClient")]
+pub trait VerifierRouterInterface {
+    fn verify(env: Env, seal: Bytes, image_id: BytesN<32>, journal: BytesN<32>);
+}
+
 #[contracttype]
 #[derive(Clone)]
 enum DataKey {
     ImageId,
     InstrumentId,
     Vault,
+    Verifier,
     Deadline(u32),
     Settled(u32),
 }
@@ -80,24 +90,17 @@ pub fn hash_allocations(env: &Env, allocations: &Vec<(Address, i128)>) -> BytesN
     acc
 }
 
-#[cfg(feature = "mock-verify")]
-fn verify_proof(_env: &Env, _proof: &Bytes, _journal: &Bytes, _image_id: &BytesN<32>) {
-    // STUB — Sprint 1 only (CLAUDE.md stub discipline). Never demo/record on this.
-}
-#[cfg(not(feature = "mock-verify"))]
-fn verify_proof(_env: &Env, _proof: &Bytes, _journal: &Bytes, _image_id: &BytesN<32>) {
-    unimplemented!("real Groth16 verification is wired June 22 (Sprint 2)");
-}
-
 #[contractimpl]
 impl SettlementContract {
-    /// Cross-binding set at factory deploy. `image_id` is immutable for this instance.
+    /// Cross-binding set at factory deploy. `image_id` is immutable for this instance;
+    /// `verifier_router` is the RISC Zero verifier router this instance checks proofs against.
     pub fn init(
         env: Env,
         image_id: BytesN<32>,
         instrument_id: BytesN<32>,
         vault: Address,
         deadlines: Vec<(u32, u64)>,
+        verifier_router: Address,
     ) {
         let s = env.storage().instance();
         if s.has(&DataKey::ImageId) {
@@ -106,6 +109,7 @@ impl SettlementContract {
         s.set(&DataKey::ImageId, &image_id);
         s.set(&DataKey::InstrumentId, &instrument_id);
         s.set(&DataKey::Vault, &vault);
+        s.set(&DataKey::Verifier, &verifier_router);
         for pair in deadlines.iter() {
             let (epoch, deadline) = pair;
             s.set(&DataKey::Deadline(epoch), &deadline);
@@ -119,8 +123,14 @@ impl SettlementContract {
         let s = env.storage().instance();
         let image_id: BytesN<32> = s.get(&DataKey::ImageId).unwrap();
 
-        // 1. verify proof against the pinned image_id (stub under mock-verify)
-        verify_proof(&env, &proof, &journal, &image_id);
+        // 1. verify the Groth16 proof against the pinned image_id via the verifier router.
+        //    The journal is committed as its sha256 digest (the verifier reconstructs the
+        //    RISC Zero claim from image_id + digest); a bad proof, wrong selector, or
+        //    unknown verifier traps inside the router call. This is the sole gate before
+        //    any binding is read — no admin/pause path can substitute for it (§3.3 step 1).
+        let verifier: Address = s.get(&DataKey::Verifier).unwrap();
+        let journal_digest = env.crypto().sha256(&journal).to_bytes();
+        VerifierRouterClient::new(&env, &verifier).verify(&proof, &image_id, &journal_digest);
 
         // 2. decode the generic journal
         assert!(journal.len() == JOURNAL_LEN, "bad journal length");
@@ -165,6 +175,9 @@ impl SettlementContract {
     }
     pub fn vault(env: Env) -> Address {
         env.storage().instance().get(&DataKey::Vault).unwrap()
+    }
+    pub fn verifier(env: Env) -> Address {
+        env.storage().instance().get(&DataKey::Verifier).unwrap()
     }
     pub fn is_settled(env: Env, epoch: u32) -> bool {
         env.storage().instance().get(&DataKey::Settled(epoch)).unwrap_or(false)
