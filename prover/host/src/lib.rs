@@ -7,8 +7,14 @@
 //! committed `position_root`. The parity tests below assert the guest's encodings equal the
 //! real factory/settlement encodings byte-for-byte.
 //!
-//! (The `prove` / `submit` / `history_builder` CLI is added with the zkVM wrapper.)
+//! This crate is also the prover host library: `prove_settlement` runs the RISC Zero guest
+//! under the real Groth16 prover and packages a submittable [`ProofArtifact`]. The
+//! `parallar-prover` binary (src/main.rs) wraps it with `prove` / `submit`. `history-builder`
+//! (the qualifying-payment scan, TECH_SPEC §10) is the next addition.
 
+use serde::{Deserialize, Serialize};
+use settle_credit_v1::{settle, Allocation, Inputs, Journal};
+use sha2::{Digest, Sha256};
 use soroban_sdk::{xdr::ToXdr, Address, Env, Symbol};
 
 /// Canonical Address XDR — exactly what the contracts fold via `addr.to_xdr(env)`.
@@ -19,6 +25,127 @@ pub fn address_xdr(env: &Env, addr: &Address) -> Vec<u8> {
 /// Canonical Symbol XDR — what the factory folds for `type_id` in `derive_instrument_id`.
 pub fn symbol_xdr(env: &Env, s: &Symbol) -> Vec<u8> {
     s.clone().to_xdr(env).iter().collect()
+}
+
+/// The RISC Zero Groth16 verifier selector for risc0 3.0.x / `parameters.json` v3.0.0. The
+/// Nethermind `groth16-verifier` build derives `SELECTOR = 73c457ba` (from CONTROL_ROOT
+/// a54dc85a… + BN254_CONTROL_ID 04446e66… + the verification key). The router dispatches on
+/// `seal[0..4]`, so a submittable seal is `SELECTOR ‖ raw_256B_seal` = 260 bytes. This is
+/// pinned to the verifier params — a new param set is a new selector (and a new type entry).
+pub const GROTH16_SELECTOR: [u8; 4] = [0x73, 0xc4, 0x57, 0xba];
+
+/// One payout line, ready for `settlement.settle`: the payee as a Stellar strkey (what
+/// `stellar contract invoke` consumes) and the amount. Order is load-bearing — it must match
+/// the order the guest folded into `allocation_root`.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AllocationOut {
+    pub payee: String, // G… / C… strkey
+    pub amount: i128,
+}
+
+/// The submittable result of a proof: everything `settlement.settle(proof, journal,
+/// allocations)` consumes, plus the values the verifier router reconstructs the claim from.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ProofArtifact {
+    /// 260-byte selector-wrapped Groth16 seal (`SELECTOR ‖ A‖B‖C`), hex — the `proof` arg.
+    pub seal: String,
+    /// 32-byte guest image id (the pinned `SETTLE_CREDIT_V1` id), hex.
+    pub image_id: String,
+    /// The 116-byte generic journal (§3.4), hex — the `journal` arg.
+    pub journal: String,
+    /// `sha256(journal)`, hex — the settlement contract recomputes this itself; emitted for
+    /// cross-checking against the verifier's expected claim input.
+    pub journal_digest: String,
+    pub epoch: u32,
+    pub total_payout: u64,
+    /// The payout set, in guest-fold order — the `allocations` arg to `settle()`.
+    pub allocations: Vec<AllocationOut>,
+}
+
+/// Prepend the verifier selector to a raw 256-byte Groth16 seal → the 260-byte seal the
+/// RISC Zero router expects (it dispatches on `seal[0..4]`). Inverse is dropping the prefix.
+pub fn wrap_seal(raw_seal: &[u8]) -> Vec<u8> {
+    let mut s = Vec::with_capacity(GROTH16_SELECTOR.len() + raw_seal.len());
+    s.extend_from_slice(&GROTH16_SELECTOR);
+    s.extend_from_slice(raw_seal);
+    s
+}
+
+/// Decode a canonical Address XDR (the bytes the guest/contract fold) back into a Stellar
+/// strkey, so the proof artifact carries submit-ready payees. Inverse of [`address_xdr`].
+pub fn address_xdr_to_strkey(xdr: &[u8]) -> anyhow::Result<String> {
+    use soroban_sdk::xdr::{Limits, PublicKey, ReadXdr, ScAddress, ScVal, Uint256};
+    let scval = ScVal::from_xdr(xdr, Limits::none())
+        .map_err(|e| anyhow::anyhow!("payee xdr is not a valid ScVal: {e:?}"))?;
+    let addr = match scval {
+        ScVal::Address(a) => a,
+        other => anyhow::bail!("payee xdr is not an ScVal::Address: {other:?}"),
+    };
+    let strkey = match addr {
+        ScAddress::Account(account_id) => match account_id.0 {
+            PublicKey::PublicKeyTypeEd25519(Uint256(k)) => {
+                stellar_strkey::Strkey::PublicKeyEd25519(stellar_strkey::ed25519::PublicKey(k))
+                    .to_string()
+            }
+        },
+        ScAddress::Contract(contract_id) => {
+            let hash: soroban_sdk::xdr::Hash = contract_id.0;
+            stellar_strkey::Strkey::Contract(stellar_strkey::Contract(hash.0)).to_string()
+        }
+        other => anyhow::bail!("unsupported address type for a payee: {other:?}"),
+    };
+    Ok(strkey)
+}
+
+/// Run the settlement guest under the real Groth16 prover (STARK→SNARK; **needs Docker/x86** —
+/// Rosetta x86 on Apple Silicon, ~34 min, TECH_SPEC §2), verify the receipt against the pinned
+/// image id, confirm the committed journal equals native `settle()`, and package the
+/// submittable [`ProofArtifact`] (seal router-wrapped, payees as strkeys in guest-fold order).
+pub fn prove_settlement(inputs: &Inputs) -> anyhow::Result<ProofArtifact> {
+    use parallar_methods::{SETTLE_CREDIT_V1_GUEST_ELF, SETTLE_CREDIT_V1_GUEST_ID};
+    use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts};
+
+    // native reference: the allocations + journal the guest must reproduce
+    let (allocs, native_journal): (Vec<Allocation>, Journal) =
+        settle(inputs).map_err(|e| anyhow::anyhow!("native settle failed: {e:?}"))?;
+    let native_journal_bytes = native_journal.to_bytes();
+
+    let env = ExecutorEnv::builder().write(inputs)?.build()?;
+    let receipt = default_prover()
+        .prove_with_opts(env, SETTLE_CREDIT_V1_GUEST_ELF, &ProverOpts::groth16())?
+        .receipt;
+
+    receipt.verify(SETTLE_CREDIT_V1_GUEST_ID)?;
+    anyhow::ensure!(
+        receipt.journal.bytes.as_slice() == &native_journal_bytes[..],
+        "guest-committed journal != native settle journal"
+    );
+
+    let raw_seal = receipt
+        .inner
+        .groth16()
+        .map_err(|e| anyhow::anyhow!("not a groth16 receipt: {e:?}"))?
+        .seal
+        .clone();
+    let image_id = risc0_zkvm::sha::Digest::from(SETTLE_CREDIT_V1_GUEST_ID);
+    let journal_digest: [u8; 32] = Sha256::digest(&receipt.journal.bytes).into();
+
+    let allocations = allocs
+        .iter()
+        .map(|a| {
+            Ok(AllocationOut { payee: address_xdr_to_strkey(&a.buyer)?, amount: a.amount })
+        })
+        .collect::<anyhow::Result<Vec<_>>>()?;
+
+    Ok(ProofArtifact {
+        seal: hex::encode(wrap_seal(&raw_seal)),
+        image_id: hex::encode(image_id.as_bytes()),
+        journal: hex::encode(&receipt.journal.bytes),
+        journal_digest: hex::encode(journal_digest),
+        epoch: native_journal.epoch,
+        total_payout: native_journal.total_payout,
+        allocations,
+    })
 }
 
 #[cfg(test)]
@@ -140,35 +267,28 @@ mod test {
         assert_eq!(session.journal.bytes.as_slice(), &native_journal[..]);
     }
 
-    /// SPIKE (slow, needs Docker): generate a REAL Groth16 proof via the STARK→SNARK wrap
-    /// (x86 image under Rosetta), verify it against the image_id, confirm the journal, and
-    /// print the (seal, image_id, journal_digest) the on-chain verifier consumes.
-    /// Run explicitly: `cargo test -p parallar-prover-host -- --ignored --nocapture groth16`.
-    #[test]
-    #[ignore = "slow: real Groth16 proof via Rosetta x86 Docker"]
-    fn groth16_proof_generates_and_verifies() {
-        use parallar_methods::{SETTLE_CREDIT_V1_GUEST_ELF, SETTLE_CREDIT_V1_GUEST_ID};
-        use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts};
-        use settle_credit_v1::{
-            position_root, settle, snapshot_root, terms_hash, Holder, Inputs, Position, Terms,
-        };
-        use sha2::{Digest, Sha256};
-
+    /// A full-miss settlement witness with a REAL buyer Address (so the payee decodes to a
+    /// strkey and the journal's allocation_root matches what the settlement contract folds
+    /// over real Addresses — the fixture the on-chain verifier integration test needs).
+    fn sample_inputs(env: &Env) -> (settle_credit_v1::Inputs, Address) {
+        use settle_credit_v1::{position_root, snapshot_root, terms_hash, Holder, Inputs, Position, Terms};
+        let buyer = Address::generate(env);
         let holders = vec![Holder { id: [1; 32], balance: 10_000, has_trustline: true, frozen: false }];
-        let positions = vec![Position { buyer: vec![0x12u8; 40], cover: 800, salt: [7; 32] }];
+        let positions = vec![Position { buyer: address_xdr(env, &buyer), cover: 800, salt: [7; 32] }];
         let terms = Terms { coupon_rate_bps: 1000 };
         let config = ConfigFields {
-            reference_asset_xdr: vec![0xAA, 1, 2, 3],
+            reference_asset_xdr: address_xdr(env, &Address::generate(env)),
             terms_hash: terms_hash(&terms),
             schedule_root: [0x55; 32],
             snapshot_root: snapshot_root(&holders),
-            collateral_token_xdr: vec![0xBB, 4, 5, 6],
+            collateral_token_xdr: address_xdr(env, &Address::generate(env)),
             premium_bps: 200,
             epoch_deadlines: vec![(1u32, 500u64)],
         };
-        let type_id_xdr = vec![0xCCu8, 1, 2, 3, 4];
+        let type_id_xdr = symbol_xdr(env, &Symbol::new(env, "credit_v1"));
         let proot = position_root(&positions);
-        let instrument_id = settle_credit_v1::derive_instrument_id(&type_id_xdr, 1, &config_hash(&config));
+        let instrument_id =
+            settle_credit_v1::derive_instrument_id(&type_id_xdr, 1, &config_hash(&config));
         let inputs = Inputs {
             type_id_xdr,
             rules_version: 1,
@@ -183,27 +303,98 @@ mod test {
             positions,
             position_root: proot,
         };
-        let native_journal = settle(&inputs).unwrap().1.to_bytes();
+        (inputs, buyer)
+    }
 
-        let env = ExecutorEnv::builder().write(&inputs).unwrap().build().unwrap();
-        let receipt = default_prover()
-            .prove_with_opts(env, SETTLE_CREDIT_V1_GUEST_ELF, &ProverOpts::groth16())
-            .unwrap()
-            .receipt;
+    /// `wrap_seal` yields the 260-byte router seal: selector ‖ raw 256-byte proof.
+    #[test]
+    fn wrap_seal_prepends_selector_to_260_bytes() {
+        let raw = [0xABu8; 256];
+        let wrapped = wrap_seal(&raw);
+        assert_eq!(wrapped.len(), 260);
+        assert_eq!(&wrapped[0..4], &GROTH16_SELECTOR);
+        assert_eq!(&wrapped[4..], &raw[..]);
+    }
 
-        receipt.verify(SETTLE_CREDIT_V1_GUEST_ID).unwrap();
-        assert_eq!(receipt.journal.bytes.as_slice(), &native_journal[..]);
+    /// A payee's canonical Address XDR decodes back to the strkey `settle()` is invoked with.
+    #[test]
+    fn address_xdr_to_strkey_round_trips() {
+        let env = Env::default();
+        let addr = Address::generate(&env);
+        let strkey = address_xdr_to_strkey(&address_xdr(&env, &addr)).unwrap();
+        let back = Address::from_string(&soroban_sdk::String::from_str(&env, &strkey));
+        assert_eq!(addr, back, "xdr -> strkey -> Address round-trips");
+    }
 
-        // the values the on-chain verifier consumes. The raw Groth16 seal comes straight off
-        // the receipt; wrapping it with the router selector for Stellar is the verifier-wiring step.
-        let seal = receipt.inner.groth16().expect("groth16 receipt").seal.clone();
-        let image_id = risc0_zkvm::sha::Digest::from(SETTLE_CREDIT_V1_GUEST_ID);
-        let journal_digest: [u8; 32] = Sha256::digest(&receipt.journal.bytes).into();
+    /// The proof artifact serializes and parses back unchanged (the submit handoff contract).
+    #[test]
+    fn proof_artifact_json_round_trips() {
+        let a = ProofArtifact {
+            seal: format!("73c457ba{}", "ab".repeat(256)),
+            image_id: "00".repeat(32),
+            journal: "11".repeat(116),
+            journal_digest: "22".repeat(32),
+            epoch: 1,
+            total_payout: 800,
+            allocations: vec![AllocationOut { payee: "GABC".into(), amount: 800 }],
+        };
+        let back: ProofArtifact = serde_json::from_str(&serde_json::to_string(&a).unwrap()).unwrap();
+        assert_eq!(a, back);
+    }
+
+    /// The witness JSON (`Inputs`) the `prove` CLI consumes round-trips, and its payee decodes.
+    #[test]
+    fn witness_json_round_trips_and_payee_decodes() {
+        let env = Env::default();
+        let (inputs, buyer) = sample_inputs(&env);
+        let json = serde_json::to_string_pretty(&inputs).unwrap();
+        let back: settle_credit_v1::Inputs = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.collateral, 1000);
+        assert_eq!(back.positions.len(), 1);
+        // the position buyer (== the eventual payee) decodes to the buyer's strkey
+        let strkey = address_xdr_to_strkey(&back.positions[0].buyer).unwrap();
+        let recovered = Address::from_string(&soroban_sdk::String::from_str(&env, &strkey));
+        assert_eq!(buyer, recovered);
+    }
+
+    /// SPIKE (slow, needs Docker): generate a REAL Groth16 proof via the STARK→SNARK wrap
+    /// (x86 image under Rosetta), package the submittable artifact, assert the seal is the
+    /// 260-byte selector-wrapped form, and persist the artifact + witness fixtures (consumed
+    /// by the on-chain verifier integration test + the demo).
+    /// Run explicitly: `cargo test -p parallar-prover-host -- --ignored --nocapture groth16`.
+    #[test]
+    #[ignore = "slow: real Groth16 proof via Rosetta x86 Docker"]
+    fn groth16_proof_generates_and_verifies() {
+        let env = Env::default();
+        let (inputs, buyer) = sample_inputs(&env);
+
+        let artifact = prove_settlement(&inputs).expect("prove");
+
+        let seal = hex::decode(&artifact.seal).unwrap();
+        assert_eq!(seal.len(), 260, "selector-wrapped seal");
+        assert_eq!(&seal[0..4], &GROTH16_SELECTOR);
+        assert_eq!(artifact.allocations.len(), 1, "one payout");
+        assert_eq!(artifact.allocations[0].amount, 800, "full cover paid");
+        let buyer_strkey =
+            address_xdr_to_strkey(&address_xdr(&env, &buyer)).unwrap();
+        assert_eq!(artifact.allocations[0].payee, buyer_strkey, "payee == buyer");
+
+        // persist fixtures (real Address XDR) for the on-chain verifier test + the demo
+        let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures");
+        std::fs::create_dir_all(dir).unwrap();
+        std::fs::write(
+            format!("{dir}/real_proof.json"),
+            serde_json::to_string_pretty(&artifact).unwrap(),
+        )
+        .unwrap();
+        std::fs::write(
+            format!("{dir}/witness.json"),
+            serde_json::to_string_pretty(&inputs).unwrap(),
+        )
+        .unwrap();
         println!(
-            "GROTH16 OK | seal={}B image_id=0x{} journal_digest=0x{}",
-            seal.len(),
-            hex::encode(image_id.as_bytes()),
-            hex::encode(journal_digest)
+            "GROTH16 OK | seal=260B image_id={} payee={} amount={}",
+            artifact.image_id, artifact.allocations[0].payee, artifact.allocations[0].amount
         );
     }
 }
