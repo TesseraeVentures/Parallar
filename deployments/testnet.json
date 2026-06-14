@@ -1,0 +1,37 @@
+{
+  "network": "testnet",
+  "network_passphrase": "Test SDF Network ; September 2015",
+  "rpc_url": "https://soroban-testnet.stellar.org",
+  "deployed": "2026-06-14",
+  "note": "MVP wiring: settlement points its verifier directly at the groth16-verifier (the production RiscZeroVerifierRouter is a thin selector-dispatcher with the identical verify(seal,image_id,journal) interface). Collateral = native XLM (claw/freeze-proof). The two deployed instruments use placeholder config roots, so they are NOT settleable (the guest's snapshot_root/terms_hash soundness bindings correctly reject any witness) — a settleable instrument needs real roots matching a proven witness.",
+  "accounts": {
+    "admin": "GBPA7CMP3JW73GMPMGCDTODBRMYRSYP74IF4DBBLVU4YXOJHJFIPKUIX",
+    "deployer": "GBMBWXCDH2JAQCNFNEVXIZPKVMMAPCHABCOUXZHRVN3BD3UPJBG7ED7E"
+  },
+  "contracts": {
+    "groth16_verifier": "CCGEOLVIWOXEK6JAW3SJRMXJFYUO3DOHQCLUZQOGBQTSLTIJ2IXSEDBM",
+    "factory": "CA5WGQMQ4DLCB5TTKRCFXBB2VKUALVZ2WB4GJVI6V3DQ2CQASLCH2ATD",
+    "collateral_xlm_sac": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC"
+  },
+  "wasm_hashes": {
+    "vault": "784e9bb16ea33816c856b0b7cb69b1be6bc57927ed3dfe1aced3b62f259f30a0",
+    "settlement": "cddf7b1af4287192b31ac9ea7bb931d9ceb8a729dbb1576cca5677c9ea665e3f"
+  },
+  "type": {
+    "type_id": "credit_v1",
+    "image_id": "705ddac439284e2593aa8e510121e7e82dcc441549c7e8c8af0e77bd053d1891",
+    "rules_version": 1
+  },
+  "instruments": [
+    {
+      "instrument_id": "7ea722ce8d13560f9b8ccfb27cc87a7489c6fe46fd0a7afe7b1c1c754279a840",
+      "vault": "CA5NCTBLCNKYZ5P3H24XWV2TPMDNUHSABVGVG262MUWQWIPU4DEKIELD",
+      "settlement": "CBEOHHRFF7SQQBQSCTWG37KVMLDKW4ADDDQ4ZYNUITU54BBNJR3FROIB"
+    },
+    {
+      "instrument_id": "439b654d0aa6536decc12e71ed4836343e61e0dcd8240add1510706e3c2adca3",
+      "vault": "CDJFBYLB3GQKJ7K3K6UUAQNAYLIQO7GD7572VZYL3WVCOLTC2DLX2BUY",
+      "settlement": "CCX7VG7E3HVB3PL6MUCTZHZ7D6HWQFU5RMRMK6QHVVRUZZB22XV4M2DE"
+    }
+  ]
+}
