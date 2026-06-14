@@ -83,3 +83,11 @@
   - `onchain_verify` **3/3** (verify · tampered-reject · full-settle); host lib 8; contracts 23; guest 22 — **full workspace green**. Settlement points at the groth16-verifier directly; the production router is a thin selector-dispatcher with the identical `verify(seal, image_id, journal)` interface (exercised live in the testnet demo).
 - **Next:** testnet deploy (factory + verifier stack + instrument) + `submit` against it (the live counterpart of this in-Env proof); `history-builder` (witness from a qualifying-payment chain scan, §10); `demo.sh` (the DoD scenario: register → deploy ×2 → deposits → cover → epoch-0 no-proof → prove → submit → settle → forged/replay/stale reverts → benchmarks); N=10 benchmark on x86.
 - **Blocked:** none.
+
+## 2026-06-14 (cont.) — R16: demo.sh (the DoD fresh-clone demo) — GREEN
+- **Done:**
+  - `demo.sh` + `make demo` — the Definition-of-Done one-command walkthrough, **fresh-clone runnable in seconds, no testnet keys and no 34-min live proof** (uses the committed real-proof fixture + the in-process Soroban host). Narrated, runs the FULL scenario against real code and fails loudly on any beat:
+    1. toolchain → 2. build the four contracts to wasm → 3. factory: register `credit_v1` + **deploy TWO instruments** (replication beat) + asset-policy gate → 4. vault: deposits + **Poseidon-committed cover** (positions hidden) → 5. guest: a fully-paid epoch is **UNPROVABLE** (NoDefault) + partial-default determination (22 cases) → 6. **a REAL Groth16 proof verifies ON-CHAIN** (actual RISC Zero verifier) + **full `settle()` confidential payout** from the vault → 7. negative paths revert (forged/tampered seal, replay, stale position_root, tampered allocation_root, pre-deadline) → 8. benchmarks.
+  - README quick-start rewritten: `make demo` is the headline; the host-CLI `prove`/`submit` shown for the live path. Repo map + the (now real) demo reference reconciled.
+- **Next:** testnet deploy (factory + verifier stack + instrument) + live `submit`; `history-builder` (§10 qualifying-payment chain scan → witness); N=10 + 1k extrapolation benchmark on x86; frontend + 2–3 min video (P1, post-freeze).
+- **Blocked:** none.

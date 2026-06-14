@@ -55,17 +55,21 @@ The proofs guarantee correct *computation over supplied inputs*, not input canon
 ## Quick start
 
 ```bash
-# prerequisites: rust, stellar-cli, rzup — docs/TECH_SPEC.md §2
-make test          # builds all four contracts to wasm + runs the full suite:
-                   #   contracts 23/23 (incl. forged-proof / replay / stale-root reverts),
-                   #   guest 22, host parity + executor 4
-
-# the real Groth16 proving spike (needs Docker; ~34 min via Rosetta x86 on Apple Silicon):
-cd prover && cargo test -p parallar-prover-host -- --ignored --nocapture \
-  groth16_proof_generates_and_verifies
+# prerequisites: rust, stellar-cli — docs/TECH_SPEC.md §2
+make demo          # fresh-clone, one command: the full verified scenario (below)
+make test          # build all four contracts to wasm + run the full suite
 ```
 
-`make demo` — the one-command end-to-end scenario (register `credit_v1` → **two instruments factory-deployed** → a fully-paid epoch for which **no proof can exist** → a partial default (7 of 10 holders paid) detected by the payment scan → prove → on-chain verify → confidential payouts → forged-proof / replay / stale-root reverts → proof-time + fee benchmarks) — is **in progress**; current state in [docs/STATUS.md](docs/STATUS.md).
+**`make demo`** (or `./demo.sh`) walks the whole scenario against real code — register `credit_v1` → **two instruments factory-deployed** → deposits + Poseidon-committed cover → a fully-paid epoch for which **no settlement proof can exist** → a partial default → a **real Groth16 proof verified on-chain** by the actual RISC Zero verifier → confidential payouts through the vault → forged-proof / replay / stale-root / tampered-allocation / pre-deadline attempts **reverting** → benchmarks. It's fresh-clone runnable in seconds: it uses the committed real-proof fixture (`prover/host/tests/fixtures/`), so **no testnet keys and no 34-minute live proof are needed**.
+
+To generate a proof live and submit it to testnet, use the host CLI:
+
+```bash
+# generate a real Groth16 proof (needs Docker; ~34 min via Rosetta x86 on Apple Silicon):
+cargo run -p parallar-prover-host --bin parallar-prover -- prove  --inputs witness.json --out proof.json
+# submit it to a deployed instrument:
+cargo run -p parallar-prover-host --bin parallar-prover -- submit --artifact proof.json --settlement <C…>
+```
 
 ## Benchmarks
 
@@ -82,6 +86,6 @@ N=10 + 1k-holder extrapolation (proof time **and** verify fee / max allocation-l
 
 ## Repo map
 
-`contracts/` (factory, bond, vault, settlement) · `prover/` (`guests/settle_credit_v1`, `host`, `methods`) · `spikes/poseidon_parity/` · `docs/` (PRD, TECH_SPEC, SPRINT_PLAN, PRODUCTION_GAP, STATUS) · `site/` (landing page) · `deck/` · `external/` (vendored Nethermind RISC Zero verifier, commit-pinned, gitignored)
+`demo.sh` · `Makefile` · `contracts/` (factory, bond, vault, settlement) · `prover/` (`guests/settle_credit_v1`, `host` + `parallar-prover` CLI, `methods`) · `spikes/poseidon_parity/` · `docs/` (PRD, TECH_SPEC, SPRINT_PLAN, PRODUCTION_GAP, STATUS) · `site/` (landing page) · `deck/` · `external/` (vendored Nethermind RISC Zero verifier, commit-pinned, gitignored)
 
 MIT
