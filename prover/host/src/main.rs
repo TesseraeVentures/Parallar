@@ -4,6 +4,8 @@
 //!              submittable proof artifact (needs Docker/x86; ~34 min via Rosetta — §2).
 //! * `submit` — invoke `settlement.settle(proof, journal, allocations)` on a deployed
 //!              instrument via `stellar-cli`, from a proof artifact.
+//! * `bench`  — time the real prover over a witness N times (the founder's x86 N=10 run,
+//!              TECH_SPEC §10.7); same Docker/x86 + ~34 min/proof cost as `prove`.
 //!
 //! `history-builder` (assemble the witness `Inputs` by scanning qualifying payments per
 //! TECH_SPEC §10) is the next subcommand; until then the witness JSON is produced out-of-band.
@@ -14,6 +16,7 @@ use parallar_prover_host::{prove_settlement, ProofArtifact};
 use settle_credit_v1::Inputs;
 use std::path::PathBuf;
 use std::process::Command;
+use std::time::Instant;
 
 #[derive(Parser)]
 #[command(name = "parallar-prover", about = "Parallar settlement prover host: prove + submit")]
@@ -51,6 +54,17 @@ enum Cmd {
         #[arg(long)]
         dry_run: bool,
     },
+    /// Benchmark the real Groth16 prover: run `prove_settlement` N times over a fixed witness
+    /// and print per-run + min/mean/max timings (the founder's x86 N=10 run, TECH_SPEC §10.7).
+    /// Each run needs Docker/x86 and is ~34 min — this is a deliberate command, NOT a test.
+    Bench {
+        /// Witness JSON — the `settle_credit_v1::Inputs` to prove on every run.
+        #[arg(long)]
+        inputs: PathBuf,
+        /// Number of proving runs to time (the DoD figure is 10).
+        #[arg(long, default_value_t = 10)]
+        n: u32,
+    },
     /// Assemble a witness (holder snapshot + qualifying payments, TECH_SPEC §10) from a data-
     /// source scan + a params template, ready for `prove`.
     HistoryBuilder {
@@ -73,6 +87,7 @@ fn main() -> Result<()> {
         Cmd::Submit { artifact, settlement, source, network, dry_run } => {
             cmd_submit(artifact, settlement, source, network, dry_run)
         }
+        Cmd::Bench { inputs, n } => cmd_bench(inputs, n),
         Cmd::HistoryBuilder { scan, params, out } => cmd_history_builder(scan, params, out),
     }
 }
@@ -116,6 +131,70 @@ fn cmd_prove(inputs_path: PathBuf, out: PathBuf) -> Result<()> {
         artifact.epoch,
         artifact.total_payout,
         artifact.allocations.len(),
+    );
+    Ok(())
+}
+
+/// On-chain `settle()` verify cost captured in Sprint 0 (real Groth16 verify on Soroban
+/// testnet) — context for the prover-side timings. Pinned figure; ~3x headroom under the
+/// ~100M-CPU-insn per-tx budget.
+const ONCHAIN_VERIFY_INSNS: u64 = 35_000_000;
+const SOROBAN_TX_INSN_BUDGET: u64 = 100_000_000;
+
+fn cmd_bench(inputs_path: PathBuf, n: u32) -> Result<()> {
+    anyhow::ensure!(n >= 1, "--n must be at least 1");
+
+    let raw = std::fs::read_to_string(&inputs_path)
+        .with_context(|| format!("reading witness {}", inputs_path.display()))?;
+    let inputs: Inputs = serde_json::from_str(&raw).context("parsing witness JSON")?;
+
+    let holders = inputs.snapshot.len();
+    eprintln!(
+        "benchmarking real Groth16 prover: {n} run(s) over {} (holders={holders}).",
+        inputs_path.display(),
+    );
+    eprintln!(
+        "NOTE: each run is the real STARK→SNARK wrap — needs Docker/x86 (Rosetta on Apple\n\
+         Silicon), ~34 min/proof. This is a deliberate command, not part of `cargo test`.",
+    );
+
+    let mut secs: Vec<f64> = Vec::with_capacity(n as usize);
+    println!("run    seconds");
+    println!("---    -------");
+    for run in 1..=n {
+        let t0 = Instant::now();
+        let _artifact = prove_settlement(&inputs)
+            .with_context(|| format!("prove_settlement failed on run {run}/{n}"))?;
+        let elapsed = t0.elapsed().as_secs_f64();
+        secs.push(elapsed);
+        println!("{run:>3}    {elapsed:>9.1}");
+    }
+
+    let min = secs.iter().copied().fold(f64::INFINITY, f64::min);
+    let max = secs.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+    let mean = secs.iter().sum::<f64>() / secs.len() as f64;
+
+    println!();
+    println!("summary (n={n}, holders={holders})");
+    println!("  min  {min:>9.1}s");
+    println!("  mean {mean:>9.1}s");
+    println!("  max  {max:>9.1}s");
+    println!();
+    // Crude extrapolation: proving cost is dominated by the fixed STARK→SNARK wrap, so the
+    // per-holder marginal is small at these N — treat this as an order-of-magnitude note, not
+    // a measured 1k-holder figure (re-run `bench` on a 1k-holder witness for the real number).
+    println!(
+        "1k-holder note: prove time here is dominated by the fixed Groth16 wrap, not the {holders}\n\
+         -holder fold; a 1k-holder witness is expected to stay the same order of magnitude\n\
+         (~{mean:.0}s). This is an extrapolation — confirm by running `bench` on a 1k witness.",
+    );
+    println!();
+    println!(
+        "on-chain verify (Sprint-0 capture): ~{}M CPU insns to verify one proof on Soroban,\n\
+         ~{:.1}x headroom under the ~{}M/tx budget — verify cost is flat in holder count.",
+        ONCHAIN_VERIFY_INSNS / 1_000_000,
+        SOROBAN_TX_INSN_BUDGET as f64 / ONCHAIN_VERIFY_INSNS as f64,
+        SOROBAN_TX_INSN_BUDGET / 1_000_000,
     );
     Ok(())
 }

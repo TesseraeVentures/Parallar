@@ -78,7 +78,25 @@ cargo run -p parallar-prover-host --bin parallar-prover -- submit --artifact pro
 | On-chain Groth16 verify | **≈ 35M CPU insns** (Bn254Pairing 17.5M + G2-subgroup 11.8M + G1Mul 5.8M) | ~3× headroom under Soroban's ~100M/tx budget (verify step only) |
 | Proof generation (N=1) | **2027.77 s** (~33.8 min) end-to-end | Apple-Silicon dev path via Rosetta-x86 Docker (STARK prove + SNARK wrap); production proving targets an x86 VM |
 
-N=10 + 1k-holder extrapolation (proof time **and** verify fee / max allocation-list size, per TECH_SPEC §10.7) pending — to be captured on x86, not under Rosetta.
+N=10 + 1k-holder extrapolation (proof time **and** verify fee / max allocation-list size, per TECH_SPEC §10.7) pending — run it push-button on x86 with `parallar-prover bench --inputs witness.json --n 10` (each proof is ~34 min under Rosetta, so this is an x86 job).
+
+## Instance #2 (`weather_v1`) — same core, different guest
+
+Parallar's claim is that protection is a *family* of instruments over one provable core, not a single product. The cleanest proof of that is a second instrument that reuses every frozen surface and changes only the one piece that is *meant* to change — the per-type guest.
+
+A parametric weather/index instrument (e.g. a payout when rainfall over a window breaches a published threshold) maps onto the unchanged surfaces:
+
+| Surface | `credit_v1` (built) | `weather_v1` (designed-for) | Changes? |
+|---|---|---|---|
+| Generic vault WASM | seller collateral + Poseidon-committed buyer positions | identical | **no** |
+| Generic settlement WASM | sole auth path = verify one Groth16 proof vs the type's image ID | identical | **no** |
+| 116-byte journal | the contract reads roots + allocation commitment, never the determination | identical layout | **no** |
+| Registry interface | `register_type(image_id, rules, wasm hashes)` → `deploy_instrument` | identical call | **no** |
+| Per-type RISC Zero guest | scans coupon payments, proves shortfall/owed, settles pro-rata | scans attested observations, proves the index breach, settles per the published parametric rule | **yes — this is the only new code** |
+
+A new guest is a **new `image_id`, i.e. a new registered type** — never an in-place upgrade of an existing one. Live instruments stay pinned to the guest they were deployed with forever (the versioning law). So `weather_v1` ships the way `credit_v1` did: register the type, then factory-deploy instances against the *same* vault and settlement WASM already in this repo.
+
+**Status: specified/designed-for, not built.** It is gap **G8** in [PRODUCTION_GAP.md](docs/PRODUCTION_GAP.md) (small once attested feeds, **G1**, exist). The demo's replication beat — a **second** factory-deploy of `credit_v1` — already exercises the path a second *type* would take: the surfaces serve instance #2 by construction, not by speculative flexibility added on its behalf.
 
 ## Roadmap
 
