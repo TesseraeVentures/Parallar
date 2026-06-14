@@ -8,7 +8,13 @@
 //! fixture proof produced by the `groth16_proof_generates_and_verifies` proving spike.
 
 use parallar_prover_host::{ProofArtifact, GROTH16_SELECTOR};
-use soroban_sdk::{Bytes, BytesN, Env};
+use parallar_settlement::{SettlementContract, SettlementContractClient};
+use parallar_vault::{VaultContract, VaultContractClient};
+use settle_credit_v1::{commitment, Inputs};
+use soroban_sdk::{
+    testutils::{Address as _, Ledger},
+    token, Address, Bytes, BytesN, Env, Vec as SVec,
+};
 
 // The real Nethermind groth16-verifier wasm, vendored as a fixture (16 KB) so this test is
 // fresh-clone runnable (external/ is gitignored). Built from the commit-pinned verifier
@@ -75,4 +81,79 @@ fn tampered_seal_rejected_on_chain() {
         &BytesN::from_array(&env, &b32(&a.image_id)),
         &journal_digest,
     ); // invalid proof -> trap
+}
+
+fn witness() -> Inputs {
+    serde_json::from_str(include_str!("fixtures/witness.json")).expect("parse witness.json fixture")
+}
+
+/// The COMPLETE on-chain path with the real proof: deploy the verifier + vault + settlement,
+/// reconstruct the exact committed position so the vault's `position_root` matches the journal,
+/// then `settle()` — the proof verifies through the verifier endpoint, every binding passes,
+/// and the buyer is paid from the vault. The whole pipeline, end to end, deterministic, no
+/// testnet. (Settlement points at the groth16-verifier directly; the production router is a
+/// thin selector-dispatcher with the identical `verify(seal, image_id, journal)` interface.)
+#[test]
+fn full_settlement_pays_out_with_real_proof() {
+    let a = fixture(); // real_proof.json — the proven artifact
+    let w = witness(); // witness.json — the exact Inputs the proof was generated from
+    let env = Env::default();
+    env.mock_all_auths();
+
+    // the real on-chain verifier (the endpoint settlement calls to check the proof)
+    let verifier = env.register(verifier_wasm::WASM, ());
+
+    // collateral SAC
+    let sac = env.register_stellar_asset_contract_v2(Address::generate(&env));
+    let coll = sac.address();
+    let coll_admin = token::StellarAssetClient::new(&env, &coll);
+    let coll_tok = token::Client::new(&env, &coll);
+
+    // vault + settlement, cross-bound; settlement pinned to the proof's image_id + verifier
+    let vault_id = env.register(VaultContract, ());
+    let settlement_id = env.register(SettlementContract, ());
+    let vault = VaultContractClient::new(&env, &vault_id);
+    let settlement = SettlementContractClient::new(&env, &settlement_id);
+
+    vault.init(&settlement_id, &coll);
+    let image_id = BytesN::from_array(&env, &b32(&a.image_id));
+    let instrument_id = BytesN::from_array(&env, &w.instrument_id);
+    let mut deadlines = SVec::new(&env);
+    deadlines.push_back((w.epoch, w.deadline));
+    settlement.init(&image_id, &instrument_id, &vault_id, &deadlines, &verifier);
+
+    // reconstruct the vault state so position_root matches the journal: fund collateral, then
+    // buy_protection with the SAME Poseidon commitment the guest folded (buyer, cover, salt)
+    let seller = Address::generate(&env);
+    coll_admin.mint(&seller, &w.collateral);
+    vault.deposit(&seller, &w.collateral);
+
+    let pos = &w.positions[0];
+    let buyer = Address::from_string(&soroban_sdk::String::from_str(&env, &a.allocations[0].payee));
+    let commit = BytesN::from_array(&env, &commitment(&pos.buyer, pos.cover, &pos.salt));
+    vault.buy_protection(&buyer, &commit, &pos.cover);
+
+    let journal = hex::decode(&a.journal).unwrap();
+    assert_eq!(
+        &vault.position_root().to_array()[..],
+        &journal[44..76],
+        "reconstructed vault position_root == the journal's committed position_root"
+    );
+
+    // settle past the deadline with the REAL proof
+    env.ledger().with_mut(|l| l.timestamp = w.deadline + 1);
+    let mut allocs = SVec::new(&env);
+    allocs.push_back((buyer.clone(), a.allocations[0].amount));
+
+    assert_eq!(coll_tok.balance(&buyer), 0, "buyer unpaid before settlement");
+    settlement.settle(
+        &Bytes::from_slice(&env, &hex::decode(&a.seal).unwrap()),
+        &Bytes::from_slice(&env, &journal),
+        &allocs,
+    );
+
+    // the proof verified on-chain, every binding passed, the buyer was paid from the vault
+    assert_eq!(coll_tok.balance(&buyer), a.allocations[0].amount, "buyer paid the proven payout");
+    assert!(settlement.is_settled(&w.epoch), "epoch marked settled");
+    assert_eq!(vault.total_collateral(), w.collateral - a.allocations[0].amount, "collateral reduced by payout");
 }

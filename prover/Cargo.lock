@@ -2398,6 +2398,7 @@ dependencies = [
  "parallar-factory",
  "parallar-methods",
  "parallar-settlement",
+ "parallar-vault",
  "risc0-zkvm",
  "serde",
  "serde_json",
@@ -2409,6 +2410,13 @@ dependencies = [
 
 [[package]]
 name = "parallar-settlement"
+version = "0.0.0"
+dependencies = [
+ "soroban-sdk",
+]
+
+[[package]]
+name = "parallar-vault"
 version = "0.0.0"
 dependencies = [
  "soroban-sdk",

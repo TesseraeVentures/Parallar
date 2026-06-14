@@ -33,3 +33,4 @@ stellar-strkey = "0.0.13"
 soroban-sdk = { version = "25.3.0", features = ["testutils"] }
 parallar-factory = { path = "../../contracts/factory" }
 parallar-settlement = { path = "../../contracts/settlement" }
+parallar-vault = { path = "../../contracts/vault" }
