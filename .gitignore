@@ -32,3 +32,6 @@ external/
 
 # confidential seed materials — keep out of the (public-bound) submission repo
 deck/
+
+# Local Claude Code settings (per-machine)
+.claude/settings.local.json
