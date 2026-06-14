@@ -42,18 +42,39 @@ Each proof guarantees the settlement **computation** — the version-pinned rule
 
 ## What's real / what's mocked
 
-- ✅ Real: factory deployment via the Soroban deployer pattern; bond as a Stellar asset with 10 holders and genuine (including partial) coupon transfers; Poseidon-committed positions; RISC Zero settlement proofs; on-chain Groth16 verification (BN254 + Poseidon host functions, Protocols 25–26); payouts authorized solely by proof.
-- ⚠️ Mocked/simplified: the issuance is a mock modeled on a live Stellar corporate bond (unnamed); holder snapshot fixed at issuance; flat premium; demo keeper reads buyers' commitment openings from a local file (production: buyer-held openings + self-claim escape hatch — G2).
+| Real | Mocked / simplified (→ production gap) |
+|---|---|
+| Factory deployment via the Soroban deployer pattern (vault+settlement cross-bound in one tx) | Issuance is a mock modeled on a live Stellar corporate bond (unnamed) |
+| Bond as a Stellar asset — 10 holders, genuine (incl. partial) coupon transfers | Holder snapshot fixed at issuance |
+| Poseidon-committed positions — cover sizes never touch public state | Flat premium (no pricing curve) |
+| RISC Zero settlement proofs — real Groth16 generation (STARK→SNARK, Rosetta x86) | Demo keeper reads buyers' commitment openings from a local file (→ buyer-held openings + self-claim escape hatch, **G2**) |
+| On-chain Groth16 verification is the settlement's **sole** payout path — a cross-contract call to the RISC Zero verifier router (BN254 + Poseidon host fns, Protocols 25–26); **no admin path exists** | Qualifying-payment history is supplied to the guest (not yet attested → **G1**) |
+
+The proofs guarantee correct *computation over supplied inputs*, not input canonicity — see the trust model above and [PRODUCTION_GAP.md](docs/PRODUCTION_GAP.md).
 
 ## Quick start
 
 ```bash
 # prerequisites: rust, stellar-cli, rzup — docs/TECH_SPEC.md §2
-./scripts/demo.sh     # self-contained one-command path: registers credit_v1, factory-deploys two instruments, runs the full scenario — negative paths, benchmarks
-./scripts/deploy.sh   # deploy-only subset: register + a single factory deploy to testnet (for manual poking)
+make test          # builds all four contracts to wasm + runs the full suite:
+                   #   contracts 23/23 (incl. forged-proof / replay / stale-root reverts),
+                   #   guest 22, host parity + executor 4
+
+# the real Groth16 proving spike (needs Docker; ~34 min via Rosetta x86 on Apple Silicon):
+cd prover && cargo test -p parallar-prover-host -- --ignored --nocapture \
+  groth16_proof_generates_and_verifies
 ```
 
-The demo shows: a type registered and **two instruments factory-deployed** → a fully-paid epoch for which no proof can exist → a partial default (7 of 10 holders paid) detected by the scan → proof → verification → confidential payouts → forged-proof, replay, and stale-root attempts reverting → proof-time and fee benchmarks (N=10 measured, 1k+ extrapolated).
+`make demo` — the one-command end-to-end scenario (register `credit_v1` → **two instruments factory-deployed** → a fully-paid epoch for which **no proof can exist** → a partial default (7 of 10 holders paid) detected by the payment scan → prove → on-chain verify → confidential payouts → forged-proof / replay / stale-root reverts → proof-time + fee benchmarks) — is **in progress**; current state in [docs/STATUS.md](docs/STATUS.md).
+
+## Benchmarks
+
+| Metric | Measured | Notes |
+|---|---|---|
+| On-chain Groth16 verify | **≈ 35M CPU insns** (Bn254Pairing 17.5M + G2-subgroup 11.8M + G1Mul 5.8M) | ~3× headroom under Soroban's ~100M/tx budget (verify step only) |
+| Proof generation (N=1) | **2027.77 s** (~33.8 min) end-to-end | Apple-Silicon dev path via Rosetta-x86 Docker (STARK prove + SNARK wrap); production proving targets an x86 VM |
+
+N=10 + 1k-holder extrapolation (proof time **and** verify fee / max allocation-list size, per TECH_SPEC §10.7) pending — to be captured on x86, not under Rosetta.
 
 ## Roadmap
 
@@ -61,6 +82,6 @@ The demo shows: a type registered and **two instruments factory-deployed** → a
 
 ## Repo map
 
-`contracts/` (factory, bond, vault, settlement) · `prover/guests/` (settle_credit_v1, prove_exposure) · `prover/host/` · `scripts/` · `docs/` (PRD, TECH_SPEC, SPRINT_PLAN, PRODUCTION_GAP) · `frontend/`
+`contracts/` (factory, bond, vault, settlement) · `prover/` (`guests/settle_credit_v1`, `host`, `methods`) · `spikes/poseidon_parity/` · `docs/` (PRD, TECH_SPEC, SPRINT_PLAN, PRODUCTION_GAP, STATUS) · `site/` (landing page) · `deck/` · `external/` (vendored Nethermind RISC Zero verifier, commit-pinned, gitignored)
 
 MIT
