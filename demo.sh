@@ -71,6 +71,12 @@ beat "Vault: seller deposits (public) + buyer cover as Poseidon commitments only
 run "deposit / committed cover / solvency floor / settlement-only payouts" \
     Cargo.toml parallar-vault ""
 
+# ── 3b. history-builder: the witness comes from observed chain data ───────────
+beat "history-builder: assemble the witness from observed chain data (§10)" \
+     "asset-received basis (classic ops + SAC transfers + path payments) · muxed→base account · clawback-aware"
+run "qualifying-payment scan: address normalization + asset filter + clawback" \
+    prover/Cargo.toml parallar-prover-host --lib history_builder
+
 # ── 4. the guest determines the outcome — and REFUSES to prove a non-default ──
 beat "Guest: a fully-paid epoch is UNPROVABLE — no settlement proof can exist" \
      "ZK is structural: if the trigger didn't occur, the guest panics on honest data"

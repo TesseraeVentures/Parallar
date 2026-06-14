@@ -91,3 +91,11 @@
   - README quick-start rewritten: `make demo` is the headline; the host-CLI `prove`/`submit` shown for the live path. Repo map + the (now real) demo reference reconciled.
 - **Next:** testnet deploy (factory + verifier stack + instrument) + live `submit`; `history-builder` (§10 qualifying-payment chain scan → witness); N=10 + 1k extrapolation benchmark on x86; frontend + 2–3 min video (P1, post-freeze).
 - **Blocked:** none.
+
+## 2026-06-14 (cont.) — R17: history-builder (the §10 witness input layer)
+- **Done:**
+  - `prover/host/src/history_builder.rs` — turns observed chain data into the guest witness's `snapshot` + `payments`, implementing the normative §10 rules: **§10.2 asset-received basis** (classic `Payment` ops + SAC `transfer` events + path payments all flatten to `RawTransfer` rows; representation-agnostic; filtered to the coupon asset), **§10.3 muxed→base** (`base_account_key` resolves M-addresses to their base G-account 32-byte key), **clawback** (carried through as `clawed_back` → guest counts it as shortfall), **§10.6 pluggable source** (`DataSource` trait; `FileSource` = archive/export; live RPC is a same-shape swap, not a rewrite). Honest scope: it normalizes *observed* data, not its canonicity — the truncated/withheld-history gap is G1 (documented in the module).
+  - `parallar-prover history-builder --scan <scan.json> --params <template.json> --out <witness.json>` fills a witness template's snapshot+payments from a scan; smoke-tested end-to-end (native transfer correctly filtered out; muxed normalized; valid G-strkey parsed).
+  - 4 new unit tests (G-key identity · muxed→base · non-account rejection · asset-received+muxed+clawback). Host lib **12** (+ groth16 `#[ignore]`); onchain_verify 3; contracts 23; guest 22 — workspace green. Added a history-builder beat to `demo.sh`.
+- **Next:** testnet deploy + live `submit` (+ a live RPC `DataSource` impl behind the trait); N=10 + 1k extrapolation benchmark on x86; README N=10 numbers + instance-#2 section; frontend + video (P1).
+- **Blocked:** none. (Live RPC `DataSource` impl deferred — the FileSource/archive path is the MVP source; the demo + tests run on it.)

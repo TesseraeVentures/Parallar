@@ -17,6 +17,10 @@ use settle_credit_v1::{settle, Allocation, Inputs, Journal};
 use sha2::{Digest, Sha256};
 use soroban_sdk::{xdr::ToXdr, Address, Env, Symbol};
 
+/// Assembles the guest witness (snapshot + qualifying payments) from observed chain data,
+/// per the normative rules in TECH_SPEC §10. See the module for the trust caveats.
+pub mod history_builder;
+
 /// Canonical Address XDR — exactly what the contracts fold via `addr.to_xdr(env)`.
 pub fn address_xdr(env: &Env, addr: &Address) -> Vec<u8> {
     addr.clone().to_xdr(env).iter().collect()

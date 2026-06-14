@@ -51,6 +51,20 @@ enum Cmd {
         #[arg(long)]
         dry_run: bool,
     },
+    /// Assemble a witness (holder snapshot + qualifying payments, TECH_SPEC §10) from a data-
+    /// source scan + a params template, ready for `prove`.
+    HistoryBuilder {
+        /// Scan JSON — the data source's observed holders + transfers (archive export / RPC dump).
+        #[arg(long)]
+        scan: PathBuf,
+        /// Witness params JSON — an `Inputs` template with config/terms/positions/epoch/etc. set;
+        /// `snapshot` + `payments` are filled in from the scan.
+        #[arg(long)]
+        params: PathBuf,
+        /// Where to write the completed witness JSON (feed to `prove`).
+        #[arg(long, default_value = "witness.json")]
+        out: PathBuf,
+    },
 }
 
 fn main() -> Result<()> {
@@ -59,7 +73,29 @@ fn main() -> Result<()> {
         Cmd::Submit { artifact, settlement, source, network, dry_run } => {
             cmd_submit(artifact, settlement, source, network, dry_run)
         }
+        Cmd::HistoryBuilder { scan, params, out } => cmd_history_builder(scan, params, out),
     }
+}
+
+fn cmd_history_builder(scan_path: PathBuf, params_path: PathBuf, out: PathBuf) -> Result<()> {
+    use parallar_prover_host::history_builder::{fill_witness, DataSource, FileSource};
+    let scan = FileSource { path: scan_path.clone() }.scan()?;
+    let params: Inputs = serde_json::from_str(
+        &std::fs::read_to_string(&params_path)
+            .with_context(|| format!("reading params {}", params_path.display()))?,
+    )
+    .context("parsing params JSON")?;
+    let witness = fill_witness(params, &scan)?;
+    std::fs::write(&out, serde_json::to_string_pretty(&witness)?)
+        .with_context(|| format!("writing witness {}", out.display()))?;
+    eprintln!(
+        "✓ witness → {} | holders={} payments={} (from scan {})",
+        out.display(),
+        witness.snapshot.len(),
+        witness.payments.len(),
+        scan_path.display(),
+    );
+    Ok(())
 }
 
 fn cmd_prove(inputs_path: PathBuf, out: PathBuf) -> Result<()> {
