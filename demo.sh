@@ -122,6 +122,18 @@ run "weather_v1 rule: a breach pays pro-rata, a non-breach is UNPROVABLE" \
 note "weather_v1 image_id d31246e6… — its OWN pinned id; credit_v1 stays 705ddac4… (new guest = new type, never an edit)"
 note "parity-proven: weather's Poseidon commitment + position/allocation roots + config/instrument-id are byte-identical to credit_v1, so the SAME factory, vault, and settlement WASM accept it with zero contract changes"
 
+# ── 6c. production direction: attested inputs (G1) + escape hatch (G2) ────────
+beat "Production direction: attested inputs (G1) + escape hatch (G2)" \
+     "the versioning law in action — new guest TYPES harden the trust model; the pinned originals never change"
+run "credit_v2: settlement REQUIRES the issuer's signature over the payment data (G1)" \
+    prover/Cargo.toml settle-credit-v2 ""
+note "credit_v2 image_id d07e6aaf… — 'trust the keeper's data' becomes 'trust the issuer's signature'; tampered or unattested payments cannot settle"
+run "settlement is permissionless — anyone can settle, there is no privileged keeper (G2)" \
+    Cargo.toml parallar-settlement settle_is_permissionless
+run "claim_credit_v1: a buyer proves their OWN allocation from public commitments + their opening (G2)" \
+    prover/Cargo.toml claim-credit-v1 ""
+note "escape hatch: no keeper can withhold a payout; other buyers' positions stay private"
+
 # ── 7. benchmarks ─────────────────────────────────────────────────────────────
 beat "Benchmarks"
 note "on-chain verify   ≈ 35M CPU insns  (Bn254Pairing 17.5M + G2-subgroup 11.8M + G1Mul 5.8M); ~3× headroom under ~100M/tx — hardware-independent, FLAT in holder count"

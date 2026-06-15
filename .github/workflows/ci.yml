@@ -4,6 +4,8 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1' # weekly: run the slow image_id reproducibility guard
 
 jobs:
   test:
@@ -52,3 +54,22 @@ jobs:
             test -f "$f" || { echo "::error::missing $f"; exit 1; }
           done
           echo "ok: artifacts present"
+
+  image-ids:
+    name: guest image_id reproducibility (thorough; manual/weekly)
+    runs-on: ubuntu-latest
+    # The RISC Zero toolchain + ELF build is slow, so this guards reproducibility on a schedule /
+    # on demand rather than on every push. Asserts each guest image_id still matches its pinned
+    # value — credit_v1 must equal the deployed type's id (the versioning law).
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: install RISC Zero toolchain
+        run: |
+          curl -L https://risczero.com/install | bash
+          echo "$HOME/.risc0/bin" >> "$GITHUB_PATH"
+          "$HOME/.risc0/bin/rzup" install
+      - name: assert pinned image_ids
+        run: ./scripts/check_image_ids.sh

@@ -299,3 +299,13 @@
 - **Next-steps program (this round) COMPLETE:** audit-readiness (R34), G1 attested (R35), G2 escape-hatch core (R36), verify guide (R37).
 - **Next:** take stock against PRODUCTION_GAP G1–G13 + PRD + TECH_SPEC; lay out the production-extension roadmap (incl. the G2 on-chain surface decision) for continued build-out.
 - **Blocked:** none for buildable items.
+
+## 2026-06-15 (cont.) — R38: submission-grade demo + image_id reproducibility guard
+
+**Production push, item 1/4 (submission-grade, buildable-now).**
+- **Done:**
+  - demo.sh beat 6c: the one-command demo now tells the FULL production-direction story — runs credit_v2 (G1: settlement requires the issuer's signature; tampered/unattested data can't settle), the permissionless-settlement test (G2: no privileged keeper), and claim_credit_v1 (G2: a buyer proves their own allocation from public commitments + their own opening). The versioning law shown live: new guest TYPES harden the trust model; pinned originals never change.
+  - `scripts/check_image_ids.sh`: reproducibility guard — rebuilds the guest ELFs and asserts each image_id matches its pinned value (credit_v1 read from deployments/testnet.json = the deployed type; weather d31246e6; credit_v2 d07e6aaf). Catches the R34-class drift. Passes (all three match).
+  - CI `image-ids` job (workflow_dispatch + weekly schedule, so it never slows the fast push CI): installs the RISC Zero toolchain and runs the guard.
+- **Next (production push):** 2/4 G2 on-chain claim_direct (claimable settlement variant, config-carried claim image_id); 3/4 hardening pack (G6 + G9 + credit_principal_v1); 4/4 G3 Option C.
+- **Blocked:** none for buildable items.
