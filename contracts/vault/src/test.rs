@@ -154,3 +154,42 @@ fn pay_allocations_rejects_sum_above_collateral() {
     alloc.push_back((b1, 500i128)); // 500 > 400 collateral
     vault.pay_allocations(&1u32, &alloc);
 }
+
+#[test]
+fn pay_allocations_requires_the_bound_settlement_auth() {
+    // Law #1: collateral leaves the vault ONLY via the bound settlement contract.
+    // Every other test uses mock_all_auths(), which auto-satisfies require_auth — so
+    // this is the one test that proves the gate actually REJECTS an unauthorized caller.
+    // A regression dropping the require_auth() at lib.rs would otherwise pass the suite.
+    let env = Env::default();
+    let (vault_id, coll, _settlement) = setup(&env);
+    let vault = VaultContractClient::new(&env, &vault_id);
+    let collateral_admin = token::StellarAssetClient::new(&env, &coll);
+
+    let seller = Address::generate(&env);
+    collateral_admin.mint(&seller, &1_000);
+    vault.deposit(&seller, &1_000); // funded under setup()'s mock_all_auths
+
+    let buyer = Address::generate(&env);
+    let mut alloc = Vec::new(&env);
+    alloc.push_back((buyer, 500i128));
+
+    // Drop all authorizations: the bound settlement has NOT signed this call.
+    env.set_auths(&[]);
+    let res = vault.try_pay_allocations(&1u32, &alloc);
+    assert!(res.is_err(), "pay_allocations must trap without the bound settlement's auth");
+    assert_eq!(vault.total_collateral(), 1_000, "collateral must be untouched");
+}
+
+#[test]
+fn set_window_requires_the_bound_settlement_auth() {
+    // The freeze window is settlement-only too: no outside caller may freeze/unfreeze.
+    let env = Env::default();
+    let (vault_id, _coll, _settlement) = setup(&env);
+    let vault = VaultContractClient::new(&env, &vault_id);
+
+    env.set_auths(&[]);
+    let res = vault.try_set_window(&true);
+    assert!(res.is_err(), "set_window must trap without the bound settlement's auth");
+    assert_eq!(vault.is_frozen(), false, "freeze state must be unchanged");
+}

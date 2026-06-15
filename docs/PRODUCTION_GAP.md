@@ -20,7 +20,7 @@
 
 ## G3 — Solvency mechanism finalization
 
-**Today:** whichever of Option C/B/A shipped on June 24.
+**Today:** **Option B** shipped (decision June 17) — a running PUBLIC aggregate `total_cover` with `cover ≤ collateral` enforced on every purchase; an individual cover is revealed transiently in the buy tx and never persisted per-buyer (`contracts/vault/src/lib.rs`). Option C (purchase-time solvency proof) was the deferred-to-production choice.
 **Production:** Option C (purchase-time solvency proof) regardless of what shipped; plus seller withdrawal queues replacing the blunt settlement-window freeze.
 
 ## G4 — Holder-set dynamics
@@ -34,7 +34,7 @@ Scope: all four contracts + both guests + the verifier integration. Sequence aft
 
 ## G6 — Operational security & governance
 
-Registry admin key → multisig (type registration is the only privileged operation; keep it that way). Key management for deployer/admin (HSM or institutional custody). Incident runbook: what happens if a guest bug is found post-deployment (answer by construction: register `credit_v2`, new instruments use it, existing instruments are immutable — document the comms protocol around this).
+Registry admin key → multisig (type registration is the only privileged operation; keep it that way). Key management for deployer/admin (HSM or institutional custody). Collateral eligibility today is an admin-curated allowlist (`set_collateral_eligible`); production replaces the manual list with an on-chain read of the asset's `AUTH_CLAWBACK_ENABLED` / `AUTH_REVOCABLE` flags at deploy time, so the claw/freeze gate (§10.1) needs no trusted curation. Incident runbook: what happens if a guest bug is found post-deployment (answer by construction: register `credit_v2`, new instruments use it, existing instruments are immutable — document the comms protocol around this).
 
 ## G7 — Pilot infrastructure
 
@@ -47,7 +47,8 @@ Not pilot-blocking; strategically central (proves the layer thesis). **Instance 
 ## G9 — State-rent (TTL) operations · BLOCKING for pilot
 
 **Fact:** Soroban persistent entries are archived when TTL/rent lapses (auto-restorable at extra fee, but the Oct 2025 Protocol-23 archival incident shows this layer deserves vigilance). A live instrument's vault commitments, settled flags, and registry entries must remain live for the instrument's full tenor — potentially years.
-**Production:** TTL monitoring + scheduled extension service (keeper duty or cron), rent budgeting per instrument at deploy time (factory could escrow rent), alerting on entries approaching expiry. MVP carries persistent-storage + extend-on-access only.
+**Today:** the registry uses `persistent` storage; per-instrument vault/settlement bindings (`position_root`, settled flags, collateral aggregates) use `instance` storage — both are archival-class (never `temporary`, auto-restorable, extended on access), so no permanent-loss path exists. The instance bundle is the MVP simplification.
+**Production:** tier the long-lived per-instrument bindings into dedicated `persistent` entries with explicit per-entry rent budgeting; TTL monitoring + scheduled extension service (keeper duty or cron), rent budgeting per instrument at deploy time (factory could escrow rent), alerting on entries approaching expiry.
 
 ## G10 — Deep history access
 

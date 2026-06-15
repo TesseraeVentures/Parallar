@@ -171,3 +171,18 @@
   - No proof-generation time quoted anywhere. Zero em/en-dashes across all five pages (verified). Verified every page in the preview: CSS/app.js load, active-nav states, headings balance with no orphans, testnet page populates contracts + 3 instruments + live settlement, live RPC reads connect (`live ✓`).
 - **Next:** N=10 proof-gen on the x86 box; video + DoraHacks submission (founder).
 - **Blocked:** none.
+
+## 2026-06-15 (cont.) — R27: gap analysis + win-leverage bundles (differentiators, honesty hardening, demo narrative)
+
+**Solvency checkpoint (TECH_SPEC §3.2; calendar June 17) — recorded 2026-06-15, ahead of the checkpoint:**
+- **Choice:** Option B. Public aggregate `total_cover` with `cover ≤ collateral` enforced on every `buy_protection`; an individual cover is revealed transiently in the buy tx and never persisted per-buyer (`contracts/vault/src/lib.rs`).
+- **Rationale:** B keeps the solvency floor on-chain and law-faithful (no per-buyer cover stored or exposed; payouts still move solely via verified settlement) while staying simple enough to ship and live-deploy. Option C (purchase-time solvency proof) is strictly better but adds a second proving path not needed for the demo; deferred to production behind the same vault interface.
+- **Deferred:** Option C → PRODUCTION_GAP G3 (also adds seller withdrawal queues over the blunt freeze).
+
+- **Done:**
+  - Ran an exhaustive 16-agent gap-analysis workflow (6 audit axes × adversarial verification + synthesis) against the v0.3 specs + DoD. Verdict: P0/R1–R7 complete and green ~10 days before freeze, both architectural laws hold end-to-end, anti-gold-plating clean, DoD substantially met. Founder/external remainder: N=10 x86 proof-gen, video, DoraHacks submission.
+  - **Surface differentiators (judge-facing copy):** README intro now states the qualified category-first claim; added a "committee CAN be convinced / this guest CANNOT" pull-quote and a 4-row "How it compares" table (Parallar vs DeFi cover mutual / TradFi CDS desk / embedded tranche, sourced from COMPETITION §6, category labels only, no forbidden words). Frontend index hero eyebrow → "The first protection protocol on Stellar"; added the same comparison table + contrast callout to `how-it-works.html` (new `.cmp` styles).
+  - **Correctness + honesty hardening:** added two `#[should_panic]`/`try_*` vault tests proving the payout gate and freeze window REJECT an unauthorized caller (`pay_allocations_requires_the_bound_settlement_auth`, `set_window_requires_the_bound_settlement_auth`) — closes the untested half of Law #1 (every other test used `mock_all_auths`). 9/9 vault tests green. Reconciled doc/code precision: README clawback wording → curated allowlist (MVP) + on-chain `AUTH_CLAWBACK_ENABLED` flag-read (G6); PRODUCTION_GAP G3 names Option B, G6 adds the flag-read upgrade, G9 + TECH_SPEC §10.5 + CLAUDE.md invariant now say "archival-class (persistent or instance), never temporary" to match the implemented `instance`-storage bindings (no permanent-loss path; persistent tiering is the documented G9 production step).
+  - **Demo storytelling (narration only):** demo.sh stages the EPOCH 0 (all paid → prover REFUSES) → EPOCH 1 (short-paid → same guest proves it) arc, and adds the confidential-payout punch (the vault paid having only ever seen a commitment + the public aggregate).
+- **Next:** per explicit founder override, build beyond P0 toward a "statement protocol" — centerpiece options pending direction (instance #2 `weather_v1`; interactive testnet demo; verifier-router topology; richer benchmark scenario). Founder: N=10 x86 bench, video, DoraHacks, tag `v0.3-p0`.
+- **Blocked:** none. (Two architectural laws remain non-negotiable regardless of the build-beyond override.)

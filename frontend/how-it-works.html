@@ -83,6 +83,25 @@
   </section>
 
   <section>
+    <div class="sec-top"><div><div class="label">How it compares</div><h2>Settled by proof, not by discretion</h2></div>
+      <p>Protection over credit is not new.<br>
+         What is new is who is allowed to decide a payout.</p>
+    </div>
+    <div class="cmp-wrap">
+      <table class="cmp">
+        <thead><tr><th></th><th>Who authorizes a payout</th><th>Positions</th><th>Funding</th><th>Portable</th></tr></thead>
+        <tbody>
+          <tr class="pr"><td>Parallar</td><td>a verified proof, no party can override</td><td>confidential (commitments only)</td><td>funded by construction (cover ≤ reserve)</td><td>yes, an on-chain asset</td></tr>
+          <tr><td>DeFi cover mutual</td><td>a discretionary member vote</td><td>public</td><td>shared pool, discretionary</td><td>limited</td></tr>
+          <tr><td>TradFi CDS desk</td><td>a committee plus a counterparty promise</td><td>private, off-chain</td><td>counterparty credit</td><td>OTC, bilateral</td></tr>
+          <tr><td>Embedded tranche</td><td>the issuer's capital structure</td><td>n/a</td><td>structural subordination</td><td>non-portable</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout" style="margin-top:24px">A claims committee can be <b>convinced</b> to pay a default that never happened. This guest <b>cannot</b>: feed it a fully-paid epoch and it panics on honest data. A false claim is unprovable, by construction.</div>
+  </section>
+
+  <section>
     <div class="sec-top"><div><div class="label">The architecture</div><h2>One generic core, every instrument</h2></div>
       <p>Four contracts, separated on purpose.<br>
          Each instrument is an instance, not a fork.</p>

@@ -70,6 +70,7 @@ beat "Vault: seller deposits (public) + buyer cover as Poseidon commitments only
      "cover sizes never touch public state; only the opaque commitment + a public aggregate"
 run "deposit / committed cover / solvency floor / settlement-only payouts" \
     Cargo.toml parallar-vault ""
+note "public vault state is now: total_cover (one aggregate) + a 32-byte position_root — and nothing else. No per-buyer cover exists on-chain to read, leak, or seize."
 
 # ── 3b. history-builder: the witness comes from observed chain data ───────────
 beat "history-builder: assemble the witness from observed chain data (§10)" \
@@ -80,8 +81,10 @@ run "qualifying-payment scan: address normalization + asset filter + clawback" \
 # ── 4. the guest determines the outcome — and REFUSES to prove a non-default ──
 beat "Guest: a fully-paid epoch is UNPROVABLE — no settlement proof can exist" \
      "ZK is structural: if the trigger didn't occur, the guest panics on honest data"
+note "EPOCH 0 — every coupon arrived in full. Run the guest and it REFUSES (NoDefault): there is no proof to make, so there is no payout. A committee could be convinced to pay here; the guest cannot."
 run "fully_paid → NoDefault: the prover cannot produce a proof" \
     prover/Cargo.toml settle-credit-v1 fully_paid_is_unprovable
+note "EPOCH 1 — a holder is short-paid. The SAME guest now determines the shortfall and proves the pro-rata payout. Same code, opposite outcome — driven only by the honest data."
 run "partial default → determination + pro-rata payout, soundness bindings" \
     prover/Cargo.toml settle-credit-v1 ""
 
@@ -98,6 +101,7 @@ if [ -f "$a" ]; then
 image_id=$(python3 -c "import json;print(json.load(open('$a'))['image_id'][:16])" 2>/dev/null)…, \
 payout=$(python3 -c "import json;print(json.load(open('$a'))['total_payout'])" 2>/dev/null)"
 fi
+note "the vault paid the buyer having only ever seen a commitment + the public aggregate — no buyer's cover amount was ever on-chain. Confidential positions, public settlement."
 
 # ── 6. negative paths: nothing else can authorize a payout ────────────────────
 beat "Negative paths revert — verification is the SOLE authorization" \

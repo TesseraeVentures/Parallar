@@ -4,6 +4,8 @@
 
 > Determination off-chain. Positions confidential. Settlement proven. Deploying a new protected instrument is one transaction.
 
+The first protection protocol we know of on Stellar — and the only one anywhere that settles default cover **by proof, over confidential positions.** *(Category survey, June 2026; re-verified quarterly.)*
+
 *Submission to Stellar Hacks: Real-World ZK, June 2026.*
 
 ---
@@ -34,11 +36,26 @@ hidden positions ┘   (determine+settle)  (constant size)  (sole auth path)
 
 **Why ZK is structural, not decorative:** the chain *cannot* compute these payouts — the determination is too heavy and the positions are hidden by construction. Remove the proof and no instrument in the family can exist. If the trigger did not occur, the guest panics on honest data: **no valid settlement proof can exist for a false claim.**
 
-**Published settlement rule (credit_v1):** `payout = cover × (Σ shortfall / Σ owed)`, capped at cover. The proof enforces exactly this; the contract accepts no other allocation set. **Stellar-native default rules:** payments count net of clawback (an issuer cannot pay a coupon and take it back); freezing a holder's trustline counts as issuer default; a holder who removed their own trustline is excluded from owed (the issuer *cannot* pay them — holder-side failure is not issuer default). The factory refuses clawbackable or freezable assets as vault collateral, so the payout pool itself can never be pulled. Full normative list: TECH_SPEC §10.
+> A claims committee can be *convinced* to pay a default that never happened. This guest cannot. Feed it a fully-paid epoch and it panics on honest data — no proof, no payout, by construction. Discretion is the thing Parallar removes.
+
+**Published settlement rule (credit_v1):** `payout = cover × (Σ shortfall / Σ owed)`, capped at cover. The proof enforces exactly this; the contract accepts no other allocation set. **Stellar-native default rules:** payments count net of clawback (an issuer cannot pay a coupon and take it back); freezing a holder's trustline counts as issuer default; a holder who removed their own trustline is excluded from owed (the issuer *cannot* pay them — holder-side failure is not issuer default). The factory only accepts collateral from a curated eligible-asset list — the MVP form of the claw/freeze gate; production reads the asset's `AUTH_CLAWBACK_ENABLED` / `AUTH_REVOCABLE` flags on-chain (PRODUCTION_GAP G6) — so the payout pool itself can never be pulled. Full normative list: TECH_SPEC §10.
 
 ## Trust model — stated plainly
 
 Each proof guarantees the settlement **computation** — the version-pinned rules executed over the supplied input data and the committed positions — is correct (verifiable execution). It does not guarantee the input data is canonical: correct computation on inputs, not fair inputs. Mitigations today: permissionless keeping (anyone can settle) and independent on-chain deadline enforcement. The real fix, attested data feeds, is gap **G1** in [PRODUCTION_GAP.md](docs/PRODUCTION_GAP.md), which enumerates the complete path from this demo to a live issuance pilot. Within the proof boundary, no party — including us — can inflate, favor, omit, or fabricate a payout.
+
+## How it compares
+
+Protection over credit is not new. What is new is *who is allowed to decide a payout* — and Parallar is the only one that answers "a proof, and no one else."
+
+| | Who authorizes a payout | Positions | Funding | Portable |
+|---|---|---|---|---|
+| **Parallar** | a verified proof — no party can override, **including us** | confidential (commitments only) | fully funded by construction (cover ≤ reserve) | yes — an on-chain asset |
+| DeFi cover mutual | a discretionary member / assessor vote | public | shared pool, discretionary | limited |
+| TradFi CDS desk | a committee + the counterparty's promise to pay | private, off-chain | counterparty credit | OTC, bilateral |
+| Issuer-embedded tranche | the issuer's capital structure | n/a | structural subordination | non-portable |
+
+Every alternative settles by *someone's discretion*; Parallar settles by *proof*. A committee can be convinced to pay a claim that should fail — the guest cannot, because a false claim is unprovable.
 
 ## What's real / what's mocked
 

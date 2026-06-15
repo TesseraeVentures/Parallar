@@ -30,7 +30,7 @@ The core is exactly as generic as the journal + guest contract require. No trait
 - Vertical slices; repo runnable + tests green at every session end.
 - **Stub discipline:** settlement `mock-verify` cfg exists for Sprint 1 only; real verification is default from June 22; never demo/record on the stub.
 - **Invariants never losing coverage:** payouts only via verified settlement · one settlement per epoch · allocations calldata hashes to the proof's allocation_root · position_root binding · trigger-didn't-occur admits no proof · Σ payouts ≤ collateral · factory-deployed pair correctly cross-bound · instrument pinned to type image_id · factory rejects clawback/freezable collateral assets · clawed-back coupon counts as shortfall · frozen holder counts as shortfall · no-trustline holder excluded from owed.
-- **Stellar mechanics are law (TECH_SPEC §10):** position commitments, roots, settled flags, registry → persistent storage, NEVER temporary; qualifying payments are asset-received basis (classic ops AND SAC transfers, muxed addresses normalized); deadlines are ledger close timestamps; history_builder never assumes default-RPC retention covers the window.
+- **Stellar mechanics are law (TECH_SPEC §10):** position commitments, roots, settled flags, registry → archival-class storage (persistent or instance), NEVER temporary; qualifying payments are asset-received basis (classic ops AND SAC transfers, muxed addresses normalized); deadlines are ledger close timestamps; history_builder never assumes default-RPC retention covers the window.
 - Guests are ordinary, readable Rust; benchmark at N=10 before optimizing anything.
 - Commits `R<n>: <what>`; STATUS.md 3 lines per session (done / next / blocked).
 

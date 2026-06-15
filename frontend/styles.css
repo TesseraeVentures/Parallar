@@ -175,6 +175,19 @@ section.first{border-top:none;margin-top:0;padding-top:64px}
 .rcpt .txbtn{display:block;margin-top:18px;text-align:center;font-size:13px;border:1px solid var(--line-2);border-radius:8px;padding:11px;color:var(--brass)}
 .rcpt .txbtn:hover{border-color:var(--brass)}
 
+/* comparison table */
+.cmp-wrap{border:1px solid var(--hairline);border-radius:12px;overflow:hidden}
+.cmp{width:100%;border-collapse:collapse;font-size:14px}
+.cmp th,.cmp td{text-align:left;padding:13px 16px;border-bottom:1px solid var(--hairline);vertical-align:top}
+.cmp tr:last-child td{border-bottom:none}
+.cmp thead th{font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);font-weight:400}
+.cmp td{color:var(--dim)}
+.cmp td:first-child{color:var(--paper);font-weight:500;white-space:nowrap}
+.cmp tbody tr.pr{background:var(--ink-2)}
+.cmp tbody tr.pr td{color:var(--paper)}
+.cmp tbody tr.pr td:first-child{color:var(--brass)}
+@media(max-width:860px){.cmp,.cmp thead{font-size:12px}.cmp th,.cmp td{padding:10px 10px}}
+
 /* faq / numbered list for content pages */
 .qa{border-top:1px solid var(--hairline)}
 .qa .item{padding:24px 0;border-bottom:1px solid var(--hairline)}
