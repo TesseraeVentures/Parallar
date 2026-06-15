@@ -120,3 +120,12 @@
   - **`settle()` on testnet** → the proof was **verified ON-CHAIN by the deployed groth16-verifier** → every binding passed → the vault **paid the buyer 800** (collateral 1000→200, `is_settled(1)=true`). tx `8b19cc71…`: events `transfer(vault→buyer, 800)` + `allocations_paid(epoch 1, 800)` + `Settled(epoch 1, 800)`. **The sprint-plan June-23 milestone — factory-deploy → default → prove → settle → confidential payout — LIVE.**
 - **Next:** N=10 bench on x86 (`parallar-prover bench`); frontend (P1); video + DoraHacks submission (founder). The core AND the live testnet demo are DONE.
 - **Blocked:** none. (Note: cleared regenerable build targets + cargo caches for the proof's disk headroom — repo source intact; `make test`/`make demo` rebuild from source.)
+
+## 2026-06-15 — R21: frontend (the R9 live testnet console)
+- **Done:**
+  - `frontend/index.html` — a vanilla, no-build SPA matching the `site/` aesthetic (Spectral/Instrument Sans/Spline Mono, brass-on-navy, the parallax wordmark). **Data-driven from `deployments/testnet.json`**: the 5-step flow, registry+factory+verifier+type, the three deployed instruments, and a "proven on-chain" settlement panel (the real settle tx + the transfer/allocations_paid/Settled events), all with clickable stellar.expert links.
+  - **Live on-chain reads:** a best-effort layer (via `@stellar/stellar-sdk` over testnet RPC, read-only `simulateTransaction`) renders the REAL per-instrument state — verified in the preview: instrument #3 `live · settled=true · collateral=200` (post-payout), #1/#2 `settled=false · collateral=0`. Degrades gracefully to the recorded deployment if RPC/CDN is unavailable.
+  - `make frontend` serves it (repo root, so the relative `deployments/` + RPC reads resolve). Verified rendering desktop + responsive via the preview tool; no console errors (live layer connects).
+  - This is Sprint-3's R9 frontend (the 1-day-cap deliverable) — now meaningful because there's a live deployment + settlement to render. README "Live on testnet" section + repo-map updated; `.claude/launch.json` preview config added.
+- **Next:** N=10 bench on x86 (`parallar-prover bench`); 2–3 min video + DoraHacks submission (founder). **The build is feature-complete** — every Claude-buildable sprint item (P0 core, demo, history-builder, live testnet deploy + settlement, frontend) is done; only x86-benchmark + video/submission remain (external/founder).
+- **Blocked:** none.

@@ -71,6 +71,15 @@ cargo run -p parallar-prover-host --bin parallar-prover -- prove  --inputs witne
 cargo run -p parallar-prover-host --bin parallar-prover -- submit --artifact proof.json --settlement <C…>
 ```
 
+## Live on testnet
+
+The full stack is deployed on Stellar testnet, and a real settlement has executed on-chain — a Groth16 proof **verified by the deployed verifier**, paying a buyer from hidden positions:
+
+- **factory** [`CA5WGQMQ…`](https://stellar.expert/explorer/testnet/contract/CA5WGQMQ4DLCB5TTKRCFXBB2VKUALVZ2WB4GJVI6V3DQ2CQASLCH2ATD) · **verifier** [`CCGEOLVI…`](https://stellar.expert/explorer/testnet/contract/CCGEOLVIWOXEK6JAW3SJRMXJFYUO3DOHQCLUZQOGBQTSLTIJ2IXSEDBM)
+- **settlement tx** [`8b19cc71…`](https://stellar.expert/explorer/testnet/tx/8b19cc711c8d5e5242acfdbe33d8bdcbc47648a659264feb8ab104c7bc401f65) — events `transfer(vault→buyer, 800)` + `Settled(epoch 1)`
+
+All ids + the reproducible deploy script are in [deployments/testnet.json](deployments/testnet.json) / [scripts/deploy_testnet.sh](scripts/deploy_testnet.sh). **`make frontend`** serves a console (`frontend/`) that renders this deployment and reads the *live* on-chain state (settled status, vault collateral) straight from testnet RPC.
+
 ## Benchmarks
 
 | Metric | Measured | Notes |
@@ -104,6 +113,6 @@ A new guest is a **new `image_id`, i.e. a new registered type** — never an in-
 
 ## Repo map
 
-`demo.sh` · `Makefile` · `contracts/` (factory, bond, vault, settlement) · `prover/` (`guests/settle_credit_v1`, `host` + `parallar-prover` CLI, `methods`) · `spikes/poseidon_parity/` · `docs/` (PRD, TECH_SPEC, SPRINT_PLAN, PRODUCTION_GAP, STATUS) · `site/` (landing page) · `deck/` · `external/` (vendored Nethermind RISC Zero verifier, commit-pinned, gitignored)
+`demo.sh` · `reset.sh` · `Makefile` · `contracts/` (factory, bond, vault, settlement) · `prover/` (`guests/settle_credit_v1`, `host` + `parallar-prover` CLI, `methods`) · `frontend/` (live testnet console) · `deployments/` (testnet ids) · `scripts/` (deploy_testnet.sh) · `spikes/poseidon_parity/` · `docs/` (PRD, TECH_SPEC, SPRINT_PLAN, PRODUCTION_GAP, STATUS) · `site/` (landing page) · `deck/` · `external/` (vendored Nethermind RISC Zero verifier, commit-pinned, gitignored)
 
 MIT
