@@ -218,3 +218,24 @@ fn receive_premium_from_router_distributes() {
     assert_eq!(v.protocol_fee_accrued(), 60);
     assert_eq!(v.pending_premium(&seller), 440);
 }
+
+#[test]
+fn float_yield_distributes_to_underwriters_minus_protocol_share() {
+    let env = Env::default();
+    let c = setup(&env);
+    let v = YieldVaultClient::new(&env, &c.vault);
+
+    let seller = Address::generate(&env);
+    mint(&env, &c.coll, &seller, 10_000);
+    v.deposit(&seller, &10_000);
+    v.set_float_fee_bps(&1000); // protocol takes 10% of float (§3.2)
+
+    // the yield strategy harvested 100 of float yield into the vault, then calls harvest_float
+    mint(&env, &c.coll, &c.vault, 100);
+    v.harvest_float(&100);
+
+    assert_eq!(v.pending_premium(&seller), 90, "90% of float to the underwriter (premium + float share one accrual)");
+    assert_eq!(v.protocol_fee_accrued(), 10, "10% protocol float share");
+    // the reserve principal is untouched — float is pure yield on top
+    assert_eq!(v.total_collateral(), 10_000);
+}

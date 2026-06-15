@@ -33,6 +33,7 @@ enum DataKey {
     Router,            // the bound YieldRouter (transparent protected-share-class path)
     PremiumBps,
     ProtocolFeeBps,
+    FloatFeeBps,       // protocol's share of reserve float yield (~10%, §3.2); default 0
     HaircutBps,
     TotalCollateral,
     TotalCover,        // SEALED cover (from buy_protection commitments)
@@ -55,6 +56,13 @@ pub struct AllocationsPaid {
 
 #[contractevent(data_format = "single-value")]
 pub struct PremiumDistributed {
+    #[topic]
+    pub to_sellers: i128,
+    pub protocol_fee: i128,
+}
+
+#[contractevent(data_format = "single-value")]
+pub struct FloatHarvested {
     #[topic]
     pub to_sellers: i128,
     pub protocol_fee: i128,
@@ -219,6 +227,39 @@ impl YieldVault {
         let token_addr: Address = s.get(&DataKey::CollateralToken).unwrap();
         token::Client::new(&env, &token_addr).transfer(&env.current_contract_address(), &admin, &accrued);
         s.extend_ttl(50, 100);
+    }
+
+    /// Set the protocol's share of reserve float yield (~10%, §3.2). Admin; default 0.
+    pub fn set_float_fee_bps(env: Env, bps: u32) {
+        let s = env.storage().instance();
+        let admin: Address = s.get(&DataKey::Admin).unwrap();
+        admin.require_auth();
+        assert!(bps <= 10_000, "bad bps");
+        s.set(&DataKey::FloatFeeBps, &(bps as i128));
+        s.extend_ttl(50, 100);
+    }
+
+    /// Harvest reserve FLOAT yield (G12): the yield strategy has transferred `amount` of yield into
+    /// this vault; distribute it to underwriters pro-rata (the SAME accrual as premium — both are
+    /// their yield) minus the protocol's float share. The reserve principal is untouched; this is
+    /// pure yield on top. Admin/keeper-driven (the strategy adapter, which holds idle reserve in a
+    /// yield-bearing eligible asset and harvests into the vault — §3.2; the adapter slots in
+    /// without touching the settlement surfaces).
+    pub fn harvest_float(env: Env, amount: i128) {
+        let s = env.storage().instance();
+        let admin: Address = s.get(&DataKey::Admin).unwrap();
+        admin.require_auth();
+        assert!(amount > 0, "amount must be positive");
+        let total_coll = get_i128(&env, &DataKey::TotalCollateral);
+        assert!(total_coll > 0, "no collateral to distribute float to");
+        let float_bps = get_i128(&env, &DataKey::FloatFeeBps); // default 0 until set
+        let protocol_cut = amount * float_bps / BPS;
+        let sellers_cut = amount - protocol_cut;
+        let acc = get_i128(&env, &DataKey::AccPremiumPerColl);
+        s.set(&DataKey::AccPremiumPerColl, &(acc + sellers_cut * ACC_SCALE / total_coll));
+        s.set(&DataKey::ProtocolFeeAccrued, &(get_i128(&env, &DataKey::ProtocolFeeAccrued) + protocol_cut));
+        s.extend_ttl(50, 100);
+        FloatHarvested { to_sellers: sellers_cut, protocol_fee: protocol_cut }.publish(&env);
     }
 
     /// Seller withdraws collateral. Settles premium first; cannot drop the reserve below the

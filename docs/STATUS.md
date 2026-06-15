@@ -357,3 +357,14 @@
 - **Both sides, made whole:** underwriters earn premium (+ future float) pro-rata; pBOND holders get the net protected coupon; the protocol earns base + distribution fees; defaults still pay wrapped holders from the reserve via the proof-gated settlement (Law #1 intact, the router is purely upstream).
 - **Next:** G12 (reserve float: eligible-reserve-asset list + the non-circularity covenant + haircuts) and G13 (pBOND-as-collateral docs + the covenant boundary).
 - **Blocked:** none for buildable items.
+
+## 2026-06-15 (cont.) — R44: money-flow layer 3/3 — reserve float (G12) + pBOND collateral (G13)
+
+**Production money-flow build COMPLETE (buildable, law-safe, non-x86 parts).**
+- **Done:**
+  - **G12 float:** `yield_vault::harvest_float(amount)` distributes reserve float yield to underwriters pro-rata (the same accrual as premium — both are their yield) minus the protocol's float share (`set_float_fee_bps`, ~10% §3.2); reserve principal untouched. The liquidity haircut (`total_cover ≤ (1−h)·collateral`) is already enforced in the solvency floor. yield_vault 10/10.
+  - **G13 docs:** pBOND is a transferable receipt (`yield_router::transfer`) → posts as external collateral today; principal protection = a credit_v1 config (no new guest). The covenant boundary + LTV/loss-truncation thesis documented.
+  - **docs/ECONOMICS.md** — the full both-sides money flow, the coupon waterfall (worked 14%→12% example), the §5A layered fee model, reserve float, the **non-circularity covenant (4 rules)** + haircuts + denomination matching, and pBOND-as-collateral. The SDF-grade business-model + safety doc. PRODUCTION_GAP G12/G13 updated; CI checks ECONOMICS.md.
+- **MONEY-FLOW LAYER (G11/G12/G13) built:** premium collection + pro-rata underwriter distribution + protocol base fee (yield_vault); the protected-share-class router + pBOND + coupon waterfall + distribution fee (yield_router); float-yield distribution (harvest_float); pBOND transferability. Both sides' economics are correct and Law #1 holds (defaults still pay only via proof-gated settlement; premium/float are separate pools). 48 contract tests green.
+- **Remaining (all external / audit-gated / x86 — not buildable here):** the live yield-strategy adapter (real BENJI-class asset + NAV oracle), the factory deploying the router + the on-chain eligible-reserve list, the Blend lending listing, the G5 audit, the (P)SPI counsel review, and the founder/x86 live proofs + video + submission.
+- **Blocked:** none for buildable items — the production build-out is at the boundary of what can be built without x86, an external yield/lending protocol, or an audit.

@@ -50,7 +50,7 @@ jobs:
       # The fresh-clone Definition-of-Done artifacts must exist.
       - name: required artifacts present
         run: |
-          for f in demo.sh reset.sh README.md deployments/testnet.json frontend/commit.wasm VERIFY.md SECURITY.md docs/OPERATIONS.md scripts/verify.sh scripts/check_image_ids.sh scripts/ttl_monitor.sh; do
+          for f in demo.sh reset.sh README.md deployments/testnet.json frontend/commit.wasm VERIFY.md SECURITY.md docs/OPERATIONS.md docs/ECONOMICS.md scripts/verify.sh scripts/check_image_ids.sh scripts/ttl_monitor.sh; do
             test -f "$f" || { echo "::error::missing $f"; exit 1; }
           done
           echo "ok: artifacts present"
