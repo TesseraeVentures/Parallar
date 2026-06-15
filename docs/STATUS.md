@@ -231,3 +231,15 @@
   - Artifact committed at `frontend/commit.wasm`; rebuild via the Cargo.toml header command.
 - **Next (dApp slice 2):** `app.html` + `dapp.js` — Freighter connect, a REAL signed underwriter deposit, and buy-cover (commitment via this wasm) on testnet, with live readouts. Signing path needs a real-wallet smoke-test (can't run Freighter in the headless preview).
 - **Blocked:** none for the build; wallet-signing verification needs a founder smoke-test.
+
+## 2026-06-15 (cont.) — R32: interactive testnet dApp (centerpiece 4 complete)
+
+**Build-beyond-P0, centerpiece 4 — slice 2: the wallet-connected dApp.**
+- **Done:**
+  - `frontend/app.html` + `frontend/dapp.js`: connect Freighter, deposit collateral (underwriter), buy cover (bondholder) — real signed transactions against the deployed testnet contracts. Live instrument picker (reserve/cover/settled read from RPC). Buy-cover computes the position commitment in-browser via `commit.wasm` (the guest's exact Poseidon), shows the commitment + the opening to save. "Try it" added to the nav across all pages.
+  - **Read+commit only (Law #1):** the only writes are `vault.deposit` and `vault.buy_protection` — neither moves the reserve to a payee; a prominent callout states there is no "pay" button and cannot be. Payouts remain solely via a verified settlement proof.
+  - **Verified in the preview:** page + SDK + wasm load; the in-browser commitment for the fixed input equals the parity reference `0687524d…` exactly (so bought positions are genuinely settleable); 3 instruments render live (`live ✓`); actions gate on wallet connect.
+  - README testnet section documents the dApp.
+- **Caveat (founder smoke-test):** the wallet sign-and-submit path can't run in the headless preview (no Freighter) — everything else is verified. Founder: connect a funded testnet Freighter, deposit, buy cover; confirm the txs land.
+- **Build-beyond-P0 status:** centerpieces 1 (instance #2), 3 (scale), 4 (dApp) DONE. Remaining: centerpiece 2 (live partial-default settlement) — scenario/script buildable here, live proof on x86 (founder).
+- **Blocked:** none for buildable items; live proofs + wallet smoke-test are founder/x86.

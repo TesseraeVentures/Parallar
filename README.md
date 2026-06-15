@@ -95,7 +95,7 @@ The full stack is deployed on Stellar testnet, and a real settlement has execute
 - **factory** [`CA5WGQMQ…`](https://stellar.expert/explorer/testnet/contract/CA5WGQMQ4DLCB5TTKRCFXBB2VKUALVZ2WB4GJVI6V3DQ2CQASLCH2ATD) · **verifier** [`CCGEOLVI…`](https://stellar.expert/explorer/testnet/contract/CCGEOLVIWOXEK6JAW3SJRMXJFYUO3DOHQCLUZQOGBQTSLTIJ2IXSEDBM)
 - **settlement tx** [`8b19cc71…`](https://stellar.expert/explorer/testnet/tx/8b19cc711c8d5e5242acfdbe33d8bdcbc47648a659264feb8ab104c7bc401f65) — events `transfer(vault→buyer, 800)` + `Settled(epoch 1)`
 
-All ids + the reproducible deploy script are in [deployments/testnet.json](deployments/testnet.json) / [scripts/deploy_testnet.sh](scripts/deploy_testnet.sh). **`make frontend`** serves a console (`frontend/`) that renders this deployment and reads the *live* on-chain state (settled status, vault collateral) straight from testnet RPC.
+All ids + the reproducible deploy script are in [deployments/testnet.json](deployments/testnet.json) / [scripts/deploy_testnet.sh](scripts/deploy_testnet.sh). **`make frontend`** serves the site (`frontend/`): a multi-page overview that reads *live* on-chain state straight from testnet RPC, plus an **interactive dApp** (`app.html`) — connect a Freighter wallet to deposit collateral or buy cover against the live contracts. Buying cover commits the position with the guest's exact Poseidon function compiled to wasm (`frontend/commit.wasm`), so the in-browser commitment is byte-identical to what the settlement guest reproduces — private and genuinely settleable. The only writes are `deposit` / `buy_protection`; nothing in the UI can move the reserve (Law #1).
 
 ## Benchmarks
 

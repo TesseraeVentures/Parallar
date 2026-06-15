@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Try it on testnet · Parallar</title>
+<meta name="description" content="Interact with Parallar on Stellar testnet: connect a Freighter wallet, deposit collateral as an underwriter, and buy cover as a bondholder (your position committed privately). Only a verified proof can ever pay out.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@300;400&family=Instrument+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<nav>
+  <a class="wordmark" href="index.html">Para<span class="ll"><i></i><i></i></span>ar</a>
+  <span class="links">
+    <a href="bondholders.html">For bondholders</a>
+    <a href="underwriters.html">For underwriters</a>
+    <a href="how-it-works.html">How it works</a>
+    <a href="testnet.html">On testnet</a>
+    <a href="app.html" class="active">Try it</a>
+  </span>
+  <span class="right">
+    <span class="netpill"><span class="dot"></span> Stellar Testnet <span id="net-state" style="color:var(--green)">·</span></span>
+    <a class="btn ghost" id="nav-explorer" href="#" target="_blank" rel="noopener">Explorer</a>
+  </span>
+</nav>
+
+<div class="wrap">
+  <header class="page-hero">
+    <a class="backlink" href="index.html">‹ Back to overview</a>
+    <div class="eyebrow"><span class="dot"></span> Live on Stellar testnet</div>
+    <h1>Try Parallar <span class="alt">on testnet</span>.</h1>
+    <p class="lead">Connect a testnet wallet and interact with the real deployed contracts.<br>
+       Deposit collateral as an underwriter, or buy cover as a bondholder.<br>
+       Your cover is committed privately, and <strong>only a verified proof can ever pay out</strong>.</p>
+  </header>
+
+  <section class="first">
+    <div class="panel">
+      <h3>1 · Connect a testnet wallet</h3>
+      <p class="hint">Needs the <a href="https://www.freighter.app/" target="_blank" rel="noopener">Freighter</a> browser wallet, set to <b>Test SDF Network</b> and funded from <a href="https://friendbot.stellar.org" target="_blank" rel="noopener">Friendbot</a>. This is testnet: no real funds.</p>
+      <div class="wstate">
+        <button class="btn" id="connect">Connect Freighter</button>
+        <span id="wallet">not connected</span>
+      </div>
+      <div class="out" id="wallet-out"></div>
+    </div>
+
+    <div class="panel">
+      <h3>2 · Pick a deployed instrument</h3>
+      <p class="hint">Factory-deployed credit_v1 instruments on testnet. Reserve + cover read live from the chain.</p>
+      <div class="picker" id="picker"></div>
+    </div>
+
+    <div class="actions2">
+      <div class="panel under">
+        <h3>Underwrite · deposit collateral</h3>
+        <p class="hint">Fund the reserve with native XLM. A real signed transaction; the reserve grows by your deposit. Withdrawals stay open outside a settlement.</p>
+        <div class="field">
+          <label for="dep-amt">Amount (XLM)</label>
+          <input id="dep-amt" type="number" min="1" step="1" value="100" inputmode="numeric">
+        </div>
+        <button class="btn" id="deposit" disabled>Deposit</button>
+        <div class="out" id="deposit-out"></div>
+      </div>
+
+      <div class="panel buy">
+        <h3>Buy cover · commit privately</h3>
+        <p class="hint">Buy protection. Your cover size is sealed as a Poseidon commitment computed in your browser (byte-identical to the settlement guest) — the chain stores only the commitment. <b>Save your opening</b> to settle later.</p>
+        <div class="field">
+          <label for="cov-amt">Cover (XLM)</label>
+          <input id="cov-amt" type="number" min="1" step="1" value="50" inputmode="numeric">
+        </div>
+        <button class="btn" id="buy" disabled>Buy cover</button>
+        <div class="out" id="buy-out"></div>
+      </div>
+    </div>
+
+    <div class="callout"><b>Law of the protocol.</b> The only writes here are <b>deposit</b> and <b>buy_protection</b> — neither can move the reserve to a payee. Payouts happen solely through a settlement that verifies a zero-knowledge proof on-chain. There is no admin path, no "pay" button, and there cannot be one. <a href="how-it-works.html">How settlement works ›</a></div>
+  </section>
+</div>
+
+<footer>
+  <div class="foot-grid">
+    <a class="wordmark" href="index.html" style="font-size:18px">Para<span class="ll"><i></i><i></i></span>ar</a>
+    <div class="foot-links">
+      <a href="bondholders.html">For bondholders</a>
+      <a href="underwriters.html">For underwriters</a>
+      <a href="how-it-works.html">How it works</a>
+      <a href="testnet.html">On testnet</a>
+      <a id="f-factory" href="#" target="_blank" rel="noopener">Factory ↗</a>
+      <a id="f-verifier" href="#" target="_blank" rel="noopener">Verifier ↗</a>
+    </div>
+    <span class="mono">Verifiable settlement on Stellar · Testnet build</span>
+  </div>
+</footer>
+
+<script type="module" src="dapp.js"></script>
+</body>
+</html>

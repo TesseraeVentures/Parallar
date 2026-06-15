@@ -175,6 +175,32 @@ section.first{border-top:none;margin-top:0;padding-top:64px}
 .rcpt .txbtn{display:block;margin-top:18px;text-align:center;font-size:13px;border:1px solid var(--line-2);border-radius:8px;padding:11px;color:var(--brass)}
 .rcpt .txbtn:hover{border-color:var(--brass)}
 
+/* interactive dApp */
+.panel{border:1px solid var(--hairline);border-radius:14px;background:var(--ink-2);padding:26px 28px;margin-bottom:16px}
+.panel h3{font-size:20px;font-weight:400;margin-bottom:6px}
+.panel .hint{color:var(--faint);font-size:14px;margin-bottom:16px;text-wrap:pretty}
+.wstate{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-family:'Spline Sans Mono',monospace;font-size:13px;color:var(--dim)}
+.wstate .ok{color:var(--green)}
+.wstate .warn{color:var(--red)}
+.field{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:14px 0}
+.field label{font-size:13px;color:var(--faint);min-width:130px}
+.field input,.field select{background:var(--ink);border:1px solid var(--line-2);border-radius:8px;color:var(--paper);padding:10px 12px;font-family:'Spline Sans Mono',monospace;font-size:14px;min-width:160px}
+.field input:focus,.field select:focus{outline:none;border-color:var(--brass)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.out{font-family:'Spline Sans Mono',monospace;font-size:12.5px;color:var(--dim);background:var(--ink);border:1px solid var(--hairline);border-radius:8px;padding:14px;margin-top:14px;white-space:pre-wrap;word-break:break-all;display:none}
+.out.show{display:block}
+.out .g{color:var(--green)}
+.out .b{color:var(--red)}
+.out a{font-size:12.5px}
+.actions2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:860px){.actions2{grid-template-columns:1fr}}
+.picker{display:grid;gap:10px;margin-top:6px}
+.pick{display:flex;justify-content:space-between;gap:12px;align-items:center;border:1px solid var(--hairline);border-radius:10px;padding:12px 16px;cursor:pointer;background:var(--ink)}
+.pick:hover{border-color:var(--line-2)}
+.pick.sel{border-color:var(--brass);background:var(--ink-2)}
+.pick .nm{font-size:14px;color:var(--paper)}
+.pick .meta{font-family:'Spline Sans Mono',monospace;font-size:12px;color:var(--faint)}
+
 /* comparison table */
 .cmp-wrap{border:1px solid var(--hairline);border-radius:12px;overflow:hidden}
 .cmp{width:100%;border-collapse:collapse;font-size:14px}
