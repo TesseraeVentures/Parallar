@@ -210,6 +210,30 @@ fn tampered_allocation_root_reverts() {
 }
 
 #[test]
+fn settle_is_permissionless_no_privileged_caller() {
+    // The escape hatch (G2), in its simplest form: settlement requires NO privileged signature.
+    // After the deadline, ANY party — e.g. a covered buyer who assembled the witness from public
+    // chain data — can submit a valid proof and settle. Only the proof gates it. We clear ALL
+    // authorizations and settle still succeeds and pays out. (Contrast: the vault's pay_allocations
+    // DOES require the bound settlement's auth — tested in the vault suite — so the settlement
+    // contract is the sole caller, but who triggers the settlement is unrestricted.)
+    let env = Env::default();
+    let c = setup(&env);
+    let vault = VaultContractClient::new(&env, &c.vault_id);
+    let settlement = SettlementContractClient::new(&env, &c.settlement_id);
+    let collateral = token::Client::new(&env, &c.coll);
+
+    let payee = Address::generate(&env);
+    let alloc = one_alloc(&env, &payee, 300);
+    let alloc_root = hash_allocations(&env, &alloc);
+    let journal = make_journal(&env, &c.instrument_id, EPOCH, DEADLINE, &vault.position_root(), &alloc_root, 300);
+
+    env.set_auths(&[]); // no privileged caller authorization whatsoever
+    settlement.settle(&stub_proof(&env), &journal, &alloc);
+    assert_eq!(collateral.balance(&payee), 300, "settled with no privileged caller (permissionless)");
+}
+
+#[test]
 #[should_panic(expected = "deadline not passed")]
 fn settling_before_deadline_reverts() {
     let env = Env::default();

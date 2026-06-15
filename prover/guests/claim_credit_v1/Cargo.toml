@@ -1,0 +1,21 @@
+[package]
+name = "claim-credit-v1"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# Instance #1 ESCAPE HATCH (PRODUCTION_GAP G2): the ZK core of "claim your own allocation".
+# Proves a SINGLE buyer's payout against the committed position_root, using only the PUBLIC
+# position commitments (recoverable from buy_protection tx history) plus that buyer's OWN opening
+# — other buyers' openings stay private. Output is a single-allocation journal (same 116-byte
+# format), so a claimable settlement variant can verify it and pay just the claimant after a
+# keeper-grace window. "ZK as unconditional claimability": no keeper cooperation needed.
+#
+# Reuses credit_v1's exact primitives + determination (credit_v1 untouched, image_id pinned). The
+# on-chain claim_direct entrypoint requires a settlement that knows this guest's image_id — a
+# surface decision flagged in PRODUCTION_GAP G2, not built here.
+
+[dependencies]
+sha2 = "0.10"
+serde = { version = "1.0", features = ["derive"] }
+settle-credit-v1 = { path = "../settle_credit_v1" }

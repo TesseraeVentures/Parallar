@@ -14,9 +14,10 @@
 
 ## G2 — Buyer-held openings & escape hatch · BLOCKING for pilot
 
-**Today:** demo keeper reads buyers' commitment openings from a local file.
-**Production:** buyers hold their own openings (wallet-side); keepers settle from encrypted-to-keeper submissions or buyers co-sign settlement requests. Plus the Lighter-inspired **escape hatch**: a `claim_direct` path where a buyer proves their own position against `position_root` and claims their allocation if no keeper settles within a timeout — ZK as unconditional claimability.
-**Touches:** vault (+1 entrypoint), one small guest. Core unchanged.
+**Today (base escape hatch, BUILT):** settlement is already PERMISSIONLESS — after the deadline, anyone (including a covered buyer who assembles the witness from public chain data) can submit a valid proof and settle; no keeper has special power (tested: `settle_is_permissionless_no_privileged_caller`). The demo keeper reads buyers' openings from a local file.
+**ZK core of the single-buyer claim, BUILT:** `claim_credit_v1` proves a SINGLE buyer's allocation against the committed `position_root` using only the PUBLIC commitments (recoverable from `buy_protection` tx history) + that buyer's OWN opening — other buyers' openings stay private — and emits a single-allocation journal identical in amount to what a full settlement would pay (tested). "ZK as unconditional claimability."
+**Surface decision (FLAGGED — do not retrofit the frozen surfaces):** the on-chain `claim_direct` entrypoint must verify a claim proof against the claim guest's image_id, a SECOND verification key the deployed settlement/registry does not carry. Two clean paths, each a NEW instrument-family version (credit_v1 stays pinned): (a) commit the claim image_id in the instrument config + a claimable settlement variant exposing `claim_direct(proof, journal, claimant)` gated by deadline+grace, per-claimant dedup, and Σ payouts ≤ collateral; or (b) a Merkle-tree `position_root` (new vault) so a buyer proves inclusion knowing ONLY their own opening. Decide before building the contract.
+**Production also:** buyers hold their own openings (wallet-side); keepers settle from encrypted-to-keeper submissions or buyers co-sign settlement requests.
 
 ## G3 — Solvency mechanism finalization
 

@@ -766,6 +766,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "claim-credit-v1"
+version = "0.0.0"
+dependencies = [
+ "serde",
+ "settle-credit-v1",
+ "sha2",
+]
+
+[[package]]
 name = "clap"
 version = "4.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

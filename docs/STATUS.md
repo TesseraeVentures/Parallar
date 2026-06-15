@@ -279,3 +279,14 @@
 - Full suite green: contracts 4/4, prover 18/18; image_ids stable.
 - **Next:** G2 escape hatch (claim_direct); verify-it-yourself guide. (credit_v2 live deploy + attested-witness generator are founder/x86 follow-ons.)
 - **Blocked:** none for buildable items.
+
+## 2026-06-15 (cont.) — R36: G2 escape hatch — permissionless settle + claim_credit_v1 ZK core
+
+**Next-steps program item 3 (G2).** Built the law-safe parts; FLAGGED the contract surface decision (did not bend a frozen surface).
+- **Done:**
+  - **Base escape hatch made explicit + tested:** settlement is permissionless — after the deadline, anyone (incl. a covered buyer assembling the witness from public chain data) can submit a valid proof and settle; no privileged keeper. New test `settle_is_permissionless_no_privileged_caller` clears ALL auths and settles successfully (contrast: the vault payout gate still requires the bound settlement's auth). Settlement suite 8/8.
+  - **claim_credit_v1 guest (ZK core of the single-buyer claim):** proves ONE buyer's allocation against the committed position_root from the PUBLIC commitments + that buyer's OWN opening (others' openings private), emitting a single-allocation journal. 6 native tests incl. `claim_matches_what_a_full_settlement_would_pay` (claim == the buyer's full-settlement share). Reuses credit_v1's primitives + determination (credit_v1 untouched). "ZK as unconditional claimability."
+  - PRODUCTION_GAP G2 updated.
+- **FLAGGED (Law #2):** the on-chain `claim_direct` entrypoint needs a SECOND verification key (the claim guest's image_id), which the deployed settlement/registry surface does not carry. Two clean NEW-instrument-family paths: (a) commit the claim image_id in config + a claimable settlement variant with deadline+grace, per-claimant dedup, Σ≤collateral; or (b) Merkle-tree position_root (new vault) for true knows-only-own inclusion. Per CLAUDE.md, surfaced for a decision rather than retrofitted. The claim guest's methods/host wiring is deferred until that decision (no speculative ELF).
+- **Next:** verify-it-yourself guide; then take stock against PRODUCTION_GAP G1–G13 + PRD + TECH_SPEC and lay out the production-extension roadmap (incl. the G2 surface decision).
+- **Blocked:** none for buildable items.
