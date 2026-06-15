@@ -77,7 +77,10 @@ The proofs guarantee correct *computation over supplied inputs*, not input canon
 # prerequisites: rust, stellar-cli — docs/TECH_SPEC.md §2
 make demo          # fresh-clone, one command: the full verified scenario (below)
 make test          # build all four contracts to wasm + run the full suite
+make verify        # independently check the live settlement + determination — see VERIFY.md
 ```
+
+Don't trust us — **[verify it yourself](VERIFY.md)**: decode the on-chain journal, confirm the proof through the real verifier, reproduce the pinned image_id, and re-run the determination, all from public data.
 
 **`make demo`** (or `./demo.sh`) walks the whole scenario against real code — register `credit_v1` → **two instruments factory-deployed** → deposits + Poseidon-committed cover → a fully-paid epoch for which **no settlement proof can exist** → a partial default → a **real Groth16 proof verified on-chain** by the actual RISC Zero verifier → confidential payouts through the vault → forged-proof / replay / stale-root / tampered-allocation / pre-deadline attempts **reverting** → benchmarks. It's fresh-clone runnable in seconds: it uses the committed real-proof fixture (`prover/host/tests/fixtures/`), so **no testnet keys and no live proof generation are needed**.
 

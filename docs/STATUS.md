@@ -290,3 +290,12 @@
 - **FLAGGED (Law #2):** the on-chain `claim_direct` entrypoint needs a SECOND verification key (the claim guest's image_id), which the deployed settlement/registry surface does not carry. Two clean NEW-instrument-family paths: (a) commit the claim image_id in config + a claimable settlement variant with deadline+grace, per-claimant dedup, Σ≤collateral; or (b) Merkle-tree position_root (new vault) for true knows-only-own inclusion. Per CLAUDE.md, surfaced for a decision rather than retrofitted. The claim guest's methods/host wiring is deferred until that decision (no speculative ELF).
 - **Next:** verify-it-yourself guide; then take stock against PRODUCTION_GAP G1–G13 + PRD + TECH_SPEC and lay out the production-extension roadmap (incl. the G2 surface decision).
 - **Blocked:** none for buildable items.
+
+## 2026-06-15 (cont.) — R37: verify-it-yourself guide
+
+**Next-steps program item 4.** Self-serve verification — judges/SDF confirm every claim from public data.
+- **Done:** `VERIFY.md` + `scripts/verify.sh` (+ `make verify`). The script decodes the 116-byte journal, checks sha256(journal)==journal_digest + the 260-byte selector-wrapped seal + image_id==the deployed type's pinned id, prints the live settlement tx + contract explorer links, and lists the exact commands to verify the proof on-chain (`onchain_verify`), confirm no mock-verify path, reproduce the pinned image_id, and re-run the determination/property/scale tests. Ends with the honest trust boundary (computation over supplied inputs; G1).
+- Caught + documented an honesty nuance: the committed fixture is the reproducible DEMO proof (its own scenario instrument `5caa6baf…`), distinct from the live on-chain settlement (instrument `7b0e94c5…`, tx `8b19cc71`) — both real, both bound to the pinned image_id `705ddac4…`. verify.sh states this rather than conflating them. README links VERIFY.md; CI checks VERIFY.md/SECURITY.md/verify.sh exist.
+- **Next-steps program (this round) COMPLETE:** audit-readiness (R34), G1 attested (R35), G2 escape-hatch core (R36), verify guide (R37).
+- **Next:** take stock against PRODUCTION_GAP G1–G13 + PRD + TECH_SPEC; lay out the production-extension roadmap (incl. the G2 on-chain surface decision) for continued build-out.
+- **Blocked:** none for buildable items.

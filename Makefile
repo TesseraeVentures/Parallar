@@ -1,7 +1,7 @@
 # Parallar — contract workspace.
 # The factory tests embed the vault/settlement wasm via `contractimport!`, so the
 # wasm must be built before `cargo test`. `make test` enforces that ordering.
-.PHONY: build test fmt clean demo reset frontend
+.PHONY: build test fmt clean demo reset frontend verify
 
 build:
 	stellar contract build
@@ -23,6 +23,10 @@ reset:
 # state from testnet RPC. Served from the repo root so the relative paths resolve.
 frontend:
 	@echo "→ open http://localhost:8765/frontend/" && python3 -m http.server 8765
+
+# Independently verify the live settlement + the determination from public artifacts. See VERIFY.md.
+verify:
+	./scripts/verify.sh
 
 fmt:
 	cargo fmt --all
