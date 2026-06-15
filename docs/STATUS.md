@@ -243,3 +243,18 @@
 - **Caveat (founder smoke-test):** the wallet sign-and-submit path can't run in the headless preview (no Freighter) — everything else is verified. Founder: connect a funded testnet Freighter, deposit, buy cover; confirm the txs land.
 - **Build-beyond-P0 status:** centerpieces 1 (instance #2), 3 (scale), 4 (dApp) DONE. Remaining: centerpiece 2 (live partial-default settlement) — scenario/script buildable here, live proof on x86 (founder).
 - **Blocked:** none for buildable items; live proofs + wallet smoke-test are founder/x86.
+
+## 2026-06-15 (cont.) — R33: partial-default scenario (centerpiece 2 buildable part)
+
+**Build-beyond-P0, centerpiece 2 — the richer live settlement (multi-holder, multi-buyer, pro-rata).**
+- **Done:**
+  - `prover/host/tests/gen_partial_scenario.rs`: generator for a PARTIAL default that exercises the pro-rata formula richly — 3 holders (unpaid / half-paid / full → Σ shortfall 1500 / Σ owed 3000, severity 0.5), 2 cover buyers (600 + 400) paid 300 + 200. Emits a witness + a per-buyer scenario.json (two commitments). Validated: instrument_id `de8b9bc7…`, total_payout 500, both buyers paid pro-rata.
+  - The founder's x86 flow: deploy with the scenario's terms_hash/snapshot_root/deadline (deploy_testnet.sh env overrides), buy_protection for both commitments, `prove`, `submit` — a second, richer live settlement than the canonical full-default #3.
+- **BUILD-BEYOND-P0 COMPLETE (buildable parts):** all four centerpieces done —
+  1. Instance #2 (weather_v1) guest + turnkey CLI/scenario/deploy,
+  2. live partial-default scenario,
+  3. scale determination benchmark,
+  4. interactive testnet dApp (wallet + wasm commitment).
+  Two architectural laws intact throughout; credit_v1 image_id unchanged.
+- **Founder/x86 remainder:** live weather proof+deploy, live partial-default proof, the N=10 proof-gen wall-clock, the dApp wallet smoke-test, video, DoraHacks, `v0.3-p0` tag.
+- **Blocked:** none for buildable items.
