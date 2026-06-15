@@ -382,3 +382,13 @@
 - Full contract suite 51 tests green (bond 4, claim_settlement 8, factory 5, settlement 8, vault 9, yield_factory 3, yield_router 4, yield_vault 10).
 - **Remaining:** shared-reserve-per-tier (correlated-default decision); the one-epoch-escrow alternative; G3 confidential-cover vault; G4 per-epoch snapshots; harden/CI for the new contracts. External/gated: live yield adapter, Blend, audit, (P)SPI counsel, founder/x86.
 - **Blocked:** none for buildable items.
+
+## 2026-06-15 (cont.) — R47: harden + verify (CI fix for the new contracts + invariant + verify guide)
+
+**Production push: consolidation of the large new contract surface.**
+- **Fixed a real CI defect:** the contract test job ran `cargo test` but never built the wasm that the factory tests `contractimport!`, so those tests couldn't compile in CI. Split into a fast native job (`cargo test --workspace --exclude parallar-factory --exclude parallar-yield-factory` + the guests incl. claim/solvency/proptests) and a `contracts-wasm` job that runs `cargo build --release --target wasm32v1-none` (no stellar-cli needed) before the factory + yield_factory deploy tests. Both command sets verified locally.
+- **Value-conservation invariant:** `yield_vault` test `premium_distribution_conserves_value` (Σ sellers' premium + protocol fee == premium paid, dust bounded by seller count). yield_vault 11/11.
+- **VERIFY.md** extended with a money-flow section (verify yield_vault + yield_router + yield_factory; pointer to ECONOMICS.md).
+- All suites green: 52 contract tests + the prover guests/host. The production build-out's new surface (claim_settlement, yield_vault, yield_router, yield_factory + the solvency/claim guests) is now CI-guarded + invariant-tested.
+- **Remaining buildable:** G3 confidential-cover vault; G4 per-epoch snapshots; a shared-reserve tier option. External/gated: live yield adapter, Blend, audit, (P)SPI counsel, founder/x86.
+- **Blocked:** none for buildable items.

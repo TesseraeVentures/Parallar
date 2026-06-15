@@ -220,6 +220,34 @@ fn receive_premium_from_router_distributes() {
 }
 
 #[test]
+fn premium_distribution_conserves_value() {
+    // INVARIANT: Σ (sellers' premium) + protocol fee == the premium paid, modulo integer dust
+    // bounded by the seller count. No value is created or lost in distribution.
+    let env = Env::default();
+    let c = setup(&env);
+    let v = YieldVaultClient::new(&env, &c.vault);
+
+    let mut addrs = std::vec::Vec::new();
+    for amt in [6_000i128, 3_000, 1_000] {
+        // total 10_000
+        let s = Address::generate(&env);
+        mint(&env, &c.coll, &s, amt);
+        v.deposit(&s, &amt);
+        addrs.push(s);
+    }
+    let buyer = Address::generate(&env);
+    mint(&env, &c.coll, &buyer, 1_000);
+    v.buy_protection(&buyer, &comm(&env, 1), &5_000); // premium = 100
+
+    let premium = 100i128;
+    let distributed: i128 = addrs.iter().map(|s| v.pending_premium(s)).sum();
+    let fee = v.protocol_fee_accrued();
+    assert!(distributed + fee <= premium, "no value created in distribution");
+    assert!(distributed + fee >= premium - addrs.len() as i128, "dust bounded by the seller count");
+    assert_eq!(fee, 12, "12% protocol base fee");
+}
+
+#[test]
 fn float_yield_distributes_to_underwriters_minus_protocol_share() {
     let env = Env::default();
     let c = setup(&env);

@@ -51,13 +51,24 @@ toolchain; `weather_v1` = `d31246e6…`, `credit_v2` = `d07e6aaf…`.)
 
 ## 6 · Reproduce the determination + invariants
 ```bash
-cargo test                                                          # the four contracts
+make test                                                           # build wasm + ALL contracts
 cd prover && cargo test -p settle-credit-v1 -p parallar-proptests   # rule + property tests
 cd prover && cargo test -p parallar-prover-host --test scale -- --ignored --nocapture  # cycle counts
 ```
 The property tests fuzz the published rule and assert the invariants always hold (Σ payouts ≤
 collateral; a non-default/non-breach is unprovable; determinism). The scale test reports the
 hardware-independent zkVM cycle counts.
+
+## 7 · Reproduce the money-flow layer (both sides' economics)
+```bash
+make build  # wasm (the factory tests contractimport! it)
+cargo test -p parallar-yield-vault -p parallar-yield-router -p parallar-yield-factory
+```
+This verifies premium collection + pro-rata underwriter distribution + the protocol base fee +
+float (`yield_vault`), the coupon waterfall + pBOND (`yield_router`), and the risk-tier factory
+that prices each bond into a tier and yields different net coupons (`yield_factory`). Defaults still
+pay only via the proof-gated settlement; premium/float are separate pools (Law #1). The full
+economics + the non-circularity covenant are in [docs/ECONOMICS.md](docs/ECONOMICS.md).
 
 ## What verification means (and does not)
 A proof guarantees **correct computation over the inputs the guest was supplied** — the

@@ -9,23 +9,38 @@ on:
 
 jobs:
   test:
-    name: contracts + guests (native + property tests)
+    name: contracts (native) + guests + property tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
-      # The four Soroban contracts: native test suite (testutils host) — no wasm target or
-      # stellar-cli needed for `cargo test`.
-      - name: contracts — native test suite
-        run: cargo test --locked
-      # The determination guests (example tests) + the relocated property-test crate. Native only
-      # — the RISC Zero ELF/host tests need the risc0 toolchain and run on the x86 box, not in CI.
-      # proptest lives in parallar-proptests, NEVER in a guest crate (a guest dev-dep would shift
-      # its ELF/image_id).
+      # Contracts that test against the in-process host. The factory + yield_factory tests use
+      # `contractimport!` and need built wasm, so they run in the `contracts-wasm` job below.
+      - name: contracts — native suites
+        run: cargo test --locked --workspace --exclude parallar-factory --exclude parallar-yield-factory
+      # Determination guests + the relocated property-test crate (native). The RISC Zero ELF/host
+      # tests need the risc0 toolchain and run on the x86 box. proptest lives in parallar-proptests,
+      # NEVER in a guest crate (a guest dev-dep would shift its ELF/image_id).
       - name: guests + property tests (native)
         working-directory: prover
-        run: cargo test --locked -p settle-credit-v1 -p settle-weather-v1 -p settle-credit-v2 -p parallar-proptests
+        run: cargo test --locked -p settle-credit-v1 -p settle-weather-v1 -p settle-credit-v2 -p claim-credit-v1 -p solvency-v1 -p parallar-proptests
+
+  contracts-wasm:
+    name: factory deploy tests (build wasm for contractimport!)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32v1-none
+      - uses: Swatinem/rust-cache@v2
+      # The factory + yield_factory tests `contractimport!` the deployed family wasm — build it
+      # first (cargo handles the Soroban wasm target directly; no stellar-cli needed in CI).
+      - name: build contract wasm
+        run: cargo build --locked --release --target wasm32v1-none
+      - name: factory + yield_factory deploy tests
+        run: cargo test --locked -p parallar-factory -p parallar-yield-factory
 
   hygiene:
     name: invariants of the build itself
