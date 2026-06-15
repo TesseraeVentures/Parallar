@@ -1,0 +1,22 @@
+[package]
+name = "solvency-v1"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# Option C purchase-time solvency proof (PRODUCTION_GAP G3). The ZK core that closes Option B's
+# leak: B keeps `total_cover` as a PUBLIC aggregate and reveals each cover in the buy tx; C keeps
+# the running total as a Poseidon COMMITMENT and proves, per purchase, that adding this (hidden)
+# cover keeps the reserve solvent (new_total ≤ collateral) AND that the same hidden cover is the
+# one bound in the buyer's position commitment — revealing neither the cover nor the totals.
+#
+# Pure Rust: testable natively AND runs in the RISC Zero guest. Reuses credit_v1's Poseidon
+# position commitment so the two commitments live in the same BN254 field. The consuming vault
+# entrypoint (`buy_protection_proven`) is a NEW vault version (flagged in G3), not built here.
+
+[dependencies]
+sha2 = "0.10"
+zkhash = "0.2"
+ark-ff = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+settle-credit-v1 = { path = "../settle_credit_v1" }

@@ -3580,6 +3580,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "solvency-v1"
+version = "0.0.0"
+dependencies = [
+ "ark-ff 0.4.2",
+ "serde",
+ "settle-credit-v1",
+ "sha2",
+ "zkhash",
+]
+
+[[package]]
 name = "soroban-builtin-sdk-macros"
 version = "25.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

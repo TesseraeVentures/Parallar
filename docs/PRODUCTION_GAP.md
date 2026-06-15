@@ -22,7 +22,8 @@
 ## G3 — Solvency mechanism finalization
 
 **Today:** **Option B** shipped (decision June 17) — a running PUBLIC aggregate `total_cover` with `cover ≤ collateral` enforced on every purchase; an individual cover is revealed transiently in the buy tx and never persisted per-buyer (`contracts/vault/src/lib.rs`). Option C (purchase-time solvency proof) was the deferred-to-production choice.
-**Production:** Option C (purchase-time solvency proof) regardless of what shipped; plus seller withdrawal queues replacing the blunt settlement-window freeze.
+**Option C — ZK core BUILT:** `solvency_v1` (`prover/guests/solvency_v1`) proves a purchase preserves solvency (`new_total ≤ collateral`) while hiding BOTH the cover and the running totals (the aggregate is a Poseidon commitment), and binds the same hidden cover to the buyer's position commitment — closing Option B's transient-cover leak. 7 native tests incl. `the_cover_never_appears_in_the_journal` (structural privacy check) and `cover_must_match_the_position_commitment` (no cover-swap). Journal: prev/new aggregate commitments + position commitment + collateral (112 bytes); no cover.
+**Production — remaining (a NEW vault version, deployed vault stays pinned):** a confidential-cover vault that stores the aggregate as a commitment: `buy_protection_proven` advances it against a `solvency_v1` proof; `withdraw` likewise proves collateral-after ≥ committed cover (its current plaintext check no longer applies once the aggregate is hidden); plus the keeper/sequencer coordination that hands the current aggregate opening to the next buyer (a confidential running aggregate). Also seller withdrawal queues replacing the blunt settlement-window freeze.
 
 ## G4 — Holder-set dynamics
 

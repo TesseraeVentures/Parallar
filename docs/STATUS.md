@@ -331,3 +331,12 @@
   - **G9 TTL ops:** `scripts/ttl_monitor.sh` (keeper runbook — lists the live contracts + the `stellar contract extend` command for each) + the operating design in OPERATIONS.md; tenor-derived TTLs noted as the v-next contract change. CI artifact checks extended.
 - **Next (production push):** 4/4 G3 Option C — purchase-time solvency proof (a new vault version + a small guest).
 - **Blocked:** none for buildable items.
+
+## 2026-06-15 (cont.) — R41: G3 Option C — confidential purchase-time solvency proof (ZK core)
+
+**Production push, item 4/4 (the ZK core).**
+- **Done:** `solvency_v1` guest — proves a purchase preserves solvency (`new_total ≤ collateral`) while hiding BOTH the cover and the running totals (the aggregate is a Poseidon commitment), and binds the same hidden cover to the buyer's position commitment (no cover-swap). Closes Option B's transient-cover leak (B reveals each cover in the buy tx). 7 native tests incl. `the_cover_never_appears_in_the_journal` + `cover_must_match_the_position_commitment`. Reuses credit_v1's Poseidon commitment (same BN254 field). 112-byte solvency journal (prev/new aggregate commitments + position commitment + collateral; no cover).
+- **Flagged (Law #2, new vault version — not retrofitted):** the consuming confidential-cover vault is a NEW instrument-family version — `buy_protection_proven` advances the committed aggregate against a solvency proof, `withdraw` proves collateral-after ≥ committed cover, plus the keeper/sequencer coordination supplying the running aggregate opening. Documented in PRODUCTION_GAP G3. solvency_v1's methods/ELF wiring deferred until the vault version consumes it (anti-gold-plating).
+- **PRODUCTION PUSH (this round) COMPLETE:** 1/4 submission demo + image_id guard (R38); 2/4 on-chain claim_direct (R39); 3/4 hardening pack (R40); 4/4 Option C ZK core (R41). Two laws + frozen surfaces intact throughout; five guest types now (credit_v1, weather_v1, credit_v2, claim_credit_v1, solvency_v1) all on the unchanged surfaces.
+- **Next:** founder/x86 deliverables + the flagged new-vault-family builds (G2 claimable deploy path, G3 confidential-cover vault) when prioritized.
+- **Blocked:** none for buildable items.
