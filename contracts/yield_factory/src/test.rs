@@ -14,6 +14,9 @@ mod settlement_wasm {
 mod router_wasm {
     soroban_sdk::contractimport!(file = "../../target/wasm32v1-none/release/parallar_yield_router.wasm");
 }
+mod tranched_wasm {
+    soroban_sdk::contractimport!(file = "../../target/wasm32v1-none/release/parallar_tranched_vault.wasm");
+}
 
 struct Ctx {
     factory: YieldFactoryClient<'static>,
@@ -78,6 +81,56 @@ fn deploy_protected_creates_cross_bound_family() {
     assert_eq!(inst.premium_bps, 200);
     assert_eq!(c.factory.tier_count(&Symbol::new(&env, "ig")), 1);
     let _ = router; // bound below in the economics test
+}
+
+#[test]
+fn deploy_tranched_creates_cross_bound_tranched_family() {
+    // The factory can also deploy a TRANCHED family: a tranched_vault (junior/mezz/senior) + the
+    // same settlement, cross-bound, with the premium still risk-priced within the tier band.
+    let env = Env::default();
+    let c = setup(&env);
+    let thash = env.deployer().upload_contract_wasm(tranched_wasm::WASM);
+    c.factory.set_tranched_wasm(&thash);
+
+    let mut weights = Vec::new(&env);
+    weights.push_back(3u32); // junior / first-loss
+    weights.push_back(2u32); // mezzanine
+    weights.push_back(1u32); // senior
+    let mut deadlines = Vec::new(&env);
+    deadlines.push_back((1u32, 500u64));
+    let cfg = TranchedConfig {
+        instrument_id: BytesN::from_array(&env, &[7u8; 32]),
+        image_id: BytesN::from_array(&env, &[9u8; 32]),
+        collateral_token: c.coupon.clone(),
+        premium_bps: 1000, // within high-yield's 500–1500 band
+        protocol_fee_bps: 1200,
+        weights,
+        epoch_deadlines: deadlines,
+    };
+    let (vault, settlement) = c.factory.deploy_tranched(&Symbol::new(&env, "hy"), &cfg);
+
+    let v = tranched_wasm::Client::new(&env, &vault);
+    let s = settlement_wasm::Client::new(&env, &settlement);
+    assert_eq!(v.settlement(), settlement, "tranched vault bound to settlement");
+    assert_eq!(v.collateral_token(), c.coupon);
+    assert_eq!(v.num_tranches(), 3, "three tranches deployed");
+    assert_eq!(v.premium_weight(&0), 3, "junior carries the largest premium weight");
+    assert_eq!(s.vault(), vault, "settlement bound to the tranched vault");
+    assert_eq!(s.image_id(), BytesN::from_array(&env, &[9u8; 32]));
+
+    // underwriters can commit to different tranches on the factory-deployed vault
+    let ca = token::StellarAssetClient::new(&env, &c.coupon);
+    let junior = Address::generate(&env);
+    let senior = Address::generate(&env);
+    ca.mint(&junior, &1_000);
+    ca.mint(&senior, &1_000);
+    v.deposit(&junior, &0, &1_000); // junior tranche
+    v.deposit(&senior, &2, &1_000); // senior tranche
+    assert_eq!(v.total_collateral(), 2_000);
+
+    let inst = c.factory.get_tranched(&BytesN::from_array(&env, &[7u8; 32]));
+    assert_eq!(inst.tier, Symbol::new(&env, "hy"));
+    assert_eq!(inst.num_tranches, 3);
 }
 
 #[test]

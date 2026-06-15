@@ -401,3 +401,12 @@
 - ECONOMICS.md (tranche section) + PRODUCTION_GAP G14 document it. Full contract suite 59 tests green (9 crates). CI fast job picks it up via `--workspace`.
 - **Remaining:** factory `deploy_tranched`; a confidential-tranche variant; G3 confidential-cover vault; G4 record-date guest. External/gated: live yield adapter, Blend, audit, (P)SPI counsel, founder/x86.
 - **Blocked:** none for buildable items.
+
+## 2026-06-15 (cont.) — R49: factory deploys tranched families (deploy_tranched)
+
+**Tranches made first-class in the factory model (the "one factory, many bonds" frame).**
+- **Done:** `yield_factory::deploy_tranched(tier, cfg)` deploys a `tranched_vault` + settlement, cross-bound in one tx via the deployer pattern (salts tags 3/4, distinct from the protected family's 0/1/2). Premium still RISK-PRICED within the tier band; `cfg.weights` sets the seniority structure (rank 0 = junior). `set_tranched_wasm` (admin, one-time) registers the tranched wasm without changing the constructor surface. `TranchedConfig` / `TranchedInstrument` / `get_tranched` / `TranchedDeployed` event added. The SAME settlement binds transparently (identical `pay_allocations(epoch, allocations)`; the tranched vault absorbs it junior-first).
+- Test `deploy_tranched_creates_cross_bound_tranched_family`: deploys a 3-tranche (junior/mezz/senior) high-yield family, asserts vault↔settlement binding, num_tranches=3, junior weight=3, and underwriters depositing into different tranches on the factory-deployed vault.
+- ECONOMICS.md + PRODUCTION_GAP G14 updated (factory deploy built). Full contract suite 60 tests green.
+- **Remaining:** a confidential-tranche variant; G3 confidential-cover vault; G4 record-date guest. External/gated: live yield adapter, Blend, audit, (P)SPI counsel, founder/x86.
+- **Blocked:** none for buildable items.

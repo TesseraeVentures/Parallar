@@ -85,8 +85,12 @@ a deposit mints shares against current collateral-per-share, a loss lowers that 
 withdrawal returns the loss-adjusted value. Premium accrues per share independently of losses
 (earned for bearing risk). This is the standard senior/mezz/junior capital structure institutions
 expect, on the same proof-gated payout surface (Law #1 — `pay_allocations` is settlement-only; the
-first-loss ordering is a pure accounting waterfall, never an admin payout path). Factory deployment
-of tranched families (a `deploy_tranched` alongside `deploy_protected`) is the next step.
+first-loss ordering is a pure accounting waterfall, never an admin payout path). The factory deploys
+tranched families too: `YieldFactory::deploy_tranched(tier, cfg)` deploys a `tranched_vault` +
+settlement cross-bound in one transaction, the premium still risk-priced within the tier band and
+`cfg.weights` setting the seniority structure — so one factory wraps many bonds, each into a tier,
+each optionally tranched, all on the unchanged settlement surface (the same `pay_allocations` binds
+transparently — the tranched vault simply absorbs it junior-first).
 
 ## Reserve float & the non-circularity covenant (§3.2, G12)
 
