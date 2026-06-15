@@ -152,3 +152,13 @@
   - Cache-busted the deployment fetch + set the settled stat from the live reads (a stale browser cache had shown 0). **Zero em/en-dashes, zero "TVL"** (grep-verified). Verified rendering (hero, stats, two-sides, steps, deployed table, settlement) via the preview tool; live RPC reads connect (verifier `live ✓`).
 - **Next:** N=10 proof-gen on the x86 box; video + DoraHacks submission (founder).
 - **Blocked:** none.
+
+## 2026-06-15 (cont.) — R25: frontend hero + overview copy/staging refinements
+- **Done (per feedback):**
+  - Hero subtext set to the exact three lines, each on its own line, with the "two-sided protocol" statement dropped: "Bondholders buy cover against default." / "Underwriters fund the reserve and earn premiums." / "When a bond defaults, payouts settle through a zero-knowledge proof, not a claims process."
+  - Removed all literal "two sides / both sides" labeling (section eyebrow + nav link + footer link now "Overview"; meta + CTA reworded) while still marketing to both participants through the hero lines and the two cards.
+  - Fixed the orphaned "in." in the heading: now "One reserve." / "Two ways in." on two balanced lines.
+  - Split the overview card descriptions onto separate lines, one sentence per line, for readability.
+  - Zero em/en-dashes (grep-verified). Verified via the preview: renders cleanly, live RPC reads connect (verifier live).
+- **Next:** N=10 proof-gen on the x86 box; video + DoraHacks submission (founder).
+- **Blocked:** none.

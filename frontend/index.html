@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Parallar · default protection for tokenized bonds, settled by proof</title>
-<meta name="description" content="Parallar is a two-sided default-protection protocol for tokenized bonds on Stellar. Bondholders buy cover; underwriters fund the reserve and earn premiums. Defaults settle through a zero-knowledge proof. Deployed and proven on testnet.">
+<meta name="description" content="Parallar is default protection for tokenized bonds on Stellar. Bondholders buy cover against default; underwriters fund the reserve and earn premiums. Defaults settle through a zero-knowledge proof, not a claims process. Deployed and proven on testnet.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Spectral:wght@300;400&family=Instrument+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -72,7 +72,7 @@ section{padding:80px 0;border-top:1px solid var(--hairline);margin-top:60px}
 .sec-top h2{font-size:clamp(28px,3.4vw,42px);max-width:20ch}
 .sec-top p{color:var(--dim);max-width:46ch;font-size:15px}
 
-/* two sides */
+/* overview cards */
 .sides{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .side{border:1px solid var(--hairline);border-radius:14px;padding:30px 30px;background:var(--ink-2);position:relative;overflow:hidden}
 .side::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px}
@@ -160,7 +160,7 @@ footer{padding:40px 32px 56px;border-top:1px solid var(--hairline);margin-top:60
 <body>
 <nav>
   <span class="wordmark">Para<span class="ll"><i></i><i></i></span>ar</span>
-  <span class="links"><a href="#sides">Two sides</a><a href="#how">How it works</a><a href="#testnet">On testnet</a></span>
+  <span class="links"><a href="#sides">Overview</a><a href="#how">How it works</a><a href="#testnet">On testnet</a></span>
   <span class="right">
     <span class="netpill"><span class="dot"></span> Stellar Testnet <span id="net-state" style="color:var(--green)">·</span></span>
     <a class="btn ghost" id="nav-explorer" href="#" target="_blank" rel="noopener">Explorer</a>
@@ -171,10 +171,12 @@ footer{padding:40px 32px 56px;border-top:1px solid var(--hairline);margin-top:60
   <header class="hero">
     <div class="eyebrow"><span class="dot"></span> Deployed and proven on Stellar testnet</div>
     <h1>Default protection for <span class="alt">tokenized bonds</span>.</h1>
-    <p class="sub">A two-sided protocol. Bondholders buy cover against default. Underwriters fund the reserve and earn premiums. When a bond defaults, payouts <strong>settle through a zero-knowledge proof</strong>, not a claims process.</p>
+    <p class="sub">Bondholders buy cover against default.<br>
+       Underwriters fund the reserve and earn premiums.<br>
+       When a bond defaults, payouts <strong>settle through a zero-knowledge proof</strong>, not a claims process.</p>
     <p class="tags"><b>Non-custodial</b> · <b>Permissionless</b> · <b>Private positions</b> · <b>Proof-settled</b></p>
     <div class="hero-cta">
-      <a class="btn" href="#sides">How both sides work</a>
+      <a class="btn" href="#how">How it works</a>
       <a class="btn ghost" href="#testnet">See it running on testnet</a>
     </div>
   </header>
@@ -193,14 +195,16 @@ footer{padding:40px 32px 56px;border-top:1px solid var(--hairline);margin-top:60
 <div class="wrap">
   <section id="sides">
     <div class="sec-top">
-      <div><div class="label">Two sides</div><h2>One reserve. Two ways in.</h2></div>
-      <p>Protection is a market between the holders who want cover and the underwriters who back it. Parallar runs both sides on-chain, and settles between them by proof.</p>
+      <div><div class="label">Overview</div><h2>One reserve.<br>Two ways in.</h2></div>
+      <p>Protection is a market between the holders who want cover and the underwriters who back it. Parallar runs both on-chain, and settles between them by proof.</p>
     </div>
     <div class="sides">
       <div class="side buy">
         <div class="who">For bondholders · Buy cover</div>
         <h3>Protect a bond position</h3>
-        <p class="desc">Hold a tokenized bond and worried about default? Buy cover and pay a premium. If the issuer misses a coupon, you are paid from the reserve, with the amount fixed by a published formula and a proof.</p>
+        <p class="desc">Hold a tokenized bond and worried about default? Buy cover and pay a premium.<br>
+           If the issuer misses a coupon, you are paid from the reserve.<br>
+           The amount is fixed by a published formula and a proof.</p>
         <ul>
           <li><span class="ck">+</span><span><b>Automatic, proof-settled payout</b> on default. No claim to file.</span></li>
           <li><span class="ck">+</span><span>Your <b>cover size stays private</b>, stored only as a commitment.</span></li>
@@ -210,7 +214,9 @@ footer{padding:40px 32px 56px;border-top:1px solid var(--hairline);margin-top:60
       <div class="side under">
         <div class="who">For underwriters · Provide the reserve</div>
         <h3>Back the protection, earn premiums</h3>
-        <p class="desc">Supply the collateral that backs payouts and earn the premiums buyers pay. Deposit into a non-custodial vault. The protocol enforces that total cover can never exceed your reserve.</p>
+        <p class="desc">Supply the collateral that backs payouts and earn the premiums buyers pay.<br>
+           Deposit into a non-custodial vault.<br>
+           The protocol enforces that total cover can never exceed your reserve.</p>
         <ul>
           <li><span class="ck">+</span><span>Earn <b>premium yield</b> from cover buyers.</span></li>
           <li><span class="ck">+</span><span><b>Non-custodial</b>: only a verified proof can move the reserve, never an operator.</span></li>
@@ -286,7 +292,7 @@ footer{padding:40px 32px 56px;border-top:1px solid var(--hairline);margin-top:60
     <div class="foot-links">
       <a id="f-factory" href="#" target="_blank" rel="noopener">Factory</a>
       <a id="f-verifier" href="#" target="_blank" rel="noopener">Verifier</a>
-      <a href="#sides">Two sides</a>
+      <a href="#sides">Overview</a>
       <a href="#testnet">On testnet</a>
     </div>
     <span class="mono">Verifiable settlement on Stellar · Testnet build</span>
