@@ -269,3 +269,13 @@
   - Fixed em/en dashes that had crept into frontend JS comments + app.html (now CI-guarded). Verified dApp still loads + the in-browser commitment parity holds.
 - **Next (next-steps program):** G1 attested feeds (in-guest issuer-signature verification), G2 escape hatch (claim_direct), verify-it-yourself guide.
 - **Blocked:** none for buildable items.
+
+## 2026-06-15 (cont.) — R35: G1 attested feeds (credit_v2) + reproducibility fix
+
+**Next-steps program item 2 (G1) DONE, and a reproducibility regression from R34 fixed.**
+- **G1 — attested data feeds, BUILT:** new guest type `settle_credit_v2` = credit_v1's determination PLUS in-guest verification of an issuer **Ed25519 signature over the payment snapshot** (issuer key committed in `terms_hash`). "Trust the keeper's data" becomes "trust the issuer's signature." Image_id `d07e6aaf…` (its OWN, pinned); credit_v1 stays `705ddac4…` (versioning law — hardening ships as a NEW type, not an edit). Reuses credit_v1's exact generic primitives (same vault/settlement/factory). ed25519-dalek compiles to the zkVM (default-features=false, verify-only). 7 native tests (tampered/injected/wrong-key → AttestationInvalid; determination matches v1) + host `prove_credit_v2_settlement` + CLI `--guest credit-v2` + an executor test proving the **in-circuit** attestation commits the native journal.
+- **Reproducibility fix (R34 regression):** R34 added `proptest` as a DEV-DEPENDENCY of the guest crates, which perturbed the methods/guest build resolution and shifted credit_v1's ELF to `97c0a4d7…` (≠ the deployed `705ddac4…`). Root cause + fix: **guest crates must carry ZERO test deps.** Moved all property tests into a new `prover/proptests` crate (depends on the guests; native-only). Verified credit_v1 rebuilds to `705ddac4…` and weather to `d31246e6…`. (Lesson: a guest dev-dep can change its image_id — never add one.)
+- **CI** updated to run the relocated property tests + all guest example tests natively. README trust model + PRODUCTION_GAP G1 record credit_v2 as the built first cut of G1.
+- Full suite green: contracts 4/4, prover 18/18; image_ids stable.
+- **Next:** G2 escape hatch (claim_direct); verify-it-yourself guide. (credit_v2 live deploy + attested-witness generator are founder/x86 follow-ons.)
+- **Blocked:** none for buildable items.

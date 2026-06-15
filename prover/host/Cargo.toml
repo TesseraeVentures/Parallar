@@ -20,6 +20,7 @@ path = "src/main.rs"
 soroban-sdk = "25.3.0"
 settle-credit-v1 = { path = "../guests/settle_credit_v1" }
 settle-weather-v1 = { path = "../guests/settle_weather_v1" }
+settle-credit-v2 = { path = "../guests/settle_credit_v2" }
 parallar-methods = { path = "../methods" }
 risc0-zkvm = "3.0"
 sha2 = "0.10"
@@ -32,6 +33,7 @@ stellar-strkey = "0.0.13"
 
 [dev-dependencies]
 soroban-sdk = { version = "25.3.0", features = ["testutils"] }
+ed25519-dalek = { version = "2", default-features = false }
 parallar-factory = { path = "../../contracts/factory" }
 parallar-settlement = { path = "../../contracts/settlement" }
 parallar-vault = { path = "../../contracts/vault" }

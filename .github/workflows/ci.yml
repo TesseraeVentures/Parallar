@@ -17,11 +17,13 @@ jobs:
       # stellar-cli needed for `cargo test`.
       - name: contracts — native test suite
         run: cargo test --locked
-      # The determination guests, incl. the proptest property suite. Native only — the RISC Zero
-      # ELF/host tests need the risc0 toolchain and run on the x86 proving box, not in CI.
-      - name: guests — determination logic + property tests
+      # The determination guests (example tests) + the relocated property-test crate. Native only
+      # — the RISC Zero ELF/host tests need the risc0 toolchain and run on the x86 box, not in CI.
+      # proptest lives in parallar-proptests, NEVER in a guest crate (a guest dev-dep would shift
+      # its ELF/image_id).
+      - name: guests + property tests (native)
         working-directory: prover
-        run: cargo test --locked -p settle-credit-v1 -p settle-weather-v1
+        run: cargo test --locked -p settle-credit-v1 -p settle-weather-v1 -p settle-credit-v2 -p parallar-proptests
 
   hygiene:
     name: invariants of the build itself

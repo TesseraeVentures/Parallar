@@ -2398,11 +2398,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "parallar-proptests"
+version = "0.0.0"
+dependencies = [
+ "ed25519-dalek",
+ "proptest",
+ "settle-credit-v1",
+ "settle-credit-v2",
+ "settle-weather-v1",
+]
+
+[[package]]
 name = "parallar-prover-host"
 version = "0.0.0"
 dependencies = [
  "anyhow",
  "clap",
+ "ed25519-dalek",
  "hex",
  "parallar-factory",
  "parallar-methods",
@@ -2412,6 +2424,7 @@ dependencies = [
  "serde",
  "serde_json",
  "settle-credit-v1",
+ "settle-credit-v2",
  "settle-weather-v1",
  "sha2",
  "soroban-sdk",
@@ -3471,10 +3484,19 @@ name = "settle-credit-v1"
 version = "0.0.0"
 dependencies = [
  "ark-ff 0.4.2",
- "proptest",
  "serde",
  "sha2",
  "zkhash",
+]
+
+[[package]]
+name = "settle-credit-v2"
+version = "0.0.0"
+dependencies = [
+ "ed25519-dalek",
+ "serde",
+ "settle-credit-v1",
+ "sha2",
 ]
 
 [[package]]
@@ -3482,7 +3504,6 @@ name = "settle-weather-v1"
 version = "0.0.0"
 dependencies = [
  "ark-ff 0.4.2",
- "proptest",
  "serde",
  "settle-credit-v1",
  "sha2",

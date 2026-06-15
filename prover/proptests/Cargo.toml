@@ -1,0 +1,21 @@
+[package]
+name = "parallar-proptests"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# Property tests for the guest determination rules, kept in a SEPARATE crate so the guest crates
+# carry ZERO test dependencies. A dev-dependency on a guest crate perturbs the methods/guest
+# build's dependency resolution and SHIFTS the compiled ELF (image_id) — which must stay pinned
+# and reproducible. So proptest lives here, depending on the guests, never inside one. This crate
+# is a prover-workspace member only; the standalone methods/guest* workspaces never see it.
+
+[lib]
+path = "src/lib.rs"
+
+[dev-dependencies]
+proptest = "1"
+ed25519-dalek = { version = "2", default-features = false }
+settle-credit-v1 = { path = "../guests/settle_credit_v1" }
+settle-weather-v1 = { path = "../guests/settle_weather_v1" }
+settle-credit-v2 = { path = "../guests/settle_credit_v2" }

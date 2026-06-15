@@ -44,6 +44,8 @@ hidden positions ┘   (determine+settle)  (constant size)  (sole auth path)
 
 Each proof guarantees the settlement **computation** — the version-pinned rules executed over the supplied input data and the committed positions — is correct (verifiable execution). It does not guarantee the input data is canonical: correct computation on inputs, not fair inputs. Mitigations today: permissionless keeping (anyone can settle) and independent on-chain deadline enforcement. The real fix, attested data feeds, is gap **G1** in [PRODUCTION_GAP.md](docs/PRODUCTION_GAP.md), which enumerates the complete path from this demo to a live issuance pilot. Within the proof boundary, no party — including us — can inflate, favor, omit, or fabricate a payout.
 
+**A first cut of G1 is already built.** `credit_v2` is a registered type (image_id `d07e6aaf…`) that verifies an issuer **Ed25519 signature over the payment snapshot in-guest** — so the proof itself certifies the data was signed by the committed issuer key (the key is bound in `terms_hash`). "Trust the keeper's data" becomes "trust the issuer's signature": a keeper can no longer fabricate, omit, or alter payments and still produce a proof. `credit_v1` stays pinned forever (the versioning law) — the hardening ships as a **new type, not an edit**, which is exactly how production upgrades are meant to work here.
+
 ## How it compares
 
 Protection over credit is not new. What is new is *who is allowed to decide a payout* — and Parallar is the only one that answers "a proof, and no one else."

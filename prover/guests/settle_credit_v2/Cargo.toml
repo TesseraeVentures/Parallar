@@ -1,0 +1,23 @@
+[package]
+name = "settle-credit-v2"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# Instance #1, ATTESTED (PRODUCTION_GAP G1). credit_v1's determination PLUS in-guest verification
+# of an issuer Ed25519 signature over the payment snapshot. A SEPARATE type with its own image_id
+# (the versioning law) — credit_v1 stays pinned forever; this is the registerable hardening, not
+# an in-place edit. It REUSES credit_v1's exact generic primitives (commitment, roots,
+# config_hash, journal) so the same vault/settlement/factory accept it unchanged, and copies the
+# determination math (credit_v1's source is never touched, so its image_id is unaffected).
+#
+# Turns "trust the keeper's supplied data" into "trust the issuer's signature": a keeper can no
+# longer fabricate or omit payments — the guest settles only over data the committed issuer signed.
+
+[dependencies]
+sha2 = "0.10"
+serde = { version = "1.0", features = ["derive"] }
+settle-credit-v1 = { path = "../settle_credit_v1" }
+# verify-only: no default features (avoids the rng/getrandom path), so it cross-compiles to the
+# zkVM. Signing in tests is deterministic (SigningKey::from_bytes), also no rng.
+ed25519-dalek = { version = "2", default-features = false }

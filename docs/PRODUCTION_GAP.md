@@ -8,8 +8,8 @@
 
 ## G1 — Input canonicity (attested data feeds) · BLOCKING for pilot
 
-**Today:** the keeper supplies payment history; the proof guarantees computation, not data canonicity. Permissionless keeping + on-chain deadline checks mitigate, not close.
-**Production:** settlement guests accept only attested inputs — (a) issuer-signed payment attestations verified in-guest, and/or (b) oracle-attested ledger snapshots (Reflector or equivalent), and/or (c) light-client-style verification of ledger entry proofs in-guest (strongest; investigate feasibility on Stellar's ledger structure).
+**Today:** the keeper supplies payment history; the proof guarantees computation, not data canonicity. Permissionless keeping + on-chain deadline checks mitigate, not close. **A first cut is BUILT:** `settle_credit_v2` (image_id `d07e6aaf…`) implements path (a) — it verifies an issuer Ed25519 signature over the payment snapshot IN-GUEST (the issuer key is committed in `terms_hash`), executor-verified in the zkVM, registerable as a new type via the unchanged factory. credit_v1 stays pinned (the versioning law).
+**Production:** settlement guests accept only attested inputs — (a) issuer-signed payment attestations verified in-guest (prototyped as credit_v2), and/or (b) oracle-attested ledger snapshots (Reflector or equivalent), and/or (c) light-client-style verification of ledger entry proofs in-guest (strongest; investigate feasibility on Stellar's ledger structure).
 **Touches:** guest input section + `config_hash` contents only. Journal, contracts, registry unchanged.
 
 ## G2 — Buyer-held openings & escape hatch · BLOCKING for pilot
