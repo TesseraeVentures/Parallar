@@ -252,6 +252,51 @@ pub fn prove_credit_v2_settlement(
     })
 }
 
+/// Escape hatch (G2): run the `claim_credit_v1` guest under the real Groth16 prover — a SINGLE
+/// buyer's allocation proof, verified against the CLAIM image_id. Same pipeline as the settlement
+/// provers, one payout. The claimable settlement variant's `claim_direct` consumes this artifact.
+pub fn prove_claim_credit_v1(
+    inputs: &claim_credit_v1::ClaimInputs,
+) -> anyhow::Result<ProofArtifact> {
+    use parallar_methods::{CLAIM_CREDIT_V1_GUEST_ELF, CLAIM_CREDIT_V1_GUEST_ID};
+    use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts};
+
+    let (alloc, native_journal) = claim_credit_v1::claim(inputs)
+        .map_err(|e| anyhow::anyhow!("native claim failed: {e:?}"))?;
+    let native_journal_bytes = native_journal.to_bytes();
+
+    let env = ExecutorEnv::builder().write(inputs)?.build()?;
+    let receipt = default_prover()
+        .prove_with_opts(env, CLAIM_CREDIT_V1_GUEST_ELF, &ProverOpts::groth16())?
+        .receipt;
+
+    receipt.verify(CLAIM_CREDIT_V1_GUEST_ID)?;
+    anyhow::ensure!(
+        receipt.journal.bytes.as_slice() == &native_journal_bytes[..],
+        "guest-committed journal != native claim journal"
+    );
+
+    let raw_seal = receipt
+        .inner
+        .groth16()
+        .map_err(|e| anyhow::anyhow!("not a groth16 receipt: {e:?}"))?
+        .seal
+        .clone();
+    let image_id = risc0_zkvm::sha::Digest::from(CLAIM_CREDIT_V1_GUEST_ID);
+    let journal_digest: [u8; 32] = Sha256::digest(&receipt.journal.bytes).into();
+    let allocations = vec![AllocationOut { payee: address_xdr_to_strkey(&alloc.buyer)?, amount: alloc.amount }];
+
+    Ok(ProofArtifact {
+        seal: hex::encode(wrap_seal(&raw_seal)),
+        image_id: hex::encode(image_id.as_bytes()),
+        journal: hex::encode(&receipt.journal.bytes),
+        journal_digest: hex::encode(journal_digest),
+        epoch: native_journal.epoch,
+        total_payout: native_journal.total_payout,
+        allocations,
+    })
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -692,5 +737,72 @@ mod credit_v2_test {
         let back: Inputs = serde_json::from_str(&json).unwrap();
         assert_eq!(back.attestation.len(), 64);
         assert_eq!(back.collateral, 2000);
+    }
+}
+
+/// Escape hatch (G2, claim_credit_v1): the cross-compiled claim guest commits the SAME
+/// single-allocation journal as the native rule — proving the in-circuit single-buyer claim.
+#[cfg(test)]
+mod claim_credit_v1_test {
+    use super::*;
+    use claim_credit_v1::{
+        commitment, config_hash, derive_instrument_id, snapshot_root, terms_hash, ClaimInputs,
+        ConfigFields, Holder, Payment, Position, Terms,
+    };
+
+    fn h(b: u8) -> Holder {
+        Holder { id: [b; 32], balance: 10_000, has_trustline: true, frozen: false }
+    }
+
+    fn claim_inputs() -> ClaimInputs {
+        let snapshot = vec![h(1), h(2)];
+        let payments = vec![Payment { holder: [2; 32], amount: 1000, paid_at: 400, clawed_back: false }];
+        let terms = Terms { coupon_rate_bps: 1000 };
+        let pos0 = Position { buyer: vec![0x10u8; 40], cover: 600, salt: [1; 32] };
+        let pos1 = Position { buyer: vec![0x20u8; 40], cover: 400, salt: [2; 32] };
+        let positions = vec![pos0.clone(), pos1.clone()];
+        let commitments = vec![
+            commitment(&pos0.buyer, pos0.cover, &pos0.salt),
+            commitment(&pos1.buyer, pos1.cover, &pos1.salt),
+        ];
+        let position_root = settle_credit_v1::position_root(&positions);
+        let config = ConfigFields {
+            reference_asset_xdr: vec![0xAA, 1, 2, 3],
+            terms_hash: terms_hash(&terms),
+            schedule_root: [0x55; 32],
+            snapshot_root: snapshot_root(&snapshot),
+            collateral_token_xdr: vec![0xBB, 4, 5, 6],
+            premium_bps: 200,
+            epoch_deadlines: vec![(1u32, 500u64)],
+        };
+        let type_id_xdr = vec![0xCCu8, 1, 2, 3, 4];
+        let instrument_id = derive_instrument_id(&type_id_xdr, 1, &config_hash(&config));
+        ClaimInputs {
+            type_id_xdr,
+            rules_version: 1,
+            config,
+            instrument_id,
+            epoch: 1,
+            deadline: 500,
+            terms,
+            collateral: 2000,
+            snapshot,
+            payments,
+            commitments,
+            claimant_index: 0,
+            claimant: pos0,
+            position_root,
+        }
+    }
+
+    #[test]
+    fn claim_zkvm_guest_journal_matches_native() {
+        use parallar_methods::CLAIM_CREDIT_V1_GUEST_ELF;
+        use risc0_zkvm::{default_executor, ExecutorEnv};
+        let inputs = claim_inputs();
+        let native_journal = claim_credit_v1::claim(&inputs).unwrap().1.to_bytes();
+        let exec_env = ExecutorEnv::builder().write(&inputs).unwrap().build().unwrap();
+        let session = default_executor().execute(exec_env, CLAIM_CREDIT_V1_GUEST_ELF).unwrap();
+        assert_eq!(session.journal.bytes.as_slice(), &native_journal[..]);
     }
 }

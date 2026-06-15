@@ -309,3 +309,14 @@
   - CI `image-ids` job (workflow_dispatch + weekly schedule, so it never slows the fast push CI): installs the RISC Zero toolchain and runs the guard.
 - **Next (production push):** 2/4 G2 on-chain claim_direct (claimable settlement variant, config-carried claim image_id); 3/4 hardening pack (G6 + G9 + credit_principal_v1); 4/4 G3 Option C.
 - **Blocked:** none for buildable items.
+
+## 2026-06-15 (cont.) — R39: G2 on-chain claim_direct — claimable settlement variant
+
+**Production push, item 2/4.** The escape hatch, on-chain. Two laws + frozen surfaces intact (new family).
+- **Done:**
+  - `contracts/claim_settlement` (`parallar-claim-settlement`): a NEW settlement variant with `settle` (full keeper path) AND `claim_direct(proof, journal, claimant, amount)`. claim_direct verifies a single-allocation proof against the CLAIM image_id, gated by deadline+grace, per-claimant dedup, and `settle`/`claim_direct` MUTUAL EXCLUSION (a full settle blocks later claims; any claim blocks a later full settle) so neither double-pays; the vault's Σ≤collateral bounds cumulative claims. 8 tests (pays after grace; reverts before grace / on double-claim / after full settle / forged proof; mutual exclusion; two-buyers-each-claim; keeper path still works). The deployed generic settlement is untouched.
+  - claim_credit_v1 wired into the zkVM: `methods/guest-claim-credit-v1` builds the ELF; image_id `b4319def9a29fe76…132124cc`; host `prove_claim_credit_v1` + executor test `claim_zkvm_guest_journal_matches_native` (host lib 19/19). All four image_ids stable (credit_v1 705ddac4, weather d31246e6, credit_v2 d07e6aaf, claim b4319def).
+  - `scripts/check_image_ids.sh` now guards all four; PRODUCTION_GAP G2 records the claimable contract as built (path a).
+- **Remaining for a live claim:** a claimable-family deploy path (wire both image_ids) + a live claim on x86 (founder).
+- **Next (production push):** 3/4 hardening pack (G6 + G9 + credit_principal_v1); 4/4 G3 Option C.
+- **Blocked:** none for buildable items.

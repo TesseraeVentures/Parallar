@@ -2422,6 +2422,7 @@ name = "parallar-prover-host"
 version = "0.0.0"
 dependencies = [
  "anyhow",
+ "claim-credit-v1",
  "clap",
  "ed25519-dalek",
  "hex",

@@ -1,0 +1,12 @@
+[package]
+name = "claim-credit-v1-guest"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+risc0-zkvm = { version = "3.0", default-features = false, features = ["std"] }
+claim-credit-v1 = { path = "../../guests/claim_credit_v1" }
+
+# Standalone (its own workspace) — risc0-build cross-compiles this for the zkVM target.
+[workspace]

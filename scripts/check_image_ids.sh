@@ -12,15 +12,16 @@ export PATH="$HOME/.risc0/bin:$HOME/.cargo/bin:/opt/homebrew/bin:$PATH"
 # weather_v1 / credit_v2 are pinned in the docs (not deployed); credit_v1 is the deployed type.
 EXPECT_WEATHER=d31246e6d19379cfecbc23434e8c4aba0571e12cb6374b286ad3e9598db4a9bb
 EXPECT_CREDIT2=d07e6aaf3e7506883bce340c019cd995e313359b062abf0bfab2b7e0bafecb3a
+EXPECT_CLAIM=b4319def9a29fe76cf7789e33741d7181f6cae44d6ac661011ec5a85132124cc
 EXPECT_CREDIT1=$(python3 -c "import json;print(json.load(open('deployments/testnet.json'))['type']['image_id'])")
 
 echo "→ building the guest ELFs (parallar-methods)…"
 ( cd prover && cargo build -p parallar-methods >/dev/null 2>&1 )
 gen=$(find prover/target -name methods.rs -path '*out*' -exec ls -t {} + | head -1)
 
-python3 - "$gen" "$EXPECT_CREDIT1" "$EXPECT_WEATHER" "$EXPECT_CREDIT2" <<'PY'
+python3 - "$gen" "$EXPECT_CREDIT1" "$EXPECT_WEATHER" "$EXPECT_CREDIT2" "$EXPECT_CLAIM" <<'PY'
 import re, sys
-gen, ec1, ew, e2 = sys.argv[1:5]
+gen, ec1, ew, e2, ecl = sys.argv[1:6]
 t = open(gen).read()
 ids = {}
 for m in re.finditer(r'(\w+)_GUEST_ID: \[u32; 8\] = \[([\d, ]+)\]', t):
@@ -30,6 +31,7 @@ expect = {
     'SETTLE_CREDIT_V1': ec1,
     'SETTLE_WEATHER_V1': ew,
     'SETTLE_CREDIT_V2': e2,
+    'CLAIM_CREDIT_V1': ecl,
 }
 ok = True
 for k, v in expect.items():

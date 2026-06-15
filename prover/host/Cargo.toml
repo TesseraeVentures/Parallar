@@ -21,6 +21,7 @@ soroban-sdk = "25.3.0"
 settle-credit-v1 = { path = "../guests/settle_credit_v1" }
 settle-weather-v1 = { path = "../guests/settle_weather_v1" }
 settle-credit-v2 = { path = "../guests/settle_credit_v2" }
+claim-credit-v1 = { path = "../guests/claim_credit_v1" }
 parallar-methods = { path = "../methods" }
 risc0-zkvm = "3.0"
 sha2 = "0.10"

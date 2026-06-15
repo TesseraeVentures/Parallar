@@ -1,0 +1,23 @@
+[package]
+name = "parallar-claim-settlement"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# ClaimableSettlement — a v-next settlement variant (PRODUCTION_GAP G2). A NEW instrument-family
+# version, NOT a change to the deployed generic settlement (which stays frozen, Law #2). Adds
+# `claim_direct`: after the keeper-grace window, a single buyer is paid against a single-allocation
+# proof (verified against a SECOND, claim-guest image_id), with per-claimant dedup and mutual
+# exclusion vs the full `settle` path so neither can double-pay. Every payout is still gated by a
+# verified proof (Law #1). Deployed via a claimable-family path, separate from the credit_v1 factory.
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+doctest = false
+
+[dependencies]
+soroban-sdk = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }
+parallar-vault = { path = "../vault" }
