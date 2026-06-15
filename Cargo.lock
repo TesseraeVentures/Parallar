@@ -998,6 +998,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "parallar-yield-router"
+version = "0.0.0"
+dependencies = [
+ "parallar-yield-vault",
+ "soroban-sdk",
+]
+
+[[package]]
 name = "parallar-yield-vault"
 version = "0.0.0"
 dependencies = [

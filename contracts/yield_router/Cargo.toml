@@ -1,0 +1,25 @@
+[package]
+name = "parallar-yield-router"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# YieldRouter — the protected share class (TECH_SPEC §5A; PRODUCTION_GAP G11). Per instrument,
+# upstream of the frozen core (vault/settlement/journal/guests untouched). Holders `wrap` a bond
+# to mint pBOND (cover auto-sized to the wrapped balance, registered with the vault for solvency);
+# `route_coupon` runs the waterfall — premium_bps of the coupon goes to the vault (→ underwriters
+# + base fee), a distribution fee is the router's MGA-equivalent take, and the NET coupon accrues
+# to pBOND holders; `unwrap` burns pBOND and returns the bond. pBOND is a transferable receipt so
+# it can serve as enhanced collateral in external lending (G13). Settlement is unchanged: on a
+# default the standard certificate pays wrapped holders from the reserve (Law #1 holds).
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+doctest = false
+
+[dependencies]
+soroban-sdk = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }
+parallar-yield-vault = { path = "../yield_vault" }

@@ -207,10 +207,12 @@ fn receive_premium_from_router_distributes() {
     mint(&env, &c.coll, &seller, 10_000);
     v.deposit(&seller, &10_000);
 
-    // the router routes a coupon's premium cut (e.g. 500) into the vault
+    // the router routes a coupon's premium cut (e.g. 500): it transfers to the vault FIRST,
+    // then calls receive_premium to account it (router-only).
     let router = Address::generate(&env);
-    mint(&env, &c.coll, &router, 500);
-    v.receive_premium(&router, &500);
+    v.set_router(&router);
+    mint(&env, &c.coll, &c.vault, 500); // simulate the router's transfer into the vault
+    v.receive_premium(&500);
 
     // 500: 12% (60) protocol, 440 to the single seller
     assert_eq!(v.protocol_fee_accrued(), 60);

@@ -465,6 +465,18 @@
                       "key": {
                         "vec": [
                           {
+                            "symbol": "RoutedCover"
+                          }
+                        ]
+                      },
+                      "val": {
+                        "i128": "0"
+                      }
+                    },
+                    {
+                      "key": {
+                        "vec": [
+                          {
                             "symbol": "Seller"
                           },
                           {

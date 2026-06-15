@@ -30,11 +30,13 @@ enum DataKey {
     Settlement,
     CollateralToken,
     Admin,
+    Router,            // the bound YieldRouter (transparent protected-share-class path)
     PremiumBps,
     ProtocolFeeBps,
     HaircutBps,
     TotalCollateral,
-    TotalCover,
+    TotalCover,        // SEALED cover (from buy_protection commitments)
+    RoutedCover,       // cover registered by the router (wrapped balances; public)
     PositionRoot,
     Frozen,
     AccPremiumPerColl, // i128, scaled by ACC_SCALE
@@ -129,6 +131,7 @@ impl YieldVault {
         s.set(&DataKey::HaircutBps, &(haircut_bps as i128));
         s.set(&DataKey::TotalCollateral, &0i128);
         s.set(&DataKey::TotalCover, &0i128);
+        s.set(&DataKey::RoutedCover, &0i128);
         s.set(&DataKey::PositionRoot, &BytesN::from_array(&env, &[0u8; 32]));
         s.set(&DataKey::Frozen, &false);
         s.set(&DataKey::AccPremiumPerColl, &0i128);
@@ -162,9 +165,10 @@ impl YieldVault {
         let s = env.storage().instance();
         let total_coll = get_i128(&env, &DataKey::TotalCollateral);
         let cur_cover = get_i128(&env, &DataKey::TotalCover);
+        let routed = get_i128(&env, &DataKey::RoutedCover);
         let haircut: i128 = s.get(&DataKey::HaircutBps).unwrap();
-        // total_cover ≤ (1 − h)·collateral
-        assert!((cur_cover + cover) * BPS <= total_coll * (BPS - haircut), "insolvent: cover would exceed (1-haircut)·collateral");
+        // sealed + routed + new cover ≤ (1 − h)·collateral
+        assert!((cur_cover + routed + cover) * BPS <= total_coll * (BPS - haircut), "insolvent: cover would exceed (1-haircut)·collateral");
 
         let premium_bps: i128 = s.get(&DataKey::PremiumBps).unwrap();
         let premium = cover * premium_bps / BPS;
@@ -179,15 +183,16 @@ impl YieldVault {
         s.extend_ttl(50, 100);
     }
 
-    /// Premium arriving from routed coupons (the YieldRouter calls this during `route_coupon`).
-    /// `from` transfers `amount`; it is distributed exactly like a purchase premium.
-    pub fn receive_premium(env: Env, from: Address, amount: i128) {
-        from.require_auth();
+    /// Premium arriving from routed coupons. The bound ROUTER transfers the tokens to this vault
+    /// FIRST (it is the current contract for that transfer), then calls this to distribute them.
+    /// Router-only: only the bound router may account premium, and it always transfers beforehand.
+    pub fn receive_premium(env: Env, amount: i128) {
         assert!(amount > 0, "amount must be positive");
-        let token_addr: Address = env.storage().instance().get(&DataKey::CollateralToken).unwrap();
-        token::Client::new(&env, &token_addr).transfer(&from, &env.current_contract_address(), &amount);
+        let s = env.storage().instance();
+        let router: Address = s.get(&DataKey::Router).expect("router not set");
+        router.require_auth();
         distribute_premium(&env, amount);
-        env.storage().instance().extend_ttl(50, 100);
+        s.extend_ttl(50, 100);
     }
 
     /// Underwriter claims accrued premium.
@@ -227,7 +232,7 @@ impl YieldVault {
         let coll = get_i128(&env, &DataKey::Seller(seller.clone()));
         assert!(coll >= amount, "insufficient seller balance");
         let total_coll = get_i128(&env, &DataKey::TotalCollateral);
-        let cover = get_i128(&env, &DataKey::TotalCover);
+        let cover = get_i128(&env, &DataKey::TotalCover) + get_i128(&env, &DataKey::RoutedCover);
         let haircut: i128 = s.get(&DataKey::HaircutBps).unwrap();
         assert!((total_coll - amount) * (BPS - haircut) >= cover * BPS, "would drop reserve below the cover floor");
         let token_addr: Address = s.get(&DataKey::CollateralToken).unwrap();
@@ -273,9 +278,39 @@ impl YieldVault {
         s.set(&DataKey::Frozen, &open);
     }
 
+    /// Bind the YieldRouter (the transparent protected-share-class path). Admin, set once.
+    pub fn set_router(env: Env, router: Address) {
+        let s = env.storage().instance();
+        let admin: Address = s.get(&DataKey::Admin).unwrap();
+        admin.require_auth();
+        assert!(!s.has(&DataKey::Router), "router already set");
+        s.set(&DataKey::Router, &router);
+        s.extend_ttl(50, 100);
+    }
+
+    /// The bound router registers its aggregate wrapped cover, enforcing the shared solvency floor
+    /// (sealed + routed ≤ (1−h)·collateral). Only the bound router may call (it advances its own
+    /// total as holders wrap/unwrap).
+    pub fn set_routed_cover(env: Env, new_routed: i128) {
+        assert!(new_routed >= 0, "routed cover must be non-negative");
+        let s = env.storage().instance();
+        let router: Address = s.get(&DataKey::Router).expect("router not set");
+        router.require_auth();
+        let total_coll = get_i128(&env, &DataKey::TotalCollateral);
+        let sealed = get_i128(&env, &DataKey::TotalCover);
+        let haircut: i128 = s.get(&DataKey::HaircutBps).unwrap();
+        assert!((sealed + new_routed) * BPS <= total_coll * (BPS - haircut), "insolvent: routed cover would exceed (1-haircut)·collateral");
+        s.set(&DataKey::RoutedCover, &new_routed);
+        s.extend_ttl(50, 100);
+    }
+
     // --- getters ---
     pub fn total_collateral(env: Env) -> i128 { get_i128(&env, &DataKey::TotalCollateral) }
-    pub fn total_cover(env: Env) -> i128 { get_i128(&env, &DataKey::TotalCover) }
+    /// Effective cover = sealed (commitment path) + routed (protected-share-class path).
+    pub fn total_cover(env: Env) -> i128 {
+        get_i128(&env, &DataKey::TotalCover) + get_i128(&env, &DataKey::RoutedCover)
+    }
+    pub fn routed_cover(env: Env) -> i128 { get_i128(&env, &DataKey::RoutedCover) }
     pub fn position_root(env: Env) -> BytesN<32> {
         env.storage().instance().get(&DataKey::PositionRoot).unwrap()
     }

@@ -348,3 +348,12 @@
 - PRODUCTION_GAP G11 records the premium foundation built.
 - **Next:** the `YieldRouter` (G11) — wrap → pBOND, route_coupon waterfall (premium to the vault, net to holders), unwrap; then G12 float (eligible-reserve-asset list + covenant) and G13 (pBOND token + lending docs).
 - **Blocked:** none for buildable items.
+
+## 2026-06-15 (cont.) — R43: money-flow layer 2/3 — YieldRouter / protected share class (G11)
+
+**Production money-flow build. Both sides' economics now complete end-to-end.**
+- **Done:** `contracts/yield_router` (`parallar-yield-router`, TECH_SPEC §5A) — upstream of the frozen core. `wrap(holder, amount)` mints pBOND 1:1 (cover auto-sizes to the wrapped balance, registered with the vault via `set_routed_cover` which enforces the shared solvency floor — wrapping past the reserve reverts). `route_coupon(payer, epoch, gross)` runs the waterfall: premium = wrapped × premium_bps; distribution fee (router, §5A(b)); premium − fee → vault.receive_premium (→ underwriters pro-rata + the vault's base fee); NET = gross − premium → pBOND holders pro-rata (rewards-per-share). `unwrap` burns + returns the bond (cover lapses). pBOND `transfer` for external-collateral composability (G13). 4 tests incl. the full 14%-gross → 12%-net-to-holder waterfall (600 net + 80 premium + 10 vault fee + 10 router fee = 700).
+- Vault gained `set_router` + `set_routed_cover` + a `routed_cover` getter; effective cover = sealed + routed. `receive_premium` is now router-only + transfer-first (the Soroban contract-auth pattern; no `authorize_as_current_contract` needed). yield_vault still 9/9.
+- **Both sides, made whole:** underwriters earn premium (+ future float) pro-rata; pBOND holders get the net protected coupon; the protocol earns base + distribution fees; defaults still pay wrapped holders from the reserve via the proof-gated settlement (Law #1 intact, the router is purely upstream).
+- **Next:** G12 (reserve float: eligible-reserve-asset list + the non-circularity covenant + haircuts) and G13 (pBOND-as-collateral docs + the covenant boundary).
+- **Blocked:** none for buildable items.
