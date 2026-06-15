@@ -137,8 +137,10 @@ impl ParallarFactory {
         env.storage().persistent().set(&key, &t);
     }
 
-    /// Admin curates the eligible collateral list — the MVP form of the §10.1 clawback/
-    /// freeze gate (production reads `AUTH_CLAWBACK_ENABLED` on-chain).
+    /// Admin curates the eligible collateral list (the §10.1 clawback/freeze gate). A Soroban
+    /// contract cannot read a classic asset's issuer flags on-chain, so eligibility is verified
+    /// off-chain at listing and monitored for changes; governed by the registry multisig in
+    /// production (docs/OPERATIONS.md).
     pub fn set_collateral_eligible(env: Env, token: Address, eligible: bool) {
         Self::admin(env.clone()).require_auth();
         env.storage().persistent().set(&DataKey::Eligible(token), &eligible);

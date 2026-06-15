@@ -320,3 +320,14 @@
 - **Remaining for a live claim:** a claimable-family deploy path (wire both image_ids) + a live claim on x86 (founder).
 - **Next (production push):** 3/4 hardening pack (G6 + G9 + credit_principal_v1); 4/4 G3 Option C.
 - **Blocked:** none for buildable items.
+
+## 2026-06-15 (cont.) — R40: production hardening pack (G6 ops/governance + G9 TTL + credit_principal-by-config)
+
+**Production push, item 3/4.** Built the law-safe parts; corrected two spec-optimisms honestly (anti-gold-plating + flag-don't-bend).
+- **Done:**
+  - **credit_principal needs NO new guest:** principal protection is `credit_v1` with `coupon_rate_bps = 10000` (owed = full principal) over a single maturity epoch. Demonstrated by 2 new credit_v1 tests (full principal default → full cover; partial repayment → pro-rata). credit_v1 now 24 tests; image_id unaffected (cfg(test)). The generic-core thesis: a new product, zero new code. (G13's "credit_principal_v1" is a deploy-time config, not a guest.)
+  - **G6 ops/governance (docs/OPERATIONS.md):** governance model (registry admin = the only privileged op → multisig; no upgrade/pause/admin-pay; deploy keys → HSM), incident runbook (a guest bug ships as a NEW type, e.g. credit_v3, exactly as credit_v2 did; existing instruments immutable; comms protocol), keeper-offline (permissionless settle + claim_direct cover it).
+  - **Honest correction — clawback eligibility:** a Soroban contract CANNOT introspect a classic asset's issuer flags (no SAC getter), so the earlier "production reads AUTH_CLAWBACK_ENABLED on-chain" is infeasible. Corrected in README + the factory comment + PRODUCTION_GAP G6 to: curated allowlist governed by the registry multisig + off-chain issuer-flag monitoring + de-list on change (native XLM is structurally claw/freeze-proof).
+  - **G9 TTL ops:** `scripts/ttl_monitor.sh` (keeper runbook — lists the live contracts + the `stellar contract extend` command for each) + the operating design in OPERATIONS.md; tenor-derived TTLs noted as the v-next contract change. CI artifact checks extended.
+- **Next (production push):** 4/4 G3 Option C — purchase-time solvency proof (a new vault version + a small guest).
+- **Blocked:** none for buildable items.

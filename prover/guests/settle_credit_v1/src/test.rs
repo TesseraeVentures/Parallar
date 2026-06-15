@@ -69,6 +69,33 @@ fn alloc(buyer_n: u8, amount: i128) -> Allocation {
 
 // ---------------- published-rule coverage ----------------
 
+/// PRINCIPAL PROTECTION needs NO new guest (G8/G13, anti-gold-plating): it is credit_v1 with the
+/// rate set to 100% (10000 bps) over a single maturity epoch — owed becomes the full principal
+/// (the holder's balance). A principal default (nothing repaid by maturity) pays the buyer's full
+/// cover; a partial repayment pays pro-rata. The generic-core thesis: a different protection
+/// product, zero new code — just a config of the pinned credit_v1 guest.
+#[test]
+fn principal_protection_is_a_credit_v1_config_no_new_guest() {
+    let holders = vec![holder(1, 10_000)]; // principal = 10_000
+    let positions = vec![pos(1, 8_000)];
+    let inputs = mk(holders, 10_000, 1000, 10_000, vec![], positions); // rate 100%, nothing repaid
+    let (allocs, journal) = settle(&inputs).expect("a principal default settles");
+    assert_eq!(allocs.len(), 1);
+    assert_eq!(allocs[0].amount, 8_000, "full principal default pays the buyer's full cover");
+    assert_eq!(journal.total_payout, 8_000);
+}
+
+#[test]
+fn partial_principal_repayment_pays_pro_rata() {
+    // owed 10_000 (rate 100%); 6_000 repaid by maturity -> shortfall 4_000 -> severity 0.4;
+    // buyer cover 5_000 -> payout 2_000.
+    let holders = vec![holder(1, 10_000)];
+    let positions = vec![pos(1, 5_000)];
+    let inputs = mk(holders, 10_000, 1000, 10_000, vec![pay(1, 6_000, 900)], positions);
+    let (allocs, _) = settle(&inputs).expect("settles");
+    assert_eq!(allocs[0].amount, 2_000, "cover 5000 × 0.4 severity");
+}
+
 #[test]
 fn full_miss_pays_full_cover() {
     let inp = mk(vec![holder(1, 10_000)], 1000, 500, 1000, vec![], vec![pos(100, 800)]);
