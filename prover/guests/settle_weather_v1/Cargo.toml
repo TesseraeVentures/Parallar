@@ -1,0 +1,24 @@
+[package]
+name = "settle-weather-v1"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# Instance #2 (TECH_SPEC §4 / PRODUCTION_GAP G8): the determination + payout logic for a
+# parametric weather/index instrument. A SEPARATE guest type with its own image_id — never
+# an edit of settle_credit_v1 (the versioning law). It reproduces the generic primitives
+# (Poseidon2 commitment, sha256 position/allocation roots, flat config_hash, the 116-byte
+# journal) BYTE-IDENTICALLY to credit_v1, so the same generic vault + settlement WASM and the
+# same factory accept it unchanged — only the published rule (rainfall-shortfall vs coupon
+# shortfall) differs. Pure Rust: testable natively AND runs inside the RISC Zero guest.
+
+[dependencies]
+sha2 = "0.10"
+zkhash = "0.2"
+ark-ff = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+
+# test-only: prove the generic primitives are byte-identical to credit_v1 (so the same
+# vault/settlement/factory accept a weather instrument). NOT compiled into the guest ELF.
+[dev-dependencies]
+settle-credit-v1 = { path = "../settle_credit_v1" }

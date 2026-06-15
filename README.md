@@ -117,11 +117,11 @@ A parametric weather/index instrument (e.g. a payout when rainfall over a window
 | Generic settlement WASM | sole auth path = verify one Groth16 proof vs the type's image ID | identical | **no** |
 | 116-byte journal | the contract reads roots + allocation commitment, never the determination | identical layout | **no** |
 | Registry interface | `register_type(image_id, rules, wasm hashes)` → `deploy_instrument` | identical call | **no** |
-| Per-type RISC Zero guest | scans coupon payments, proves shortfall/owed, settles pro-rata | scans attested observations, proves the index breach, settles per the published parametric rule | **yes — this is the only new code** |
+| Per-type RISC Zero guest | scans coupon payments, proves shortfall/owed, settles pro-rata | scans attested rainfall, proves the index shortfall, settles per the published parametric rule | **yes — and it is the only new code, now proven** |
 
 A new guest is a **new `image_id`, i.e. a new registered type** — never an in-place upgrade of an existing one. Live instruments stay pinned to the guest they were deployed with forever (the versioning law). So `weather_v1` ships the way `credit_v1` did: register the type, then factory-deploy instances against the *same* vault and settlement WASM already in this repo.
 
-**Status: specified/designed-for, not built.** It is gap **G8** in [PRODUCTION_GAP.md](docs/PRODUCTION_GAP.md) (small once attested feeds, **G1**, exist). The demo's replication beat — a **second** factory-deploy of `credit_v1` — already exercises the path a second *type* would take: the surfaces serve instance #2 by construction, not by speculative flexibility added on its behalf.
+**Status: the guest is BUILT.** `settle_weather_v1` is implemented (a rainfall-shortfall parametric rule: `payout = cover × (trigger − observed) / (trigger − exhaust)`, capped, with `NoBreach` unprovable when rainfall meets the threshold), compiles to its own pinned `image_id` `d31246e6…`, and runs in the RISC Zero zkVM — executor-verified that the circuit commits the same 116-byte journal as the native rule. It is **parity-tested against the generic surfaces**: its Poseidon position commitment, position/allocation roots, and `config_hash`/`instrument_id` derivation are byte-identical to `credit_v1`, so the same factory, vault, and settlement WASM accept it with **zero contract changes**. What remains is the live testnet beat — register the type and prove one settlement on x86 (gap **G8**; attested feeds are **G1**). The layer thesis is no longer asserted; it is exercised by a second working guest. (The demo's replication beat — a second factory-deploy of `credit_v1` — exercises the deploy path; `weather_v1` exercises the *guest* boundary.)
 
 ## Roadmap
 

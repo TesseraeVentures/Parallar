@@ -11,4 +11,4 @@ publish = false
 risc0-build = "3.0"
 
 [package.metadata.risc0]
-methods = ["guest"]
+methods = ["guest", "guest-weather"]

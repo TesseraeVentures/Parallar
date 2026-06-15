@@ -152,6 +152,57 @@ pub fn prove_settlement(inputs: &Inputs) -> anyhow::Result<ProofArtifact> {
     })
 }
 
+/// Instance #2: run the `settle_weather_v1` guest under the real Groth16 prover and package
+/// the submittable artifact. The pipeline is identical to [`prove_settlement`] — same host,
+/// same `ProofArtifact`, same seal wrapping and payee decoding — pinned to the weather guest's
+/// OWN image id. That a second instrument type proves through this unchanged path, into the
+/// same generic settlement contract, is the layer thesis made operational.
+pub fn prove_weather_settlement(
+    inputs: &settle_weather_v1::Inputs,
+) -> anyhow::Result<ProofArtifact> {
+    use parallar_methods::{SETTLE_WEATHER_V1_GUEST_ELF, SETTLE_WEATHER_V1_GUEST_ID};
+    use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts};
+
+    let (allocs, native_journal) = settle_weather_v1::settle(inputs)
+        .map_err(|e| anyhow::anyhow!("native weather settle failed: {e:?}"))?;
+    let native_journal_bytes = native_journal.to_bytes();
+
+    let env = ExecutorEnv::builder().write(inputs)?.build()?;
+    let receipt = default_prover()
+        .prove_with_opts(env, SETTLE_WEATHER_V1_GUEST_ELF, &ProverOpts::groth16())?
+        .receipt;
+
+    receipt.verify(SETTLE_WEATHER_V1_GUEST_ID)?;
+    anyhow::ensure!(
+        receipt.journal.bytes.as_slice() == &native_journal_bytes[..],
+        "guest-committed journal != native weather settle journal"
+    );
+
+    let raw_seal = receipt
+        .inner
+        .groth16()
+        .map_err(|e| anyhow::anyhow!("not a groth16 receipt: {e:?}"))?
+        .seal
+        .clone();
+    let image_id = risc0_zkvm::sha::Digest::from(SETTLE_WEATHER_V1_GUEST_ID);
+    let journal_digest: [u8; 32] = Sha256::digest(&receipt.journal.bytes).into();
+
+    let allocations = allocs
+        .iter()
+        .map(|a| Ok(AllocationOut { payee: address_xdr_to_strkey(&a.buyer)?, amount: a.amount }))
+        .collect::<anyhow::Result<Vec<_>>>()?;
+
+    Ok(ProofArtifact {
+        seal: hex::encode(wrap_seal(&raw_seal)),
+        image_id: hex::encode(image_id.as_bytes()),
+        journal: hex::encode(&receipt.journal.bytes),
+        journal_digest: hex::encode(journal_digest),
+        epoch: native_journal.epoch,
+        total_payout: native_journal.total_payout,
+        allocations,
+    })
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -400,5 +451,123 @@ mod test {
             "GROTH16 OK | seal=260B image_id={} payee={} amount={}",
             artifact.image_id, artifact.allocations[0].payee, artifact.allocations[0].amount
         );
+    }
+}
+
+/// Instance #2 (weather_v1) host parity: the SAME factory derives its instrument_id, the SAME
+/// settlement verifies its allocation_root, and the cross-compiled weather circuit commits the
+/// same journal as native settle — proving the generic surfaces serve a second instrument type.
+#[cfg(test)]
+mod weather_test {
+    use super::*;
+    use parallar_factory::{hash_config, InstrumentConfig};
+    use parallar_settlement::hash_allocations;
+    use settle_weather_v1::{
+        allocation_root, config_hash, position_root, snapshot_root, terms_hash, Allocation,
+        ConfigFields, Inputs, Observation, Position, Terms, WeatherParams,
+    };
+    use soroban_sdk::{testutils::Address as _, vec as svec, BytesN, Symbol};
+
+    /// weather_v1's flat config_hash equals the factory's over the same generic config — so the
+    /// SAME factory/registry derives a weather instrument_id (the registry surface is unchanged).
+    #[test]
+    fn weather_config_hash_matches_factory_byte_for_byte() {
+        let env = Env::default();
+        let reference = Address::generate(&env);
+        let collateral = Address::generate(&env);
+        let config = InstrumentConfig {
+            reference_asset: reference.clone(),
+            terms_hash: BytesN::from_array(&env, &[0x11; 32]),
+            schedule_root: BytesN::from_array(&env, &[0x22; 32]),
+            snapshot_root: BytesN::from_array(&env, &[0x33; 32]),
+            collateral_token: collateral.clone(),
+            premium_bps: 150,
+            epoch_deadlines: svec![&env, (1u32, 700u64)],
+        };
+        let contract_ch = hash_config(&env, &config);
+        let guest_cf = ConfigFields {
+            reference_asset_xdr: address_xdr(&env, &reference),
+            terms_hash: [0x11; 32],
+            schedule_root: [0x22; 32],
+            snapshot_root: [0x33; 32],
+            collateral_token_xdr: address_xdr(&env, &collateral),
+            premium_bps: 150,
+            epoch_deadlines: vec![(1, 700)],
+        };
+        assert_eq!(contract_ch.to_array(), config_hash(&guest_cf));
+    }
+
+    /// weather_v1's allocation_root equals the settlement contract's hash_allocations over real
+    /// Stellar Addresses — so the SAME settlement WASM verifies a weather payout set.
+    #[test]
+    fn weather_allocation_root_matches_settlement() {
+        let env = Env::default();
+        let b1 = Address::generate(&env);
+        let allocs = svec![&env, (b1.clone(), 400i128)];
+        let contract_root = hash_allocations(&env, &allocs);
+        let guest_allocs = vec![Allocation { buyer: address_xdr(&env, &b1), amount: 400 }];
+        assert_eq!(contract_root.to_array(), allocation_root(&guest_allocs));
+    }
+
+    fn weather_inputs(env: &Env) -> (Inputs, Address) {
+        let buyer = Address::generate(env);
+        let params = WeatherParams { station_id: [9; 32], window_start: 100, window_end: 200 };
+        let terms = Terms { trigger_mm: 500, exhaust_mm: 100 };
+        let positions = vec![Position { buyer: address_xdr(env, &buyer), cover: 800, salt: [7; 32] }];
+        let config = ConfigFields {
+            reference_asset_xdr: address_xdr(env, &Address::generate(env)),
+            terms_hash: terms_hash(&terms),
+            schedule_root: [0x55; 32],
+            snapshot_root: snapshot_root(&params),
+            collateral_token_xdr: address_xdr(env, &Address::generate(env)),
+            premium_bps: 150,
+            epoch_deadlines: vec![(1u32, 200u64)],
+        };
+        let type_id_xdr = symbol_xdr(env, &Symbol::new(env, "weather_v1"));
+        let proot = position_root(&positions);
+        let instrument_id =
+            settle_weather_v1::derive_instrument_id(&type_id_xdr, 1, &config_hash(&config));
+        let inputs = Inputs {
+            type_id_xdr,
+            rules_version: 1,
+            config,
+            instrument_id,
+            epoch: 1,
+            deadline: 200,
+            terms,
+            params,
+            collateral: 1000,
+            observations: vec![Observation { station: [9; 32], mm: 300, observed_at: 150 }],
+            positions,
+            position_root: proot,
+        };
+        (inputs, buyer)
+    }
+
+    /// The cross-compiled weather zkVM guest, run in the executor (no proof), commits the SAME
+    /// 116-byte journal as native settle() — confirming the circuit matches the reference rule.
+    #[test]
+    fn weather_zkvm_guest_journal_matches_native_settle() {
+        use parallar_methods::SETTLE_WEATHER_V1_GUEST_ELF;
+        use risc0_zkvm::{default_executor, ExecutorEnv};
+        let env = Env::default();
+        let (inputs, _buyer) = weather_inputs(&env);
+        let native_journal = settle_weather_v1::settle(&inputs).unwrap().1.to_bytes();
+        let exec_env = ExecutorEnv::builder().write(&inputs).unwrap().build().unwrap();
+        let session = default_executor().execute(exec_env, SETTLE_WEATHER_V1_GUEST_ELF).unwrap();
+        assert_eq!(session.journal.bytes.as_slice(), &native_journal[..]);
+    }
+
+    /// The weather witness JSON round-trips and its payee decodes (the prove CLI handoff).
+    #[test]
+    fn weather_witness_json_round_trips_and_payee_decodes() {
+        let env = Env::default();
+        let (inputs, buyer) = weather_inputs(&env);
+        let json = serde_json::to_string_pretty(&inputs).unwrap();
+        let back: settle_weather_v1::Inputs = serde_json::from_str(&json).unwrap();
+        assert_eq!(back.collateral, 1000);
+        let strkey = address_xdr_to_strkey(&back.positions[0].buyer).unwrap();
+        let recovered = Address::from_string(&soroban_sdk::String::from_str(&env, &strkey));
+        assert_eq!(buyer, recovered);
     }
 }

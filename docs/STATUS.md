@@ -186,3 +186,15 @@
   - **Demo storytelling (narration only):** demo.sh stages the EPOCH 0 (all paid → prover REFUSES) → EPOCH 1 (short-paid → same guest proves it) arc, and adds the confidential-payout punch (the vault paid having only ever seen a commitment + the public aggregate).
 - **Next:** per explicit founder override, build beyond P0 toward a "statement protocol" — centerpiece options pending direction (instance #2 `weather_v1`; interactive testnet demo; verifier-router topology; richer benchmark scenario). Founder: N=10 x86 bench, video, DoraHacks, tag `v0.3-p0`.
 - **Blocked:** none. (Two architectural laws remain non-negotiable regardless of the build-beyond override.)
+
+## 2026-06-15 (cont.) — R28: Instance #2 (weather_v1) BUILT — the layer thesis, exercised
+
+**Build-beyond-P0, centerpiece 1 of 4 (explicit founder override).** Two architectural laws held intact.
+- **Done:**
+  - New guest type `settle_weather_v1` (`prover/guests/settle_weather_v1/`): a parametric rainfall-shortfall (drought) cover. Published rule: `payout = cover × (trigger_mm − observed_mm) / (trigger_mm − exhaust_mm)`, capped at cover; `NoBreach` (unprovable, guest panics) when observed rainfall meets/exceeds the trigger — the weather analog of credit's fully-paid-epoch unprovability. Same soundness bindings as credit (instrument_id / terms / params(snapshot_root) / deadline / position_root). 16/16 native tests green.
+  - **Versioning law honored:** `settle_credit_v1` untouched — its image_id is still `705ddac439284e…053d1891` (confirmed from the rebuilt ELF). `weather_v1` is a NEW type with its OWN image_id `d31246e6d19379…8db4a9bb`.
+  - **Thesis proven in tests, not asserted:** weather_v1's Poseidon commitment, position/allocation roots, and config_hash/instrument_id derivation are byte-identical to credit_v1 (parity tests in the guest) AND match the on-chain factory/settlement encodings (host `weather_test`). So the SAME generic vault, settlement, and factory WASM accept a weather instrument with zero contract changes.
+  - RISC Zero wiring: `prover/methods/guest-weather/` builds the weather ELF; `parallar-methods` now embeds both `SETTLE_CREDIT_V1_*` and `SETTLE_WEATHER_V1_*`. Methods build green (4 min). Host `prove_weather_settlement` added (mirrors `prove_settlement`, pinned to the weather id). Executor parity test `weather_zkvm_guest_journal_matches_native_settle` green — the cross-compiled circuit commits the same 116-byte journal as the native rule. Host lib 16/16 green.
+  - README Instance #2 + PRODUCTION_GAP G8 updated honestly: guest BUILT (image_id, executor-verified, surface-parity); remaining = register the type + prove one live settlement on x86 (founder), then attested feeds (G1).
+- **Next:** still in the build-beyond program — CLI `prove`/`submit` weather support + a weather witness/scenario + register/deploy on testnet (founder x86 for the live proof); then centerpieces 2–4 (live partial-default settlement, scale + production verifier-router topology, interactive testnet dApp).
+- **Blocked:** live weather proof + deploy need the x86 box (founder). Everything up to it is built and green.
