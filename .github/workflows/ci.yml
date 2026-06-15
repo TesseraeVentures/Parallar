@@ -71,11 +71,13 @@ jobs:
           echo "ok: artifacts present"
 
   image-ids:
-    name: guest image_id reproducibility (thorough; manual/weekly)
+    name: guest image_id reproducibility + on-chain verify (thorough; manual/weekly)
     runs-on: ubuntu-latest
     # The RISC Zero toolchain + ELF build is slow, so this guards reproducibility on a schedule /
     # on demand rather than on every push. Asserts each guest image_id still matches its pinned
-    # value — credit_v1 must equal the deployed type's id (the versioning law).
+    # value — credit_v1 must equal the deployed type's id (the versioning law) — and runs the
+    # keystone on-chain-verify test (the real Groth16 verifier pays only on a valid proof, the
+    # load-bearing Law #1 evidence) so an image_id↔fixture drift is caught here, not only in demo.sh.
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
     steps:
       - uses: actions/checkout@v4
@@ -88,3 +90,6 @@ jobs:
           "$HOME/.risc0/bin/rzup" install
       - name: assert pinned image_ids
         run: ./scripts/check_image_ids.sh
+      - name: on-chain verify (real Groth16 verifier, committed fixture)
+        working-directory: prover
+        run: cargo test -p parallar-prover-host --test onchain_verify
