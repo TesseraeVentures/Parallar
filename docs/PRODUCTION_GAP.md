@@ -77,6 +77,12 @@ Not pilot-blocking; strategically central (proves the layer thesis). **Instance 
 **Boundary (non-negotiable):** pBOND is permitted in external lending markets and prohibited in Parallar reserves (covenant rule 2). Loop leverage is user risk; published LTV-band guidance and stress-unwind documentation accompany any listing.
 **Built / documented:** pBOND is a transferable receipt (`yield_router::transfer`), so it can already post as external collateral; principal protection (the full-LTV-uplift case) is a `credit_v1` config at 100% rate over the maturity epoch — NO new guest (demonstrated in tests). The covenant boundary, the LTV/loss-truncation thesis, and the honest constraints (coupon ≠ principal) are in [docs/ECONOMICS.md](ECONOMICS.md). **Remaining:** the external lending-market listing itself (Blend) + risk-parameter engagement — external + audit-gated.
 
+## G14 — Tranches (first-loss capital structure) · built under override
+
+PRD §4 lists "multi-tranche vaults" as a v0.4+ non-goal (the vault interface was designed not to preclude them). Built early under explicit human override toward the production protocol.
+**Built:** `contracts/tranched_vault` (a NEW instrument-family version) — underwriters commit to a tranche by seniority rank (0 = junior/first-loss); on a default the proof-gated payout is absorbed JUNIOR-FIRST (junior collateral consumed before senior); premium is split across tranches by weight (junior earns the most), then pro-rata within a tranche via a per-tranche share model that spreads each tranche's losses pro-rata across its members. 7 tests (junior-first absorption, senior protection, 3:1 premium, intra-tranche pro-rata loss, loss-adjusted withdrawal, solvency floor). Law #1 holds — `pay_allocations` is settlement-only; the first-loss ordering is a pure accounting waterfall.
+**Remaining:** factory deployment of tranched families (`deploy_tranched` alongside `deploy_protected`); a confidential-tranche variant; counsel review of tranche securities treatment.
+
 ---
 
 ## Sequencing sketch (post-hackathon, support + counterparty secured)

@@ -68,6 +68,26 @@ keeps its **own reserve**, so a default in one bond never touches another's coll
 shared-reserve tier — one pool backing a whole tier for capital efficiency — is a deliberate
 further design with correlated-default implications, deferred to a covenant-and-risk decision.)
 
+## Tranches & first-loss capital (`tranched_vault`)
+
+Underwriters need not all bear the same risk. The `tranched_vault` (a new instrument-family
+version) lets them commit to a **tranche by seniority rank** — rank 0 is the **junior / first-loss**
+tranche. On a default the proof-gated payout is absorbed **junior-first**: the junior tranche's
+collateral is consumed before any senior collateral, so junior capital takes the first loss and
+senior capital is protected until everything more junior is exhausted (tested: a 1,200 payout over
+a 1,000-junior / 1,000-senior reserve wipes junior and takes only 200 from senior).
+
+Risk is priced into the **premium split**: each tranche carries a weight, and distributed premium
+is shared across tranches by weight (junior largest), then pro-rata within a tranche — so first-loss
+underwriters earn the most (tested: equal collateral, 3:1 weights → junior earns 3× the senior's
+premium). A per-tranche **share model** spreads each tranche's losses pro-rata across its members:
+a deposit mints shares against current collateral-per-share, a loss lowers that ratio, and a
+withdrawal returns the loss-adjusted value. Premium accrues per share independently of losses
+(earned for bearing risk). This is the standard senior/mezz/junior capital structure institutions
+expect, on the same proof-gated payout surface (Law #1 — `pay_allocations` is settlement-only; the
+first-loss ordering is a pure accounting waterfall, never an admin payout path). Factory deployment
+of tranched families (a `deploy_tranched` alongside `deploy_protected`) is the next step.
+
 ## Reserve float & the non-circularity covenant (§3.2, G12)
 
 The reserve runs as insurance float — held in yield-bearing eligible assets so underwriter return

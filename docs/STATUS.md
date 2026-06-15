@@ -392,3 +392,12 @@
 - All suites green: 52 contract tests + the prover guests/host. The production build-out's new surface (claim_settlement, yield_vault, yield_router, yield_factory + the solvency/claim guests) is now CI-guarded + invariant-tested.
 - **Remaining buildable:** G3 confidential-cover vault; G4 per-epoch snapshots; a shared-reserve tier option. External/gated: live yield adapter, Blend, audit, (P)SPI counsel, founder/x86.
 - **Blocked:** none for buildable items.
+
+## 2026-06-15 (cont.) — R48: tranches — first-loss capital structure (G14, human-override)
+
+**Per founder request: underwriters commit to different tranches with varying first-loss payout responsibility.** (PRD §4 v0.4+ non-goal; built under explicit override.)
+- **Done:** `contracts/tranched_vault` (`parallar-tranched-vault`, a NEW instrument-family version; deployed + yield vaults stay frozen). Underwriters `deposit(tranche, amount)` by seniority rank (0 = junior/first-loss). On a default, `pay_allocations` absorbs the payout JUNIOR-FIRST (junior collateral consumed before senior). Premium split across tranches by configured weight (junior largest) then pro-rata within a tranche via a per-tranche SHARE model (a loss lowers collateral-per-share, spreading it pro-rata; premium accrues per share independently). 7 tests: junior-first absorption, senior protection, 3:1 premium-by-weight, intra-tranche pro-rata loss, loss-adjusted withdrawal, solvency floor, unknown-tranche reject.
+- **Law #1 intact:** `pay_allocations` is settlement-only + proof-gated; the first-loss ordering is a pure accounting waterfall, never an admin payout path. Position-root binding + persistent accounting (TECH_SPEC §10).
+- ECONOMICS.md (tranche section) + PRODUCTION_GAP G14 document it. Full contract suite 59 tests green (9 crates). CI fast job picks it up via `--workspace`.
+- **Remaining:** factory `deploy_tranched`; a confidential-tranche variant; G3 confidential-cover vault; G4 record-date guest. External/gated: live yield adapter, Blend, audit, (P)SPI counsel, founder/x86.
+- **Blocked:** none for buildable items.

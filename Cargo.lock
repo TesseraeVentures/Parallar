@@ -991,6 +991,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "parallar-tranched-vault"
+version = "0.0.0"
+dependencies = [
+ "soroban-sdk",
+]
+
+[[package]]
 name = "parallar-vault"
 version = "0.0.0"
 dependencies = [

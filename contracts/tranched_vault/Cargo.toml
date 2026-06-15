@@ -1,0 +1,24 @@
+[package]
+name = "parallar-tranched-vault"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# TranchedVault — a first-loss tranche structure (PRD roadmap "multi-tranche vaults"; built under
+# explicit human override toward the production protocol). A NEW instrument-family version; the
+# deployed + yield vaults stay frozen (Law #2). Underwriters commit to a TRANCHE by seniority rank
+# (0 = junior / first-loss). On a default the payout is absorbed JUNIOR-FIRST, so junior capital is
+# consumed before senior; junior bears more risk and earns a larger premium share (configured
+# weights). A per-tranche SHARE model spreads each tranche's losses pro-rata across its underwriters
+# (collateral-per-share drops) while premium accrues per share (earned for bearing risk regardless
+# of loss). The default-payout path stays settlement-only + proof-gated (Law #1).
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+doctest = false
+
+[dependencies]
+soroban-sdk = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }
