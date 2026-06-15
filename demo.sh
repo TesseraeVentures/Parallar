@@ -134,6 +134,15 @@ run "claim_credit_v1: a buyer proves their OWN allocation from public commitment
     prover/Cargo.toml claim-credit-v1 ""
 note "escape hatch: no keeper can withhold a payout; other buyers' positions stay private"
 
+# ── 6d. both sides' economics: premium + the protected share class (G11-G13) ─
+beat "Both sides' money flow: premium to underwriters + the protected share class (G11-G13)" \
+     "the revenue layer, on the UNCHANGED core — buyers pay premium, underwriters earn it, holders get the net protected coupon"
+run "yield_vault: buyers pay premium → underwriters earn pro-rata + protocol base fee + reserve float" \
+    Cargo.toml parallar-yield-vault ""
+run "yield_router: wrap → pBOND; coupon waterfall (premium → vault, NET → holders); pBOND transferable" \
+    Cargo.toml parallar-yield-router ""
+note "14% gross coupon → 12% net to the protected holder + premium to underwriters + layered protocol fees (§5A); defaults still pay ONLY via the proof-gated settlement — premium/float are separate pools (Law #1)"
+
 # ── 7. benchmarks ─────────────────────────────────────────────────────────────
 beat "Benchmarks"
 note "on-chain verify   ≈ 35M CPU insns  (Bn254Pairing 17.5M + G2-subgroup 11.8M + G1Mul 5.8M); ~3× headroom under ~100M/tx — hardware-independent, FLAT in holder count"
