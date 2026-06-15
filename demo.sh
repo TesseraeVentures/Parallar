@@ -114,6 +114,14 @@ run "stale position_root reverts"                       Cargo.toml parallar-sett
 run "tampered allocation_root reverts"                  Cargo.toml parallar-settlement tampered_allocation_root_reverts
 run "settling before the deadline reverts"             Cargo.toml parallar-settlement settling_before_deadline_reverts
 
+# ── 6b. instance #2: the layer thesis — a second guest on the unchanged core ──
+beat "Instance #2 (weather_v1): the SAME core settles a DIFFERENT instrument" \
+     "a second guest type — the only new code is the published rule; the contracts don't change"
+run "weather_v1 rule: a breach pays pro-rata, a non-breach is UNPROVABLE" \
+    prover/Cargo.toml settle-weather-v1 ""
+note "weather_v1 image_id d31246e6… — its OWN pinned id; credit_v1 stays 705ddac4… (new guest = new type, never an edit)"
+note "parity-proven: weather's Poseidon commitment + position/allocation roots + config/instrument-id are byte-identical to credit_v1, so the SAME factory, vault, and settlement WASM accept it with zero contract changes"
+
 # ── 7. benchmarks ─────────────────────────────────────────────────────────────
 beat "Benchmarks"
 note "on-chain verify   ≈ 35M CPU insns  (Bn254Pairing 17.5M + G2-subgroup 11.8M + G1Mul 5.8M); ~3× headroom under ~100M/tx — hardware-independent"

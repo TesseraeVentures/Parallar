@@ -198,3 +198,16 @@
   - README Instance #2 + PRODUCTION_GAP G8 updated honestly: guest BUILT (image_id, executor-verified, surface-parity); remaining = register the type + prove one live settlement on x86 (founder), then attested feeds (G1).
 - **Next:** still in the build-beyond program — CLI `prove`/`submit` weather support + a weather witness/scenario + register/deploy on testnet (founder x86 for the live proof); then centerpieces 2–4 (live partial-default settlement, scale + production verifier-router topology, interactive testnet dApp).
 - **Blocked:** live weather proof + deploy need the x86 box (founder). Everything up to it is built and green.
+
+## 2026-06-15 (cont.) — R29: Instance #2 turnkey — CLI + scenario generator + deploy script
+
+**Build-beyond-P0, centerpiece 1 finished (the founder's x86 step is now one flow).**
+- **Done:**
+  - `parallar-prover` CLI gained `--guest credit|weather` on `prove` and `bench` (dispatches to `prove_settlement` / `prove_weather_settlement`; `submit` is guest-agnostic, unchanged). Default `credit` keeps the existing flow byte-for-byte. Bench is generalized over the scale label (holders / observations).
+  - `prover/host/tests/gen_weather_scenario.rs`: a one-off generator (mirrors `gen_scenario.rs`) that emits a weather `witness.json` (for `prove --guest weather`) + a `scenario.json` (the on-chain InstrumentConfig + commitment + payout) so the deployed instrument_id == the proof's journal instrument_id. Validated end-to-end against the deployed testnet addresses: instrument_id `6f83c10e…`, position_root `7c6a14ce…`, payout 400 (0.5 severity on 800 cover, drought 300mm vs trigger 500 / exhaust 100).
+  - `scripts/deploy_weather.sh`: registers `weather_v1` (image_id `d31246e6…`) on the EXISTING factory and factory-deploys a weather instrument using the SAME generic vault + settlement WASM — the layer thesis on-chain. Reads the scenario.json so config matches the witness.
+  - demo.sh beat 6b runs the weather rule + states the parity (same core, different guest).
+  - Full prover suite green: host lib 16, onchain_verify 3 (credit unchanged), credit guest 22, weather guest 16.
+- **Founder x86 flow (turnkey):** `gen_weather_scenario` (real testnet addrs) → `deploy_weather.sh` → fund vault + buy_protection(commitment) → `prove --guest weather` → `submit`. Deploy needs no x86; only the proof does.
+- **Next:** centerpiece 3 scale half — a 1k-holder credit determination run for real determination numbers (executor, no proving, fully doable here); then the interactive testnet dApp; then live partial-default + verifier-router topology scripts.
+- **Blocked:** live weather proof needs the x86 box (founder). Everything up to it is built, tested, and turnkey.

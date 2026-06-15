@@ -11,8 +11,8 @@
 //! TECH_SPEC §10) is the next subcommand; until then the witness JSON is produced out-of-band.
 
 use anyhow::{Context, Result};
-use clap::{Parser, Subcommand};
-use parallar_prover_host::{prove_settlement, ProofArtifact};
+use clap::{Parser, Subcommand, ValueEnum};
+use parallar_prover_host::{prove_settlement, prove_weather_settlement, ProofArtifact};
 use settle_credit_v1::Inputs;
 use std::path::PathBuf;
 use std::process::Command;
@@ -25,16 +25,29 @@ struct Cli {
     cmd: Cmd,
 }
 
+/// Which registered guest type a witness targets. `prove`/`bench` dispatch on this; `submit`
+/// is guest-agnostic (it consumes a finished artifact). A new guest = a new type, never an edit.
+#[derive(Copy, Clone, Debug, ValueEnum)]
+enum GuestKind {
+    /// settle_credit_v1 — coupon-default protection (instrument #1).
+    Credit,
+    /// settle_weather_v1 — parametric rainfall-shortfall protection (instrument #2).
+    Weather,
+}
+
 #[derive(Subcommand)]
 enum Cmd {
     /// Run the settlement guest under the real Groth16 prover; write a submittable artifact.
     Prove {
-        /// Witness JSON — the `settle_credit_v1::Inputs` (snapshot, payments, positions, config…).
+        /// Witness JSON — the guest `Inputs` (config + witness; shape depends on `--guest`).
         #[arg(long)]
         inputs: PathBuf,
         /// Where to write the proof artifact JSON.
         #[arg(long, default_value = "proof.json")]
         out: PathBuf,
+        /// Which guest type the witness targets.
+        #[arg(long, value_enum, default_value_t = GuestKind::Credit)]
+        guest: GuestKind,
     },
     /// Submit a proof artifact to a deployed settlement contract via stellar-cli.
     Submit {
@@ -58,12 +71,15 @@ enum Cmd {
     /// and print per-run + min/mean/max timings (the founder's x86 N=10 run, TECH_SPEC §10.7).
     /// Each run needs Docker/x86 and is ~34 min — this is a deliberate command, NOT a test.
     Bench {
-        /// Witness JSON — the `settle_credit_v1::Inputs` to prove on every run.
+        /// Witness JSON — the guest `Inputs` to prove on every run (shape depends on `--guest`).
         #[arg(long)]
         inputs: PathBuf,
         /// Number of proving runs to time (the DoD figure is 10).
         #[arg(long, default_value_t = 10)]
         n: u32,
+        /// Which guest type the witness targets.
+        #[arg(long, value_enum, default_value_t = GuestKind::Credit)]
+        guest: GuestKind,
     },
     /// Assemble a witness (holder snapshot + qualifying payments, TECH_SPEC §10) from a data-
     /// source scan + a params template, ready for `prove`.
@@ -83,11 +99,11 @@ enum Cmd {
 
 fn main() -> Result<()> {
     match Cli::parse().cmd {
-        Cmd::Prove { inputs, out } => cmd_prove(inputs, out),
+        Cmd::Prove { inputs, out, guest } => cmd_prove(inputs, out, guest),
         Cmd::Submit { artifact, settlement, source, network, dry_run } => {
             cmd_submit(artifact, settlement, source, network, dry_run)
         }
-        Cmd::Bench { inputs, n } => cmd_bench(inputs, n),
+        Cmd::Bench { inputs, n, guest } => cmd_bench(inputs, n, guest),
         Cmd::HistoryBuilder { scan, params, out } => cmd_history_builder(scan, params, out),
     }
 }
@@ -113,13 +129,22 @@ fn cmd_history_builder(scan_path: PathBuf, params_path: PathBuf, out: PathBuf) -
     Ok(())
 }
 
-fn cmd_prove(inputs_path: PathBuf, out: PathBuf) -> Result<()> {
+fn cmd_prove(inputs_path: PathBuf, out: PathBuf, guest: GuestKind) -> Result<()> {
     let raw = std::fs::read_to_string(&inputs_path)
         .with_context(|| format!("reading witness {}", inputs_path.display()))?;
-    let inputs: Inputs = serde_json::from_str(&raw).context("parsing witness JSON")?;
 
     eprintln!("proving settlement — real Groth16 STARK→SNARK (needs Docker/x86; this is slow)…");
-    let artifact = prove_settlement(&inputs)?;
+    let artifact = match guest {
+        GuestKind::Credit => {
+            let inputs: Inputs = serde_json::from_str(&raw).context("parsing credit witness JSON")?;
+            prove_settlement(&inputs)?
+        }
+        GuestKind::Weather => {
+            let inputs: settle_weather_v1::Inputs =
+                serde_json::from_str(&raw).context("parsing weather witness JSON")?;
+            prove_weather_settlement(&inputs)?
+        }
+    };
 
     std::fs::write(&out, serde_json::to_string_pretty(&artifact)?)
         .with_context(|| format!("writing artifact {}", out.display()))?;
@@ -141,16 +166,32 @@ fn cmd_prove(inputs_path: PathBuf, out: PathBuf) -> Result<()> {
 const ONCHAIN_VERIFY_INSNS: u64 = 35_000_000;
 const SOROBAN_TX_INSN_BUDGET: u64 = 100_000_000;
 
-fn cmd_bench(inputs_path: PathBuf, n: u32) -> Result<()> {
+fn cmd_bench(inputs_path: PathBuf, n: u32, guest: GuestKind) -> Result<()> {
     anyhow::ensure!(n >= 1, "--n must be at least 1");
 
     let raw = std::fs::read_to_string(&inputs_path)
         .with_context(|| format!("reading witness {}", inputs_path.display()))?;
-    let inputs: Inputs = serde_json::from_str(&raw).context("parsing witness JSON")?;
 
-    let holders = inputs.snapshot.len();
+    // Dispatch once: parse the right witness type and capture a closure that proves it, so the
+    // timing loop below is identical for both guests.
+    let (scale_label, scale, prove_once): (&str, usize, Box<dyn Fn() -> Result<ProofArtifact>>) =
+        match guest {
+            GuestKind::Credit => {
+                let inputs: Inputs =
+                    serde_json::from_str(&raw).context("parsing credit witness JSON")?;
+                let scale = inputs.snapshot.len();
+                ("holders", scale, Box::new(move || prove_settlement(&inputs)))
+            }
+            GuestKind::Weather => {
+                let inputs: settle_weather_v1::Inputs =
+                    serde_json::from_str(&raw).context("parsing weather witness JSON")?;
+                let scale = inputs.observations.len();
+                ("observations", scale, Box::new(move || prove_weather_settlement(&inputs)))
+            }
+        };
+
     eprintln!(
-        "benchmarking real Groth16 prover: {n} run(s) over {} (holders={holders}).",
+        "benchmarking real Groth16 prover: {n} run(s) over {} ({scale_label}={scale}).",
         inputs_path.display(),
     );
     eprintln!(
@@ -163,8 +204,7 @@ fn cmd_bench(inputs_path: PathBuf, n: u32) -> Result<()> {
     println!("---    -------");
     for run in 1..=n {
         let t0 = Instant::now();
-        let _artifact = prove_settlement(&inputs)
-            .with_context(|| format!("prove_settlement failed on run {run}/{n}"))?;
+        let _artifact = prove_once().with_context(|| format!("prove failed on run {run}/{n}"))?;
         let elapsed = t0.elapsed().as_secs_f64();
         secs.push(elapsed);
         println!("{run:>3}    {elapsed:>9.1}");
@@ -175,23 +215,22 @@ fn cmd_bench(inputs_path: PathBuf, n: u32) -> Result<()> {
     let mean = secs.iter().sum::<f64>() / secs.len() as f64;
 
     println!();
-    println!("summary (n={n}, holders={holders})");
+    println!("summary (n={n}, {scale_label}={scale})");
     println!("  min  {min:>9.1}s");
     println!("  mean {mean:>9.1}s");
     println!("  max  {max:>9.1}s");
     println!();
     // Crude extrapolation: proving cost is dominated by the fixed STARK→SNARK wrap, so the
-    // per-holder marginal is small at these N — treat this as an order-of-magnitude note, not
-    // a measured 1k-holder figure (re-run `bench` on a 1k-holder witness for the real number).
+    // per-item marginal is small at these N — an order-of-magnitude note, not a measured 1k figure.
     println!(
-        "1k-holder note: prove time here is dominated by the fixed Groth16 wrap, not the {holders}\n\
-         -holder fold; a 1k-holder witness is expected to stay the same order of magnitude\n\
-         (~{mean:.0}s). This is an extrapolation — confirm by running `bench` on a 1k witness.",
+        "scale note: prove time here is dominated by the fixed Groth16 wrap, not the {scale}\n\
+         -{scale_label} fold; a 1k-{scale_label} witness is expected to stay the same order of\n\
+         magnitude (~{mean:.0}s). This is an extrapolation — confirm with `bench` on a 1k witness.",
     );
     println!();
     println!(
         "on-chain verify (Sprint-0 capture): ~{}M CPU insns to verify one proof on Soroban,\n\
-         ~{:.1}x headroom under the ~{}M/tx budget — verify cost is flat in holder count.",
+         ~{:.1}x headroom under the ~{}M/tx budget — verify cost is flat in {scale_label} count.",
         ONCHAIN_VERIFY_INSNS / 1_000_000,
         SOROBAN_TX_INSN_BUDGET as f64 / ONCHAIN_VERIFY_INSNS as f64,
         SOROBAN_TX_INSN_BUDGET / 1_000_000,
