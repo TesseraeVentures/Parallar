@@ -25,6 +25,11 @@ use soroban_sdk::{
 
 const ACC_SCALE: i128 = 1_000_000_000_000; // 1e12, rewards-per-share fixed point
 const BPS: i128 = 10_000;
+// Archival-class storage must be kept alive (TECH_SPEC §10): bump TTLs on every state change,
+// mirroring the sibling vaults (yield_vault uses the same threshold/extend pair). Instance config
+// is bumped per call; persistent accounting entries are bumped on write in set_i128 / on the roots.
+const TTL_THRESHOLD: u32 = 50;
+const TTL_EXTEND: u32 = 100;
 
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -110,9 +115,10 @@ impl TranchedVault {
         s.set(&DataKey::Frozen, &false);
         // mutable accounting lives in PERSISTENT storage (roots/totals never temporary, TECH_SPEC
         // §10); the i128 counters default to 0 there. Seed the position root.
-        env.storage()
-            .persistent()
-            .set(&DataKey::PositionRoot, &BytesN::from_array(&env, &[0u8; 32]));
+        let p = env.storage().persistent();
+        p.set(&DataKey::PositionRoot, &BytesN::from_array(&env, &[0u8; 32]));
+        p.extend_ttl(&DataKey::PositionRoot, TTL_THRESHOLD, TTL_EXTEND);
+        s.extend_ttl(TTL_THRESHOLD, TTL_EXTEND);
     }
 
     /// Underwriter commits collateral to tranche `tranche` and is minted shares against that
@@ -142,6 +148,7 @@ impl TranchedVault {
         // reset debt against the new share balance
         let acc = get_i128(&env, &DataKey::AccPremPerShare(tranche));
         set_i128(&env, &DataKey::PremDebt(tranche, seller), s_shares * acc / ACC_SCALE);
+        bump_instance(&env);
     }
 
     /// Cover buyer pays premium upfront; premium is split across tranches by weight (junior earns
@@ -166,6 +173,7 @@ impl TranchedVault {
         }
         set_i128(&env, &DataKey::TotalCover, total_cover + cover);
         fold_position_root(&env, &position_commitment);
+        bump_instance(&env);
     }
 
     /// Router-routed premium (already transferred into the vault): account + distribute. Same
@@ -179,6 +187,7 @@ impl TranchedVault {
             panic_with(&env, Error::BadAmount);
         }
         distribute_premium(&env, amount);
+        bump_instance(&env);
     }
 
     pub fn claim_premium(env: Env, seller: Address, tranche: u32) -> i128 {
@@ -192,6 +201,7 @@ impl TranchedVault {
         }
         set_i128(&env, &key, 0);
         token_client(&env).transfer(&env.current_contract_address(), &seller, &amt);
+        bump_instance(&env);
         amt
     }
 
@@ -204,6 +214,7 @@ impl TranchedVault {
         }
         set_i128(&env, &DataKey::ProtocolFeeAccrued, 0);
         token_client(&env).transfer(&env.current_contract_address(), &admin, &amt);
+        bump_instance(&env);
         amt
     }
 
@@ -239,6 +250,7 @@ impl TranchedVault {
         set_i128(&env, &DataKey::PremDebt(tranche, seller.clone()), new_shares * acc / ACC_SCALE);
 
         token_client(&env).transfer(&env.current_contract_address(), &seller, &amount);
+        bump_instance(&env);
         amount
     }
 
@@ -273,11 +285,13 @@ impl TranchedVault {
                 token.transfer(&me, &payee, &amt);
             }
         }
+        bump_instance(&env);
     }
 
     pub fn set_window(env: Env, open: bool) {
         get_admin(&env).require_auth();
         env.storage().instance().set(&DataKey::Frozen, &!open);
+        bump_instance(&env);
     }
 
     // ---- getters ----
@@ -405,7 +419,9 @@ fn fold_position_root(env: &Env, commitment: &BytesN<32>) {
     buf.append(&Bytes::from_array(env, &old.to_array()));
     buf.append(&Bytes::from_array(env, &commitment.to_array()));
     let new = env.crypto().sha256(&buf).to_bytes();
-    env.storage().persistent().set(&DataKey::PositionRoot, &new);
+    let p = env.storage().persistent();
+    p.set(&DataKey::PositionRoot, &new);
+    p.extend_ttl(&DataKey::PositionRoot, TTL_THRESHOLD, TTL_EXTEND);
 }
 
 fn bump_total_collateral(env: &Env, delta: i128) {
@@ -439,7 +455,12 @@ fn get_i128(env: &Env, key: &DataKey) -> i128 {
     env.storage().persistent().get(key).unwrap_or(0)
 }
 fn set_i128(env: &Env, key: &DataKey, v: i128) {
-    env.storage().persistent().set(key, &v);
+    let p = env.storage().persistent();
+    p.set(key, &v);
+    p.extend_ttl(key, TTL_THRESHOLD, TTL_EXTEND);
+}
+fn bump_instance(env: &Env) {
+    env.storage().instance().extend_ttl(TTL_THRESHOLD, TTL_EXTEND);
 }
 fn get_u32(env: &Env, key: &DataKey) -> u32 {
     env.storage().instance().get(key).unwrap_or(0)

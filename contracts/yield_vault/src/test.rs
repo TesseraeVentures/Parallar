@@ -267,3 +267,24 @@ fn float_yield_distributes_to_underwriters_minus_protocol_share() {
     // the reserve principal is untouched — float is pure yield on top
     assert_eq!(v.total_collateral(), 10_000);
 }
+
+#[test]
+fn pay_allocations_requires_the_bound_settlement_auth() {
+    // Law #1: the reserve moves ONLY via the bound settlement. Every other test uses
+    // mock_all_auths(); this is the one proving the gate REJECTS an unauthorized caller — a
+    // regression dropping the require_auth() in pay_allocations would otherwise pass the suite.
+    let env = Env::default();
+    let c = setup(&env);
+    let v = YieldVaultClient::new(&env, &c.vault);
+    let seller = Address::generate(&env);
+    mint(&env, &c.coll, &seller, 10_000);
+    v.deposit(&seller, &10_000); // funded under setup()'s mock_all_auths
+
+    let payee = Address::generate(&env);
+    let mut alloc = Vec::new(&env);
+    alloc.push_back((payee, 3_000i128));
+    env.set_auths(&[]); // the bound settlement has NOT signed this call
+    let res = v.try_pay_allocations(&1u32, &alloc);
+    assert!(res.is_err(), "pay_allocations must trap without the bound settlement's auth");
+    assert_eq!(v.total_collateral(), 10_000, "reserve must be untouched");
+}

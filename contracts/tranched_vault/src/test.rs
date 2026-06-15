@@ -191,3 +191,21 @@ fn withdraw_returns_loss_adjusted_collateral() {
     assert_eq!(tok.balance(&junior), 600);
     assert_eq!(v.tranche_collateral(&0), 0);
 }
+
+#[test]
+fn pay_allocations_requires_the_bound_settlement_auth() {
+    // Law #1: the reserve moves ONLY via the bound settlement. The other tests use
+    // mock_all_auths(); this proves the first-loss payout gate REJECTS an unauthorized caller.
+    let env = Env::default();
+    let c = setup(&env, &[3, 1], 0, 0);
+    let v = TranchedVaultClient::new(&env, &c.vault);
+    let s = Address::generate(&env);
+    mint(&env, &c.coll, &s, 1_000);
+    v.deposit(&s, &0, &1_000);
+
+    let payee = Address::generate(&env);
+    env.set_auths(&[]); // the bound settlement has NOT signed this call
+    let res = v.try_pay_allocations(&1u32, &vec![&env, (payee, 500i128)]);
+    assert!(res.is_err(), "pay_allocations must trap without the bound settlement's auth");
+    assert_eq!(v.total_collateral(), 1_000, "reserve must be untouched");
+}

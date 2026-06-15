@@ -71,7 +71,7 @@ fn get_instrument(env, instrument_id) -> Instrument;
 2. Deploy vault + settlement from the type's WASM hashes via `env.deployer()`.
 3. Initialize both with cross-bindings: settlement gets `{image_id, instrument_id, vault}`; vault gets `{settlement, collateral_token, params}`.
 4. `instrument_id = H(type_id ‖ rules_version ‖ config_hash)` — this is what guests bind proofs to.
-5. **Asset-policy gate:** refuse deployment if the collateral asset has `AUTH_CLAWBACK_ENABLED` (or issuer-revocable auth that could freeze the vault's balance). A protection vault whose collateral can be clawed back or frozen by a third party is hollow; the factory enforces this at birth (§10.1). XLM and verified non-clawback stablecoins pass.
+5. **Asset-policy gate:** deploy only collateral on the curated eligibility allowlist. A protection vault whose collateral can be clawed back or frozen by a third party is hollow — but a Soroban contract **cannot** introspect a classic asset's `AUTH_CLAWBACK_ENABLED` / revocable-auth flags on-chain (no SAC getter exposes them), so the gate is an **on-chain allowlist** the factory enforces at birth (§10.1), with clawback/freeze status verified off-chain at listing under the registry multisig and an off-chain monitor that de-lists on any issuer-flag change. XLM (structurally claw/freeze-proof) and verified non-clawback stablecoins are listed.
 6. Record in `instruments`; emit `instrument_deployed`.
 
 **Versioning rule (final):** a new guest version is a **new type entry** (`credit_v2`); existing instances stay pinned to their image_id forever. No in-place image upgrades — settlement logic for a live instrument is immutable by construction. This is the institutional guarantee and it costs nothing to enforce from day one.
@@ -235,7 +235,7 @@ These are the Stellar-specific mechanics that determine whether Parallar is buil
 
 ### 10.1 Clawback & authorization flags (CAP-35 / Protocol 17)
 **Fact:** transactions are irreversible, but issuers of assets with `AUTH_CLAWBACK_ENABLED` can pull balances back from holders; issuers with revocable auth can freeze trustlines. These exist *for* regulated RWAs — the bonds Parallar protects will plausibly use them.
-**Rules:** (a) collateral asset must be claw-proof and freeze-proof — factory enforces at deploy (§3.0 step 5); (b) coupon payments count net of clawback (§4); (c) freeze of a holder = issuer-side shortfall; missing holder trustline = excluded from owed (§4). **Enforced:** factory check + guest determination rules + tests.
+**Rules:** (a) collateral asset must be claw-proof and freeze-proof — enforced via a curated **on-chain eligibility allowlist** (a contract cannot read the issuer flags on-chain), the allowlist governed by the registry multisig with clawback/freeze status verified off-chain at listing (§3.0 step 5); (b) coupon payments count net of clawback (§4); (c) freeze of a holder = issuer-side shortfall; missing holder trustline = excluded from owed (§4). **Enforced:** factory allowlist gate + guest determination rules + tests.
 
 ### 10.2 Two payment representations (classic ops vs SAC events)
 **Fact:** the same economic payment can occur as a classic `Payment` operation or as a Stellar Asset Contract `transfer` — different ledger artifacts. Path payments deliver the asset via a different op type again.

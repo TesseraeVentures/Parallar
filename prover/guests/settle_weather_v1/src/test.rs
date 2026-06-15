@@ -154,66 +154,6 @@ fn journal_is_116_bytes_generic_layout() {
     assert_eq!(&b[108..116], &j.total_payout.to_be_bytes());
 }
 
-// ---- THE THESIS, ASSERTED: weather_v1's generic primitives are byte-identical to credit_v1,
-// so the SAME generic vault, settlement, and factory accept a weather instrument unchanged. ----
-mod parity_with_credit_v1 {
-    use super::*;
-    use settle_credit_v1 as credit;
-
-    #[test]
-    fn commitment_matches_credit() {
-        let buyer = vec![0x12u8; 40];
-        let salt = [7u8; 32];
-        assert_eq!(
-            commitment(&buyer, 800, &salt),
-            credit::commitment(&buyer, 800, &salt),
-            "Poseidon position commitment must be identical -> the same vault folds it"
-        );
-    }
-
-    #[test]
-    fn position_root_matches_credit() {
-        let w = vec![Position { buyer: vec![0x12u8; 40], cover: 800, salt: [7; 32] }];
-        let c = vec![credit::Position { buyer: vec![0x12u8; 40], cover: 800, salt: [7; 32] }];
-        assert_eq!(position_root(&w), credit::position_root(&c));
-    }
-
-    #[test]
-    fn allocation_root_matches_credit() {
-        let w = vec![Allocation { buyer: vec![0xABu8; 40], amount: 400 }];
-        let c = vec![credit::Allocation { buyer: vec![0xABu8; 40], amount: 400 }];
-        assert_eq!(
-            allocation_root(&w),
-            credit::allocation_root(&c),
-            "allocation_root must match -> the same settlement contract verifies it"
-        );
-    }
-
-    #[test]
-    fn config_hash_and_instrument_id_match_credit() {
-        let wc = ConfigFields {
-            reference_asset_xdr: vec![0xAA, 1, 2, 3],
-            terms_hash: [0x11; 32],
-            schedule_root: [0x22; 32],
-            snapshot_root: [0x33; 32],
-            collateral_token_xdr: vec![0xBB, 4, 5, 6],
-            premium_bps: 200,
-            epoch_deadlines: vec![(1, 500), (2, 1000)],
-        };
-        let cc = credit::ConfigFields {
-            reference_asset_xdr: vec![0xAA, 1, 2, 3],
-            terms_hash: [0x11; 32],
-            schedule_root: [0x22; 32],
-            snapshot_root: [0x33; 32],
-            collateral_token_xdr: vec![0xBB, 4, 5, 6],
-            premium_bps: 200,
-            epoch_deadlines: vec![(1, 500), (2, 1000)],
-        };
-        assert_eq!(config_hash(&wc), credit::config_hash(&cc), "same factory derives the id");
-        let tid = vec![0xCCu8, 9, 9];
-        assert_eq!(
-            derive_instrument_id(&tid, 1, &config_hash(&wc)),
-            credit::derive_instrument_id(&tid, 1, &credit::config_hash(&cc)),
-        );
-    }
-}
+// The cross-guest parity tests (weather_v1's generic primitives are byte-identical to credit_v1)
+// live in `prover/proptests/tests/parity.rs` — kept out of this crate so the guest carries ZERO
+// dev-dependencies and its ELF / image_id stays reproducible (R35).

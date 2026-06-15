@@ -141,3 +141,15 @@ fn two_holders_split_net_coupon_pro_rata() {
     assert_eq!(router.pending_coupon(&a), 480, "60% of the 800 net coupon");
     assert_eq!(router.pending_coupon(&b), 320, "40% of the 800 net coupon");
 }
+
+#[test]
+fn claim_dist_fee_requires_admin() {
+    // The router's distribution-fee pool is admin-only; an outside caller must not drain it.
+    // Other tests use mock_all_auths(); this proves the admin gate REJECTS an unauthorized caller.
+    let env = Env::default();
+    let c = setup(&env);
+    let router = YieldRouterClient::new(&env, &c.router);
+    env.set_auths(&[]);
+    let res = router.try_claim_dist_fee();
+    assert!(res.is_err(), "claim_dist_fee must trap without the admin's auth");
+}

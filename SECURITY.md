@@ -40,8 +40,10 @@ fabricate a payout.
 - A non-default is **unprovable**: if the trigger did not occur the guest panics, so no proof
   exists (property-tested over randomized books).
 - Σ payouts ≤ collateral, and each payout ≤ its cover (property-tested).
-- The factory rejects clawback/freezable collateral (curated eligible list; production reads
-  `AUTH_CLAWBACK_ENABLED` on-chain, G6).
+- The factory rejects ineligible collateral via a curated **on-chain allowlist** (clawback/
+  freezable assets are kept off it). A Soroban contract cannot introspect a classic asset's
+  `AUTH_CLAWBACK_ENABLED` flag on-chain, so eligibility is verified off-chain at listing under the
+  registry multisig, with an off-chain monitor that de-lists on any issuer-flag change (G6).
 - A guest is pinned forever: a new rule is a **new type with a new `image_id`**, never an
   in-place upgrade. `credit_v1` = `705ddac4…`; `weather_v1` = `d31246e6…`.
 

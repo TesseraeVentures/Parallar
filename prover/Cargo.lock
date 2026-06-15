@@ -3515,7 +3515,6 @@ version = "0.0.0"
 dependencies = [
  "ark-ff 0.4.2",
  "serde",
- "settle-credit-v1",
  "sha2",
  "zkhash",
 ]

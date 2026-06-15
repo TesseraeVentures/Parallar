@@ -67,7 +67,7 @@ Every alternative settles by *someone's discretion*; Parallar settles by *proof*
 | Bond as a Stellar asset — 10 holders, genuine (incl. partial) coupon transfers | Holder snapshot fixed at issuance |
 | Poseidon-committed positions — cover sizes never touch public state | Flat premium (no pricing curve) |
 | RISC Zero settlement proofs — real Groth16 generation (STARK→SNARK, Rosetta x86) | Demo keeper reads buyers' commitment openings from a local file (→ buyer-held openings + self-claim escape hatch, **G2**) |
-| On-chain Groth16 verification is the settlement's **sole** payout path — a cross-contract call to the RISC Zero verifier router (BN254 + Poseidon host fns, Protocols 25–26); **no admin path exists** | Qualifying-payment history is supplied to the guest (not yet attested → **G1**) |
+| On-chain Groth16 verification is the settlement's **sole** payout path — a cross-contract call to the RISC Zero verifier router (Stellar's native BN254 pairing host fn; the journal is committed as its SHA-256 digest, Protocols 25–26); **no admin path exists** | Qualifying-payment history is supplied to the guest (not yet attested → **G1**) |
 
 The proofs guarantee correct *computation over supplied inputs*, not input canonicity — see the trust model above and [PRODUCTION_GAP.md](docs/PRODUCTION_GAP.md).
 

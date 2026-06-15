@@ -410,3 +410,17 @@
 - ECONOMICS.md + PRODUCTION_GAP G14 updated (factory deploy built). Full contract suite 60 tests green.
 - **Remaining:** a confidential-tranche variant; G3 confidential-cover vault; G4 record-date guest. External/gated: live yield adapter, Blend, audit, (P)SPI counsel, founder/x86.
 - **Blocked:** none for buildable items.
+
+## 2026-06-16 — R50: review-driven hardening (honesty + Law #1 coverage + TTL + reproducibility)
+
+**An 11-agent comprehensive review (grounded, adversarial honesty pass + SDF strategist) flagged several checkable issues; fixed the buildable correctness/honesty items (the x86/founder items — video, 2nd on-chain proof, benchmark recapture — remain for the founder).**
+- **#2 Verifier overclaim fixed (honesty):** the deployed verifier uses native BN254 pairing + sha256 only — Poseidon runs in the GUEST commitment layer, never on-chain. Reworded index.html / testnet.html / how-it-works.html / README.md (Poseidon stays correctly credited to commitments).
+- **#3 Law #1 negative tests:** added `pay_allocations_requires_the_bound_settlement_auth` to yield_vault + tranched_vault and `claim_dist_fee_requires_admin` to yield_router (the `set_auths(&[]) -> try_* -> err` pattern). Previously the auth gate was proven for only 1 of the payout-capable contracts; claim_settlement's gate is proof-verification (already tested via `forged_claim_proof_reverts`).
+- **#4 tranched_vault TTL bricking fixed:** it had ZERO `extend_ttl` (vs yield_vault 12). Added instance bumps on every state change + persistent bumps on write (set_i128 / position root / init), mirroring yield_vault — archival-class state can no longer expire (TECH_SPEC §10).
+- **#5 Clawback-flag drift reconciled:** SECURITY.md + TECH_SPEC §3.0/§10.1 now describe the curated on-chain allowlist (a contract cannot read `AUTH_CLAWBACK_ENABLED` on-chain), matching PRODUCTION_GAP G6 + the code.
+- **#11 Weather guest dev-dep removed (reproducibility):** relocated the cross-guest parity tests to `prover/proptests/tests/parity.rs`; `settle_weather_v1` now carries ZERO dev-deps (R35 — a guest dev-dep once shifted credit_v1's image_id).
+- **#10 Demo robustness:** `run()` now fails on a zero-match filter (no more false-green on a renamed test); demo.sh falls back to `cargo build --target wasm32v1-none` when stellar-cli is absent (the build never needed it) — fresh-clone runnable.
+- **#12 yield_factory instrument_id trust-delta documented:** it accepts instrument_id as a supplied field (vs the base factory's H-derivation); the guest's M1/M2 re-derivation is the soundness backstop (not a Law #1 break). Documented in code + this note.
+- **Verified green:** 63 contract tests + 68 guest/proptest tests; frontend dash-free; demo.sh syntax ok; settlement mock-verify-free. Law #1/#2 independently grep-confirmed intact across all 9 contracts.
+- **Remaining (x86/founder):** demo video (DoD), 2nd guest type proven live on testnet, scale.rs N=10 recapture + row-label check. **Remaining (buildable):** add onchain_verify to a CI job (#9). **Do NOT build:** the confidential-cover/tranche/record-date items (correctly remaining; keep as the SDF pilot workplan).
+- **Blocked:** none for buildable items.

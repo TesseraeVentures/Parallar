@@ -31,6 +31,14 @@ pub struct RiskTier {
 }
 
 /// Per-bond deploy parameters. `premium_bps` is the risk-priced premium (within the tier band).
+///
+/// TRUST DELTA vs the base `ParallarFactory` (PRODUCTION_GAP G11): the base factory DERIVES
+/// `instrument_id = H(type_id ‖ rules_version ‖ config_hash)`, binding the on-chain config to the
+/// id the guest re-derives. This tiered factory accepts `instrument_id` as an admin-supplied
+/// field. The guest's M1/M2 config re-derivation remains the soundness backstop — a mismatched
+/// config still cannot produce a valid proof, so this is NOT a Law #1 break — but on-chain
+/// id↔config canonicity is not guaranteed here. Deriving it (mirroring the base factory) is a
+/// follow-up; until then the registry multisig is the gate.
 #[contracttype]
 #[derive(Clone)]
 pub struct ProtectedConfig {

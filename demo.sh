@@ -27,12 +27,15 @@ beat() { step=$((step+1)); printf "\n${bold}${cyn}━━ %d. %s${rst}\n" "$step"
 note() { printf "${dim}   %s${rst}\n" "$1"; }
 ok()   { printf "${grn}   ✓ %s${rst}\n" "$1"; }
 
-# run a cargo test filter quietly; print ✓ with the pass count, fail loudly
+# run a cargo test filter quietly; print ✓ with the pass count, fail loudly.
+# A zero-match filter (a renamed/removed test) makes cargo exit 0 with "0 passed" — treat that as a
+# FAILURE so the demo can never green-check a test that no longer runs.
 run() { # run <label> <manifest> <pkg> <filter...>
   local label="$1" manifest="$2" pkg="$3"; shift 3
   local out; out=$(cargo test --manifest-path "$manifest" -p "$pkg" "$@" 2>&1) || { echo "$out"; echo "${ylw}demo FAILED at: $label${rst}"; exit 1; }
-  local res; res=$(echo "$out" | grep -Eo '[0-9]+ passed' | head -1 || echo "ok")
-  ok "$label  (${res})"
+  local n; n=$(echo "$out" | grep -Eo '[0-9]+ passed' | head -1 | grep -Eo '^[0-9]+')
+  if [ -z "$n" ] || [ "$n" -eq 0 ]; then echo "$out"; echo "${ylw}demo FAILED at: $label (no tests matched the filter)${rst}"; exit 1; fi
+  ok "$label  (${n} passed)"
 }
 
 printf "${bold}${cyn}\n"
@@ -42,14 +45,19 @@ printf "  ╚══════════════════════�
 note "Determination off-chain · positions confidential · settlement proven."
 
 # ── 0. toolchain ──────────────────────────────────────────────────────────────
-beat "Toolchain" "rust + stellar-cli (the guest/proof are pre-built into fixtures)"
-command -v cargo   >/dev/null || { echo "need rust/cargo"; exit 1; }
-command -v stellar >/dev/null || { echo "need stellar-cli (cargo install --locked stellar-cli)"; exit 1; }
-ok "cargo $(cargo --version | awk '{print $2}'),  stellar $(stellar --version 2>/dev/null | head -1 | awk '{print $2}')"
+beat "Toolchain" "rust required; stellar-cli optional (the guest/proof are pre-built into fixtures)"
+command -v cargo >/dev/null || { echo "need rust/cargo"; exit 1; }
+HAVE_STELLAR=0; command -v stellar >/dev/null && HAVE_STELLAR=1
+if [ "$HAVE_STELLAR" -eq 1 ]; then
+  ok "cargo $(cargo --version | awk '{print $2}'),  stellar $(stellar --version 2>/dev/null | head -1 | awk '{print $2}')"
+else
+  ok "cargo $(cargo --version | awk '{print $2}')  (stellar-cli absent — building wasm with plain cargo)"
+fi
 
 # ── 1. build the four generic contracts to wasm ───────────────────────────────
 beat "Build the four production contracts → wasm" "factory · bond · vault · settlement (one generic vault + settlement, reused by every instrument)"
-stellar contract build >/dev/null 2>&1
+# the wasm build does NOT need stellar-cli — `stellar contract build` is just a wrapper over this.
+if [ "$HAVE_STELLAR" -eq 1 ]; then stellar contract build >/dev/null 2>&1; else cargo build --release --target wasm32v1-none >/dev/null 2>&1; fi
 for w in factory bond vault settlement; do
   f="target/wasm32v1-none/release/parallar_${w}.wasm"
   [ -f "$f" ] && ok "$(printf '%-11s' "$w") $(wc -c < "$f" | tr -d ' ') bytes"
