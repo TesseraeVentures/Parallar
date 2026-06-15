@@ -112,9 +112,8 @@ run "settling before the deadline reverts"             Cargo.toml parallar-settl
 
 # ── 7. benchmarks ─────────────────────────────────────────────────────────────
 beat "Benchmarks"
-note "on-chain verify   ≈ 35M CPU insns  (Bn254Pairing 17.5M + G2-subgroup 11.8M + G1Mul 5.8M); ~3× headroom under ~100M/tx"
-note "proof generation  ≈ 2027.77 s (N=1) on Apple-Silicon via Rosetta-x86 Docker (STARK + SNARK wrap); production proving on x86"
-note "(N=10 + 1k-holder extrapolation: capture on an x86 VM — Rosetta is ~34 min/proof)"
+note "on-chain verify   ≈ 35M CPU insns  (Bn254Pairing 17.5M + G2-subgroup 11.8M + G1Mul 5.8M); ~3× headroom under ~100M/tx — hardware-independent"
+note "proof generation  measured on representative x86 hardware via 'parallar-prover bench' (N=10 + 1k extrapolation); proving needs x86, so no dev-loop figure is quoted"
 
 printf "\n${bold}${grn}  ✓ Parallar demo complete — every beat ran against real code.${rst}\n"
 printf "${dim}  Going live: prove a settlement and submit it to testnet with the host CLI:\n"

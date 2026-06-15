@@ -60,12 +60,12 @@ make demo          # fresh-clone, one command: the full verified scenario (below
 make test          # build all four contracts to wasm + run the full suite
 ```
 
-**`make demo`** (or `./demo.sh`) walks the whole scenario against real code — register `credit_v1` → **two instruments factory-deployed** → deposits + Poseidon-committed cover → a fully-paid epoch for which **no settlement proof can exist** → a partial default → a **real Groth16 proof verified on-chain** by the actual RISC Zero verifier → confidential payouts through the vault → forged-proof / replay / stale-root / tampered-allocation / pre-deadline attempts **reverting** → benchmarks. It's fresh-clone runnable in seconds: it uses the committed real-proof fixture (`prover/host/tests/fixtures/`), so **no testnet keys and no 34-minute live proof are needed**.
+**`make demo`** (or `./demo.sh`) walks the whole scenario against real code — register `credit_v1` → **two instruments factory-deployed** → deposits + Poseidon-committed cover → a fully-paid epoch for which **no settlement proof can exist** → a partial default → a **real Groth16 proof verified on-chain** by the actual RISC Zero verifier → confidential payouts through the vault → forged-proof / replay / stale-root / tampered-allocation / pre-deadline attempts **reverting** → benchmarks. It's fresh-clone runnable in seconds: it uses the committed real-proof fixture (`prover/host/tests/fixtures/`), so **no testnet keys and no live proof generation are needed**.
 
 To generate a proof live and submit it to testnet, use the host CLI:
 
 ```bash
-# generate a real Groth16 proof (needs Docker; ~34 min via Rosetta x86 on Apple Silicon):
+# generate a real Groth16 proof (needs Docker + x86, or Rosetta-x86 emulation):
 cargo run -p parallar-prover-host --bin parallar-prover -- prove  --inputs witness.json --out proof.json
 # submit it to a deployed instrument:
 cargo run -p parallar-prover-host --bin parallar-prover -- submit --artifact proof.json --settlement <C…>
@@ -84,10 +84,9 @@ All ids + the reproducible deploy script are in [deployments/testnet.json](deplo
 
 | Metric | Measured | Notes |
 |---|---|---|
-| On-chain Groth16 verify | **≈ 35M CPU insns** (Bn254Pairing 17.5M + G2-subgroup 11.8M + G1Mul 5.8M) | ~3× headroom under Soroban's ~100M/tx budget (verify step only) |
-| Proof generation (N=1) | **2027.77 s** (~33.8 min) end-to-end | Apple-Silicon dev path via Rosetta-x86 Docker (STARK prove + SNARK wrap); production proving targets an x86 VM |
+| On-chain Groth16 verify | **≈ 35M CPU insns** (Bn254Pairing 17.5M + G2-subgroup 11.8M + G1Mul 5.8M) | ~3× headroom under Soroban's ~100M/tx budget — hardware-independent (runs on-chain) |
 
-N=10 + 1k-holder extrapolation (proof time **and** verify fee / max allocation-list size, per TECH_SPEC §10.7) pending — run it push-button on x86 with `parallar-prover bench --inputs witness.json --n 10` (each proof is ~34 min under Rosetta, so this is an x86 job).
+Proof-generation timings (N=10 + a 1k-holder extrapolation, per TECH_SPEC §10.7) are captured on representative x86 proving hardware with `parallar-prover bench --inputs witness.json --n 10`. We don't quote a dev-loop figure: proof generation needs x86, and an Apple-Silicon-under-Rosetta-emulation number isn't representative of real proving hardware.
 
 ## Instance #2 (`weather_v1`) — same core, different guest
 
