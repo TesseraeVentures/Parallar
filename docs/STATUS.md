@@ -221,3 +221,13 @@
   - README Benchmarks + demo.sh beat 7 now carry the scale table. This closes the gap-analysis "no scale numbers" finding honestly without x86 (the x86 N=10 is still the separate proof-gen wall-clock, founder).
 - **Next:** centerpiece 4 — the interactive testnet dApp (read+commit, Law-1-safe), fully doable here; then live partial-default + verifier-router topology scripts.
 - **Blocked:** none for the items I can do solo. Live weather proof + the x86 N=10 wall-clock remain founder/x86.
+
+## 2026-06-15 (cont.) — R31: browser commitment via wasm (dApp parity foundation)
+
+**Build-beyond-P0, centerpiece 4 (interactive dApp) — slice 1: the parity-critical core.**
+- **Done:**
+  - `frontend/commit-wasm/`: a cdylib that compiles the guest's EXACT `settle_credit_v1::commitment` (Poseidon2 BN254) to `wasm32-unknown-unknown`, exposed via manual C-ABI exports (`parallar_alloc` + `parallar_commit`) — no wasm-bindgen/wasm-pack toolchain needed. getrandom (transitive via ark-std) is satisfied with a no-op CUSTOM backend so the wasm carries NO external imports (75KB).
+  - **Parity verified end-to-end:** native `commitment([0x12;40], 800, [7;32])` == wasm output via Node == `0687524d192ea03c7fd3345e9764be493714f4afd1b2ddfbadfe789c0575af21`. The browser will compute byte-identical commitments, so a cover bought in the dApp is genuinely private AND settleable (no JS-Poseidon parity gap — it IS the guest's function).
+  - Artifact committed at `frontend/commit.wasm`; rebuild via the Cargo.toml header command.
+- **Next (dApp slice 2):** `app.html` + `dapp.js` — Freighter connect, a REAL signed underwriter deposit, and buy-cover (commitment via this wasm) on testnet, with live readouts. Signing path needs a real-wallet smoke-test (can't run Freighter in the headless preview).
+- **Blocked:** none for the build; wallet-signing verification needs a founder smoke-test.

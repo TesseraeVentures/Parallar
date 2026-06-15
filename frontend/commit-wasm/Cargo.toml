@@ -1,0 +1,34 @@
+[package]
+name = "parallar-commit-wasm"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# Compiles the guest's EXACT Poseidon position commitment to wasm, so the browser dApp computes
+# H(buyer ‖ cover ‖ salt) byte-identically to settle_credit_v1 / settle_weather_v1. A cover
+# bought in the UI is therefore genuinely settleable AND genuinely private — no JS-reimplemented
+# Poseidon, no parity gap (it IS the guest's function). Plain cdylib + manual memory exports, so
+# no wasm-bindgen/wasm-pack toolchain is needed.
+#
+# Build (artifact committed to frontend/commit.wasm):
+#   cd frontend/commit-wasm
+#   cargo build --target wasm32-unknown-unknown --release
+#   cp target/wasm32-unknown-unknown/release/parallar_commit_wasm.wasm ../commit.wasm
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+settle-credit-v1 = { path = "../../prover/guests/settle_credit_v1" }
+# Transitive (ark-std → rand → getrandom): on wasm32-unknown-unknown it needs a backend to
+# COMPILE. We register a no-op CUSTOM backend (lib.rs) instead of "js", so the wasm has NO
+# external RNG import / no wasm-bindgen glue. The commitment is deterministic; it never runs.
+getrandom = { version = "0.2", features = ["custom"] }
+
+[profile.release]
+opt-level = "z"
+lto = true
+panic = "abort"
+
+# Standalone workspace — targets wasm32-unknown-unknown, separate from the native workspaces.
+[workspace]
