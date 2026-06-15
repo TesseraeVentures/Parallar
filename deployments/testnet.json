@@ -26,12 +26,28 @@
     {
       "instrument_id": "7ea722ce8d13560f9b8ccfb27cc87a7489c6fe46fd0a7afe7b1c1c754279a840",
       "vault": "CA5NCTBLCNKYZ5P3H24XWV2TPMDNUHSABVGVG262MUWQWIPU4DEKIELD",
-      "settlement": "CBEOHHRFF7SQQBQSCTWG37KVMLDKW4ADDDQ4ZYNUITU54BBNJR3FROIB"
+      "settlement": "CBEOHHRFF7SQQBQSCTWG37KVMLDKW4ADDDQ4ZYNUITU54BBNJR3FROIB",
+      "note": "placeholder roots — not settleable"
     },
     {
       "instrument_id": "439b654d0aa6536decc12e71ed4836343e61e0dcd8240add1510706e3c2adca3",
       "vault": "CDJFBYLB3GQKJ7K3K6UUAQNAYLIQO7GD7572VZYL3WVCOLTC2DLX2BUY",
-      "settlement": "CCX7VG7E3HVB3PL6MUCTZHZ7D6HWQFU5RMRMK6QHVVRUZZB22XV4M2DE"
+      "settlement": "CCX7VG7E3HVB3PL6MUCTZHZ7D6HWQFU5RMRMK6QHVVRUZZB22XV4M2DE",
+      "note": "placeholder roots — not settleable (the replication beat)"
+    },
+    {
+      "instrument_id": "7b0e94c5ba88981680a6c7d7d14be2e0f27ab895cff9674514ff8fdfc49e8df2",
+      "vault": "CB3YEEDG43ETR7AP2P6UTT4SWTFMDBHJMZMM7VCM7RWAM72TVIPVCDCA",
+      "settlement": "CD4IHJX6AGKPNLLFW37CE3RZPNU6EOJMEQPL2I7W27UWXOEERR6WLZ7G",
+      "note": "settleable — real config roots; SETTLED LIVE below"
     }
-  ]
+  ],
+  "live_settlement": {
+    "instrument": "7b0e94c5ba88981680a6c7d7d14be2e0f27ab895cff9674514ff8fdfc49e8df2",
+    "scenario": "1 holder owed 1000 (10% of 10000) unpaid -> full default; buyer cover 800; collateral 1000",
+    "proof": "real Groth16 (260-byte selector-wrapped seal) generated via Rosetta-x86 Docker for this exact instrument; the on-chain instrument_id + vault position_root were verified to match the witness BEFORE proving",
+    "settle_tx": "8b19cc711c8d5e5242acfdbe33d8bdcbc47648a659264feb8ab104c7bc401f65",
+    "result": "proof verified ON-CHAIN by the deployed groth16-verifier -> all bindings passed -> vault paid the buyer 800 (collateral 1000->200), epoch 1 settled. Events: transfer(vault->buyer,800) + allocations_paid(epoch1,800) + Settled(epoch1,800).",
+    "explorer": "https://stellar.expert/explorer/testnet/tx/8b19cc711c8d5e5242acfdbe33d8bdcbc47648a659264feb8ab104c7bc401f65"
+  }
 }
