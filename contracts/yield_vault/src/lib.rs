@@ -346,6 +346,12 @@ impl YieldVault {
     }
 
     // --- getters ---
+    pub fn settlement(env: Env) -> Address {
+        env.storage().instance().get(&DataKey::Settlement).unwrap()
+    }
+    pub fn collateral_token(env: Env) -> Address {
+        env.storage().instance().get(&DataKey::CollateralToken).unwrap()
+    }
     pub fn total_collateral(env: Env) -> i128 { get_i128(&env, &DataKey::TotalCollateral) }
     /// Effective cover = sealed (commitment path) + routed (protected-share-class path).
     pub fn total_cover(env: Env) -> i128 {

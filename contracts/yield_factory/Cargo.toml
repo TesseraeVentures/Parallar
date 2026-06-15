@@ -1,0 +1,23 @@
+[package]
+name = "parallar-yield-factory"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# YieldFactory — the tiered protected-share-class factory (TECH_SPEC §5A; PRODUCTION_GAP G11). A
+# NEW factory version (the deployed credit factory stays frozen, Law #2). It registers standardised
+# RISK TIERS (a premium band + haircut per risk profile) and deploys a full protected family —
+# yield_vault + settlement + yield_router, cross-bound in one tx — for ANY bond/asset, with each
+# instrument's premium RISK-PRICED within its tier's band (so different bonds yield different net
+# coupons). The tier framework lets underwriters back bonds matching a risk profile they have
+# appetite for. Defaults still settle through the unchanged proof-gated core (Law #1).
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+doctest = false
+
+[dependencies]
+soroban-sdk = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }

@@ -51,6 +51,23 @@ premium the router originates via the protected share class (blended take ≈ 22
 flow vs MGA benchmarks of 20–30% of GWP) · (c) structuring fees on bespoke notional · (d) ~10% of
 reserve float yield (§3.2). Marketplace-only flow stays at the 12% base to remain fork-resistant.
 
+## Risk tiers & the factory model (G11)
+
+The 14%→12% above is **one bond's** economics. In production a single `YieldFactory` wraps MANY
+bonds/assets, each with its risk priced individually — a riskier bond carries a higher premium and
+therefore a lower net coupon (tested: an investment-grade bond at 2% premium yields 600 net on a
+700 coupon; a high-yield bond at 10% yields 200 — same factory, same cash-flow, different risk).
+Pricing is standardised by **risk tiers**: the factory registers tiers — a `[min, max]` premium
+band + a haircut + a label (e.g. "investment grade" 100–300 bps, "high yield" 500–1500 bps) — and
+every protected instrument deploys into a tier with its premium validated against the band. The
+tier is the unit of **underwriter appetite**: an underwriter backs a tier (a risk profile they
+understand) under one standard, rather than negotiating bespoke terms per bond, and the same
+standard governs every similar-risk bond. `deploy_protected` cross-binds the full family
+(`yield_vault` + settlement + `yield_router`) for the bond in one transaction; each instrument
+keeps its **own reserve**, so a default in one bond never touches another's collateral. (A
+shared-reserve tier — one pool backing a whole tier for capital efficiency — is a deliberate
+further design with correlated-default implications, deferred to a covenant-and-risk decision.)
+
 ## Reserve float & the non-circularity covenant (§3.2, G12)
 
 The reserve runs as insurance float — held in yield-bearing eligible assets so underwriter return
