@@ -1,0 +1,23 @@
+[package]
+name = "parallar-yield-vault"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# YieldVault — a premium-aware reserve vault (TECH_SPEC §3.2 / §5A; PRODUCTION_GAP G11/G12). A NEW
+# instrument-family version (the deployed generic vault stays frozen, Law #2). It makes BOTH sides'
+# money flow real: buyers PAY a premium on cover; underwriters EARN it pro-rata to their collateral
+# (a rewards-per-share accrual); the protocol takes a base fee. The default-payout path
+# (`pay_allocations`, settlement-only) is UNCHANGED and still the sole way the reserve moves to a
+# payee (Law #1) — premium is a separate flow that never authorizes a payout. A liquidity haircut
+# (`total_cover ≤ (1−h)·collateral`) and the float-adapter seam are included for G12.
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+doctest = false
+
+[dependencies]
+soroban-sdk = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }

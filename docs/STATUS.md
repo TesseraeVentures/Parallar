@@ -340,3 +340,11 @@
 - **PRODUCTION PUSH (this round) COMPLETE:** 1/4 submission demo + image_id guard (R38); 2/4 on-chain claim_direct (R39); 3/4 hardening pack (R40); 4/4 Option C ZK core (R41). Two laws + frozen surfaces intact throughout; five guest types now (credit_v1, weather_v1, credit_v2, claim_credit_v1, solvency_v1) all on the unchanged surfaces.
 - **Next:** founder/x86 deliverables + the flagged new-vault-family builds (G2 claimable deploy path, G3 confidential-cover vault) when prioritized.
 - **Blocked:** none for buildable items.
+
+## 2026-06-15 (cont.) — R42: money-flow layer 1/3 — premium-aware reserve vault (G11/G12 foundation)
+
+**Production money-flow build (gated items, per founder mandate). Both sides' economics, made real.**
+- **Done:** `contracts/yield_vault` (`parallar-yield-vault`) — a NEW instrument-family vault version (deployed generic vault stays frozen). Buyers PAY a premium on `buy_protection` (cover × premium_bps), or premium arrives via `receive_premium` (the router's coupon waterfall); underwriters EARN it pro-rata to collateral via a rewards-per-share accumulator (`claim_premium`); the protocol takes a base fee (`claim_protocol_fee`, ~12% §5A). Liquidity haircut on the solvency floor (`total_cover ≤ (1−h)·collateral`, §3.2) + the float-adapter seam (G12). 9 tests: pro-rata split, NO retroactive accrual for late depositors, withdraw settles premium, haircut/insolvency floors, and — critically — `pay_allocations` pays from the reserve only, never the premium pool (Law #1 separation; defaults still proof-gated + settlement-only).
+- PRODUCTION_GAP G11 records the premium foundation built.
+- **Next:** the `YieldRouter` (G11) — wrap → pBOND, route_coupon waterfall (premium to the vault, net to holders), unwrap; then G12 float (eligible-reserve-asset list + covenant) and G13 (pBOND token + lending docs).
+- **Blocked:** none for buildable items.
