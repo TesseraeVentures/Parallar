@@ -27,19 +27,22 @@
       "instrument_id": "7ea722ce8d13560f9b8ccfb27cc87a7489c6fe46fd0a7afe7b1c1c754279a840",
       "vault": "CA5NCTBLCNKYZ5P3H24XWV2TPMDNUHSABVGVG262MUWQWIPU4DEKIELD",
       "settlement": "CBEOHHRFF7SQQBQSCTWG37KVMLDKW4ADDDQ4ZYNUITU54BBNJR3FROIB",
-      "note": "placeholder roots — not settleable"
+      "reserve": 0, "cover": 0, "settled": false,
+      "note": "placeholder roots, not settleable"
     },
     {
       "instrument_id": "439b654d0aa6536decc12e71ed4836343e61e0dcd8240add1510706e3c2adca3",
       "vault": "CDJFBYLB3GQKJ7K3K6UUAQNAYLIQO7GD7572VZYL3WVCOLTC2DLX2BUY",
       "settlement": "CCX7VG7E3HVB3PL6MUCTZHZ7D6HWQFU5RMRMK6QHVVRUZZB22XV4M2DE",
-      "note": "placeholder roots — not settleable (the replication beat)"
+      "reserve": 0, "cover": 0, "settled": false,
+      "note": "placeholder roots, not settleable (the replication beat)"
     },
     {
       "instrument_id": "7b0e94c5ba88981680a6c7d7d14be2e0f27ab895cff9674514ff8fdfc49e8df2",
       "vault": "CB3YEEDG43ETR7AP2P6UTT4SWTFMDBHJMZMM7VCM7RWAM72TVIPVCDCA",
       "settlement": "CD4IHJX6AGKPNLLFW37CE3RZPNU6EOJMEQPL2I7W27UWXOEERR6WLZ7G",
-      "note": "settleable — real config roots; SETTLED LIVE below"
+      "reserve": 200, "cover": 800, "settled": true,
+      "note": "settleable, real config roots; settled live (see live_settlement)"
     }
   ],
   "live_settlement": {

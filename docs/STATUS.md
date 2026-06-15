@@ -136,3 +136,11 @@
   - **Removed proof-GENERATION time claims** from all user-facing surfaces (frontend, README benchmarks + prove-command + demo note): the dev-loop figure (Apple-Silicon under Rosetta-x86 emulation) is **not representative** of real proving hardware, so it isn't quoted — proof-gen timings are captured on x86 via `parallar-prover bench`. Kept the **hardware-independent** on-chain verify cost (~35M insns).
 - **Next:** capture N=10 proof-gen on representative x86 (founder's Hetzner box). (Attempted N=10 on this Mac — chronically disk-constrained: a single SNARK wrap drives free space to ~2 GiB, so the batch is unreliable here; the x86 box is the right place.)
 - **Blocked:** none.
+
+## 2026-06-15 (cont.) — R23: frontend rebuilt as a DeFi-native protocol page
+- **Done (per feedback: em-dashes everywhere, hard to read, structure/keyword it like leading DeFi):**
+  - Rewrote `frontend/index.html` modeled on leading lending/RWA protocols (Aave / Morpho / Maple / Ondo / Nexus Mutual): a stats-forward hero with DeFi copy (buy **cover**, **underwrite** the **reserve** to earn **premiums**, defaults **settle through a zero-knowledge proof**; **non-custodial / permissionless / private positions / no claims process**) + primary CTAs; a **4-stat bar** (Reserve/TVL · Protection markets · Settled on-chain · On-chain verifier); a **markets table** (the Aave/Compound pattern: Market · Collateral · Reserve · Cover sold · Status) reading **live** from testnet; a 4-step Underwrite → Cover → Prove → Payout; **6 feature cards** (non-custodial & fully-funded · proof-settled not adjudicated · private positions · permissionless · RWA · verifiable on Stellar); the live settlement as a clean receipt (Payout 800 / Reserve after 200 / Authorized by ZK proof) with the real tx link.
+  - **Zero em-dashes / en-dashes** (verified by grep). Scannable: cards + table + short copy, no run-on lines.
+  - Robustness: recorded `reserve`/`cover`/`settled` added to `deployments/testnet.json` so the markets table + stats show real numbers even when the esm.sh CDN flakes; live RPC reads override and flip the verifier to `live ✓` when available. Verified rendering (hero + stats + markets + steps + features + settlement) via the preview tool.
+- **Next:** N=10 proof-gen on the x86 box; video + DoraHacks submission (founder).
+- **Blocked:** none.

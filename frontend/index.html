@@ -3,239 +3,313 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Parallar — bond default protection, settled by proof · live on Stellar testnet</title>
-<meta name="description" content="Parallar is default protection for tokenized bonds. If a bond misses a payment, protection buyers are paid from a pre-funded reserve — the payout decided by a mathematical proof, not a middleman. This page shows it running live on Stellar testnet.">
+<title>Parallar · on-chain default protection for tokenized bonds</title>
+<meta name="description" content="Parallar is on-chain credit default protection for tokenized bonds on Stellar. Buy cover, underwrite for yield, and let defaults settle through a zero-knowledge proof. Non-custodial, permissionless, private.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,200;0,300;0,400;1,200;1,300&family=Instrument+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@300;400&family=Instrument+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
-  --ink:#0B1026; --ink-2:#0E1430; --ink-3:#131A3A;
-  --paper:#EDEFF6; --dim:#7C87A6; --faint:#525E80;
-  --brass:#C9A961; --brass-bright:#E2C57E; --brass-dim:#8a7440;
-  --red:#C96A61; --green:#6FB58A; --hairline:#1D2546; --max:1080px;
+  --ink:#0B1026; --ink-2:#0E1430; --ink-3:#141C40; --ink-4:#1A2350;
+  --paper:#F2F4FA; --dim:#9AA4C2; --faint:#69739A;
+  --brass:#D4B36A; --brass-bright:#E8CE8C; --brass-dim:#897449;
+  --red:#D07A70; --green:#6FBF95; --green-dim:#2f6149;
+  --hairline:#222B52; --line-2:#2C376A; --max:1140px;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{background:var(--ink);color:var(--paper);font-family:'Instrument Sans',system-ui,sans-serif;font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body{background:var(--ink);color:var(--paper);font-family:'Instrument Sans',system-ui,sans-serif;font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 ::selection{background:var(--brass);color:var(--ink)}
-h1,h2,h3,.serif{font-family:'Spectral',serif;font-weight:200;line-height:1.1;letter-spacing:-0.012em}
-.mono{font-family:'Spline Sans Mono',monospace;font-weight:300;letter-spacing:.04em}
+h1,h2,h3,.serif{font-family:'Spectral',serif;font-weight:300;line-height:1.12;letter-spacing:-0.01em}
+.mono{font-family:'Spline Sans Mono',monospace;letter-spacing:.02em}
 a{color:var(--brass);text-decoration:none}
-a:hover{text-decoration:underline;text-underline-offset:3px}
+a:hover{color:var(--brass-bright)}
 svg{display:block}
 
-.wordmark{display:inline-flex;align-items:baseline;font-family:'Spectral',serif;font-weight:300;letter-spacing:.045em;color:var(--paper)}
+.wordmark{display:inline-flex;align-items:baseline;font-family:'Spectral',serif;font-weight:400;letter-spacing:.04em;color:var(--paper)}
 .wordmark .ll{display:inline-flex;align-items:flex-end;margin:0 .04em;position:relative;top:.02em}
 .wordmark .ll i{display:block;width:.085em;background:var(--paper);height:.92em;border-radius:.5px}
 .wordmark .ll i+i{margin-left:.14em;background:var(--brass);height:.78em;transform:translateY(-.14em)}
 
-nav{position:sticky;top:0;z-index:60;display:flex;align-items:center;justify-content:space-between;padding:17px 36px;background:linear-gradient(to bottom,rgba(11,16,38,.97),rgba(11,16,38,.8));border-bottom:1px solid var(--hairline);backdrop-filter:blur(4px)}
+nav{position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:28px;padding:16px 32px;background:rgba(11,16,38,.9);border-bottom:1px solid var(--hairline);backdrop-filter:blur(8px)}
 nav .wordmark{font-size:20px}
-nav .net{font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);display:flex;align-items:center;gap:9px}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
-.badge{border:1px solid var(--brass-dim);color:var(--brass);padding:3px 8px;border-radius:2px}
+nav .links{display:flex;gap:26px;margin-left:10px;font-size:14px}
+nav .links a{color:var(--dim)}
+nav .links a:hover{color:var(--paper)}
+nav .right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.netpill{display:inline-flex;align-items:center;gap:8px;font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:.08em;color:var(--dim);border:1px solid var(--hairline);padding:6px 12px;border-radius:999px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 7px var(--green)}
+.btn{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:500;padding:10px 18px;border-radius:8px;border:1px solid var(--brass);color:var(--ink);background:var(--brass);transition:.18s}
+.btn:hover{background:var(--brass-bright);color:var(--ink)}
+.btn.ghost{background:transparent;color:var(--brass);border-color:var(--line-2)}
+.btn.ghost:hover{border-color:var(--brass);color:var(--brass-bright)}
 
-.wrap{max-width:var(--max);margin:0 auto;padding:0 36px}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 32px}
 
 /* hero */
-.hero{padding:96px 0 64px;border-bottom:1px solid var(--hairline)}
-.kicker{font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--brass);margin-bottom:26px;display:flex;align-items:center;gap:13px}
-.kicker::before{content:"";width:28px;height:1px;background:var(--brass-dim)}
-.hero h1{font-size:clamp(36px,5.4vw,66px);margin-bottom:28px;max-width:17ch}
-.hero h1 em{font-style:italic;color:var(--brass)}
-.lede{font-size:clamp(18px,1.7vw,22px);color:var(--paper);max-width:60ch;font-weight:400;line-height:1.55}
-.lede b{color:var(--brass-bright);font-weight:500}
-.sub{font-size:16.5px;color:var(--dim);max-width:62ch;margin-top:20px}
-.sub b{color:var(--paper);font-weight:500}
-.seebar{margin-top:40px;display:inline-flex;align-items:center;gap:14px;font-family:'Spline Sans Mono',monospace;font-size:12px;letter-spacing:.1em;color:var(--dim);border:1px solid var(--hairline);padding:12px 20px;border-radius:3px}
-.seebar .dot{flex:none}
-.seebar a{color:var(--brass)}
+.hero{padding:88px 0 8px;text-align:center}
+.eyebrow{display:inline-flex;align-items:center;gap:10px;font-family:'Spline Sans Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass);border:1px solid var(--hairline);border-radius:999px;padding:7px 16px;margin-bottom:30px}
+.hero h1{font-size:clamp(40px,6vw,72px);max-width:16ch;margin:0 auto 22px;letter-spacing:-0.02em}
+.hero h1 .alt{color:var(--brass)}
+.hero .sub{font-size:clamp(17px,1.6vw,20px);color:var(--dim);max-width:50ch;margin:0 auto 14px}
+.hero .sub strong{color:var(--paper);font-weight:500}
+.hero .tags{font-family:'Spline Sans Mono',monospace;font-size:13px;color:var(--faint);margin-bottom:34px}
+.hero .tags b{color:var(--brass)}
+.hero-cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
 
-/* editorial section rail */
-section{padding:84px 0;border-bottom:1px solid var(--hairline)}
-.rail{display:grid;grid-template-columns:180px 1fr;gap:56px}
-.rail-label{font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--brass);line-height:2;align-self:start;position:sticky;top:90px}
-.rail-label .plate{color:var(--faint);display:block;margin-bottom:6px}
-h2{font-size:clamp(26px,3.4vw,40px);margin-bottom:18px;max-width:20ch}
-h2 em{font-style:italic;color:var(--brass)}
-.intro{font-size:18px;color:var(--dim);max-width:58ch}
-.intro b{color:var(--paper);font-weight:500}
+/* stats strip */
+.stats{max-width:var(--max);margin:62px auto 0;padding:0 32px}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--hairline);border-radius:14px;overflow:hidden;background:var(--ink-2)}
+.stat{padding:26px 24px;border-right:1px solid var(--hairline)}
+.stat:last-child{border-right:none}
+.stat .v{font-family:'Spectral',serif;font-weight:300;font-size:34px;color:var(--paper);line-height:1}
+.stat .v .u{font-size:16px;color:var(--dim);font-family:'Instrument Sans'}
+.stat .k{font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-top:12px}
+.stat .v .live{color:var(--green)}
+
+section{padding:80px 0;border-top:1px solid var(--hairline);margin-top:62px}
+section:first-of-type{border-top:none;margin-top:0}
+.sec-top{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:30px;flex-wrap:wrap}
+.sec-top .label{font-family:'Spline Sans Mono',monospace;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--brass);margin-bottom:12px}
+.sec-top h2{font-size:clamp(28px,3.4vw,42px);max-width:18ch}
+.sec-top p{color:var(--dim);max-width:46ch;font-size:15px}
+
+/* markets table */
+.markets{border:1px solid var(--hairline);border-radius:14px;overflow:hidden}
+.mkt-head,.mkt-row{display:grid;grid-template-columns:2.1fr 1fr 1fr 1fr 1.1fr;gap:16px;padding:16px 24px;align-items:center}
+.mkt-head{background:var(--ink-2);font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);border-bottom:1px solid var(--hairline)}
+.mkt-row{border-bottom:1px solid var(--hairline);transition:background .15s}
+.mkt-row:last-child{border-bottom:none}
+.mkt-row:hover{background:var(--ink-2)}
+.mkt-row .name{font-size:16px;color:var(--paper);font-weight:500}
+.mkt-row .name small{display:block;color:var(--faint);font-family:'Spline Sans Mono',monospace;font-size:11px;font-weight:400;margin-top:3px}
+.mkt-row .num{font-family:'Spline Sans Mono',monospace;font-size:15px;color:var(--paper)}
+.mkt-row .num small{color:var(--faint);font-size:12px}
+.asset{display:inline-flex;align-items:center;gap:8px;font-family:'Spline Sans Mono',monospace;font-size:14px;color:var(--dim)}
+.asset .coin{width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,var(--brass),var(--brass-dim));display:inline-block}
+.tag{display:inline-flex;align-items:center;gap:7px;font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:5px 11px;border-radius:999px;border:1px solid var(--line-2);color:var(--dim)}
+.tag.settled{color:var(--green);border-color:var(--green-dim)}
+.tag.active{color:var(--brass);border-color:var(--brass-dim)}
+.tag .dot{width:6px;height:6px}
+.mkt-note{padding:14px 24px;background:var(--ink-2);font-size:13px;color:var(--faint);border-top:1px solid var(--hairline)}
 
 /* steps */
-.steps{margin-top:42px;display:grid;gap:0}
-.step{display:grid;grid-template-columns:54px 1fr;gap:24px;padding:28px 0;border-top:1px solid var(--hairline)}
-.step:last-child{border-bottom:1px solid var(--hairline)}
-.step .g{padding-top:3px}.step .g svg{width:40px;height:40px}
-.step h3{font-size:21px;font-weight:300;margin-bottom:7px}
-.step p{font-size:16px;color:var(--dim);max-width:58ch}
-.step p b{color:var(--paper);font-weight:500}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.scard{border:1px solid var(--hairline);border-radius:12px;background:var(--ink-2);padding:24px 22px}
+.scard .n{font-family:'Spline Sans Mono',monospace;font-size:12px;color:var(--brass);letter-spacing:.06em}
+.scard h3{font-size:19px;margin:14px 0 8px;font-weight:400}
+.scard p{font-size:14.5px;color:var(--dim)}
+.scard p b{color:var(--paper);font-weight:500}
 
-/* live proof — the receipt */
-.receipt{border:1px solid #2c5e44;background:linear-gradient(180deg,rgba(111,181,138,.07),transparent 60%);padding:30px 32px;margin-top:8px}
-.receipt .tag{font-family:'Spline Sans Mono',monospace;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--green);display:flex;align-items:center;gap:9px;margin-bottom:14px}
-.receipt .head{font-family:'Spectral',serif;font-weight:200;font-size:clamp(22px,2.7vw,32px);line-height:1.2;margin-bottom:10px}
-.receipt .head em{font-style:italic;color:var(--brass)}
-.receipt p{color:var(--dim);max-width:62ch}.receipt p b{color:var(--paper);font-weight:500}
-.flowline{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:22px 0;font-family:'Spline Sans Mono',monospace;font-size:12.5px}
-.flowline .n{color:var(--paper);border:1px solid var(--hairline);padding:7px 13px;border-radius:3px;background:var(--ink-2)}
-.flowline .n.hot{border-color:var(--brass-dim);color:var(--brass)}
-.flowline .n.paid{border-color:#2c5e44;color:var(--green)}
-.flowline .ar{color:var(--faint)}
-.receipt .txrow{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:baseline;margin-top:18px;padding-top:18px;border-top:1px solid var(--hairline);font-size:14px}
-.receipt .txrow .k{font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:.1em;color:var(--faint);text-transform:uppercase}
-.receipt .txrow a{font-family:'Spline Sans Mono',monospace;font-size:12.5px}
-.livechip{font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--green);border:1px solid #2c5e44;padding:2px 8px;border-radius:2px}
+/* feature cards */
+.feats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.feat{border:1px solid var(--hairline);border-radius:12px;padding:24px;background:linear-gradient(180deg,var(--ink-2),var(--ink))}
+.feat .ic{width:34px;height:34px;color:var(--brass);margin-bottom:16px}
+.feat h3{font-size:18px;font-weight:500;margin-bottom:7px;font-family:'Instrument Sans'}
+.feat p{font-size:14.5px;color:var(--dim)}
+.feat p b{color:var(--paper);font-weight:500}
 
-/* instruments — plain cards */
-.insts{display:grid;gap:12px;margin-top:34px}
-.inst{border:1px solid var(--hairline);background:var(--ink-2);padding:16px 20px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
-.inst.settled{border-color:#2c5e44;box-shadow:inset 3px 0 0 var(--green)}
-.inst .what{font-size:15.5px;color:var(--paper)}
-.inst .what small{display:block;color:var(--faint);font-family:'Spline Sans Mono',monospace;font-size:11px;margin-top:4px}
-.inst .st{font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;text-align:right}
-.inst .st .v{color:var(--dim)}
-.inst.settled .st .v{color:var(--green)}
+/* live settlement */
+.settle{display:grid;grid-template-columns:1.15fr .85fr;gap:0;border:1px solid var(--green-dim);border-radius:14px;overflow:hidden;background:linear-gradient(135deg,rgba(111,191,149,.07),transparent 55%)}
+.settle .left{padding:34px 36px}
+.settle .right{padding:34px 32px;border-left:1px solid var(--hairline);background:var(--ink-2)}
+.settle .tag{margin-bottom:16px}
+.settle h2{font-size:clamp(24px,2.8vw,34px);margin-bottom:14px}
+.settle h2 .alt{color:var(--brass)}
+.settle p{color:var(--dim);font-size:15.5px}
+.settle p b{color:var(--paper);font-weight:500}
+.pipe{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:22px;font-family:'Spline Sans Mono',monospace;font-size:12.5px}
+.pipe .n{padding:7px 12px;border:1px solid var(--line-2);border-radius:7px;color:var(--dim)}
+.pipe .n.hot{color:var(--brass);border-color:var(--brass-dim)}
+.pipe .n.paid{color:var(--green);border-color:var(--green-dim)}
+.pipe .a{color:var(--faint)}
+.rcpt{font-family:'Spline Sans Mono',monospace;font-size:13px}
+.rcpt .row{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px dashed var(--hairline)}
+.rcpt .row:last-child{border-bottom:none}
+.rcpt .row .k{color:var(--faint)}
+.rcpt .row .vv{color:var(--paper);text-align:right}
+.rcpt .row .vv.g{color:var(--green)}
+.rcpt .txbtn{display:block;margin-top:18px;text-align:center;font-size:13px;border:1px solid var(--line-2);border-radius:8px;padding:11px;color:var(--brass)}
+.rcpt .txbtn:hover{border-color:var(--brass)}
 
-/* trust rules */
-.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--hairline);border:1px solid var(--hairline);margin-top:34px}
-.rule{background:var(--ink-2);padding:22px 22px}
-.rule .n{font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:.16em;color:var(--brass-dim);text-transform:uppercase}
-.rule h3{font-size:18px;font-weight:300;margin:8px 0 8px}
-.rule p{font-size:14.5px;color:var(--dim)}.rule p b{color:var(--paper);font-weight:500}
-.trustnote{margin-top:26px;border-left:2px solid var(--brass-dim);padding:4px 0 4px 22px;max-width:64ch;font-size:15px;color:var(--dim)}
-.trustnote b{color:var(--paper);font-weight:500}
+footer{padding:40px 32px 56px;border-top:1px solid var(--hairline);margin-top:62px}
+.foot-grid{max-width:var(--max);margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap}
+.foot-grid .mono{font-size:12px;color:var(--faint)}
+.foot-links{display:flex;gap:22px;font-size:14px}
+.foot-links a{color:var(--dim)}.foot-links a:hover{color:var(--brass)}
+.addr{font-family:'Spline Sans Mono',monospace;color:var(--brass)}
+.err{color:var(--red);text-align:center;padding:30px}
 
-.addr{font-family:'Spline Sans Mono',monospace;font-size:12px;color:var(--brass)}
-footer{padding:44px 36px;text-align:center;color:var(--faint);font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:.08em;line-height:2}
-footer a{color:var(--brass-dim)}
-.err{color:var(--red);font-size:14px;margin-top:20px}
-
-@media(max-width:780px){.rail{grid-template-columns:1fr;gap:24px}.rail-label{position:static}.rules{grid-template-columns:1fr}.step{grid-template-columns:1fr}.step .g{display:none}}
+@media(max-width:860px){
+  .stats-grid{grid-template-columns:1fr 1fr}.stat{border-bottom:1px solid var(--hairline)}
+  .steps{grid-template-columns:1fr 1fr}.feats{grid-template-columns:1fr}
+  .settle{grid-template-columns:1fr}.settle .right{border-left:none;border-top:1px solid var(--hairline)}
+  nav .links{display:none}
+  .mkt-head{display:none}
+  .mkt-row{grid-template-columns:1fr 1fr;gap:8px 16px}
+}
 </style>
 </head>
 <body>
 <nav>
   <span class="wordmark">Para<span class="ll"><i></i><i></i></span>ar</span>
-  <span class="net"><span class="dot"></span> Live on Stellar <span class="badge">Testnet</span> <span id="net-state">·</span></span>
+  <span class="links"><a href="#markets">Markets</a><a href="#how">How it works</a><a href="#proof">Live settlement</a></span>
+  <span class="right">
+    <span class="netpill"><span class="dot"></span> Stellar Testnet <span id="net-state" style="color:var(--green)">·</span></span>
+    <a class="btn ghost" id="nav-explorer" href="#" target="_blank" rel="noopener">Explorer</a>
+  </span>
 </nav>
 
 <div class="wrap">
   <header class="hero">
-    <div class="kicker">Default protection · settled by proof</div>
-    <h1>When a bond skips a payment, the people it owes get <em>paid</em>.</h1>
-    <p class="lede">Parallar is default protection for tokenized bonds. If a bond misses an interest payment, the holders who bought protection are paid from a reserve that was <b>funded in advance</b> — and the payout is decided by a <b>mathematical proof</b>, not a claims department, a committee, or an admin key.</p>
-    <p class="sub">It runs on Stellar. The amount of protection each holder bought stays <b>private</b>. Anyone can check the proof. And no one — not even us — can fake a payout, inflate one, or refuse one.</p>
-    <div class="seebar"><span class="dot"></span> This page is the system <b style="color:var(--paper);font-weight:500;margin:0 4px">running for real</b> on Stellar's test network — <a href="#live">a live default, proven and paid →</a></div>
+    <div class="eyebrow"><span class="dot"></span> Live on Stellar testnet</div>
+    <h1>Default protection for <span class="alt">tokenized bonds</span>.</h1>
+    <p class="sub">Buy cover on a tokenized bond. Underwrite the reserve to earn premiums. When a bond defaults, payouts <strong>settle through a zero-knowledge proof</strong> and pay out on-chain.</p>
+    <p class="tags"><b>Non-custodial</b> · <b>Permissionless</b> · <b>Private positions</b> · <b>No claims process</b></p>
+    <div class="hero-cta">
+      <a class="btn" href="#markets">View live markets</a>
+      <a class="btn ghost" href="#proof">See a real settlement</a>
+    </div>
   </header>
+</div>
+
+<div class="stats">
+  <div class="stats-grid">
+    <div class="stat"><div class="v" id="s-tvl">0 <span class="u">XLM</span></div><div class="k">Reserve (TVL)</div></div>
+    <div class="stat"><div class="v" id="s-mkts">3</div><div class="k">Protection markets</div></div>
+    <div class="stat"><div class="v" id="s-settled">1</div><div class="k">Settled on-chain</div></div>
+    <div class="stat"><div class="v"><span class="live" id="s-verifier">ZK</span></div><div class="k">On-chain verifier</div></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <section id="markets">
+    <div class="sec-top">
+      <div>
+        <div class="label">Markets</div>
+        <h2>Protection markets, live on-chain</h2>
+      </div>
+      <p>Each market is a non-custodial vault and a settlement contract, deployed by the factory in one transaction. Figures read live from Stellar testnet.</p>
+    </div>
+    <div class="markets">
+      <div class="mkt-head">
+        <div>Market</div><div>Collateral</div><div>Reserve</div><div>Cover sold</div><div>Status</div>
+      </div>
+      <div id="mkt-rows"></div>
+      <div class="mkt-note" id="mkt-note">Loading on-chain state…</div>
+    </div>
+  </section>
 
   <section id="how">
-    <div class="rail">
-      <div class="rail-label"><span class="plate">01</span>How it<br>works</div>
-      <div>
-        <h2>Four steps, and <em>no one to trust</em> in the middle.</h2>
-        <p class="intro">A bond is a company borrowing from many people at once. Parallar protects the people it owes — and settles that protection by measurement, not by anyone's word.</p>
-        <div class="steps">
-          <div class="step">
-            <div class="g"><svg viewBox="0 0 44 44"><g fill="#7C87A6"><circle cx="10" cy="14" r="3"/><circle cx="22" cy="10" r="3"/><circle cx="34" cy="15" r="3"/><circle cx="16" cy="30" r="3"/><circle cx="30" cy="32" r="3"/></g></svg></div>
-            <div><h3>A bond pays interest to many holders</h3><p>On Stellar the bond is digital, and its scheduled interest payments — <b>coupons</b> — are real transfers anyone can see, made to every holder.</p></div>
-          </div>
-          <div class="step">
-            <div class="g"><svg viewBox="0 0 44 44"><rect x="6" y="10" width="32" height="24" fill="none" stroke="#C9A961" stroke-width="1.5"/><path d="M6 18 h32" stroke="#C9A961" stroke-width="1"/><path d="M14 26 h16" stroke="#7C87A6" stroke-width="1.5"/></svg></div>
-            <div><h3>Buyers purchase protection — the reserve is funded first</h3><p>Underwriters deposit real money into a shared reserve <b>before</b> any protection is sold; Parallar never promises a payout it isn't already holding. How much each buyer bought stays <b>sealed — like a bid in an envelope</b>.</p></div>
-          </div>
-          <div class="step">
-            <div class="g"><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="15" fill="none" stroke="#C9A961" stroke-width="1.5"/><path d="M22 7 v6 M22 31 v6 M7 22 h6 M31 22 h6" stroke="#C9A961" stroke-width="1.5"/></svg></div>
-            <div><h3>If a payment is missed, the math notices</h3><p>Anyone can run the settlement program. It reads the public payment record, confirms who wasn't paid, opens each sealed position privately, and computes every payout by a <b>formula published in advance</b> — then produces a compact <b>proof</b> that the whole calculation was done exactly right.</p></div>
-          </div>
-          <div class="step">
-            <div class="g"><svg viewBox="0 0 44 44"><path d="M8 24 l9 9 L37 12" fill="none" stroke="#6FB58A" stroke-width="2"/></svg></div>
-            <div><h3>Stellar checks the proof — and the reserve pays</h3><p>The blockchain verifies the proof and releases each payout. <b>There is no other way to move that money</b> — no claims department, no override. And if the bond paid on time, a valid proof <b>cannot exist</b>.</p></div>
-          </div>
-        </div>
-      </div>
+    <div class="sec-top">
+      <div><div class="label">How it works</div><h2>Coverage, settled by proof</h2></div>
+      <p>No claims department, no committee, no admin key. A default either produces a valid proof or it does not.</p>
+    </div>
+    <div class="steps">
+      <div class="scard"><div class="n">01 / Underwrite</div><h3>Fund the reserve</h3><p>Underwriters deposit collateral and earn premiums. <b>Cover sold can never exceed the reserve</b>, enforced on every purchase.</p></div>
+      <div class="scard"><div class="n">02 / Cover</div><h3>Buy protection</h3><p>Bondholders buy cover against default. The <b>amount each holder buys stays private</b>, stored only as a commitment.</p></div>
+      <div class="scard"><div class="n">03 / Prove</div><h3>Settle a default</h3><p>Anyone runs the settlement program. It reads the on-chain payment record and <b>proves who is owed</b> by a published formula, in zero knowledge.</p></div>
+      <div class="scard"><div class="n">04 / Payout</div><h3>Verify and pay</h3><p>The contract verifies the proof on Stellar and releases each payout from the reserve. <b>This is the only way the reserve moves.</b></p></div>
     </div>
   </section>
 
-  <section id="live">
-    <div class="rail">
-      <div class="rail-label"><span class="plate">02</span>Seen<br>working</div>
-      <div>
-        <h2>We didn't just describe it. <em>We ran it.</em></h2>
-        <p class="intro">Everything below is live on Stellar's test network — real contracts, a real proof, a real payout. The figures and status update straight from the chain when you load this page.</p>
-        <div id="receipt-host"></div>
-        <h3 style="font-size:19px;font-weight:300;margin:42px 0 4px">The protection instruments, on-chain</h3>
-        <p style="font-size:15px;color:var(--faint);max-width:58ch">Each is its own vault + settlement pair, deployed by the factory in a single transaction. One has settled (above); the others are live, waiting on their deadline.</p>
-        <div class="insts" id="insts"></div>
-      </div>
+  <section id="why">
+    <div class="sec-top"><div><div class="label">Why Parallar</div><h2>Built for institutional credit, on-chain</h2></div></div>
+    <div class="feats">
+      <div class="feat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg><h3>Non-custodial and fully funded</h3><p>The reserve is held in <b>claw-proof, freeze-proof</b> assets. Total cover can never exceed reserves. No one can pull the pool.</p></div>
+      <div class="feat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 13l4 4L19 7"/></svg><h3>Proof-settled, not adjudicated</h3><p>Payouts are authorized by a <b>verified zero-knowledge proof</b>, not a claims process. If a bond paid on time, no valid proof can exist.</p></div>
+      <div class="feat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 018 0v3"/></svg><h3>Private positions</h3><p>How much cover each holder buys is sealed on-chain. The system enforces the totals <b>without ever seeing the parts</b>.</p></div>
+      <div class="feat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/></svg><h3>Permissionless settlement</h3><p>Anyone can generate a proof and settle. There is <b>no privileged operator</b> and no admin override.</p></div>
+      <div class="feat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 7h16M4 12h16M4 17h10"/></svg><h3>Real-world assets</h3><p>Designed for <b>tokenized bonds and credit</b>. One generic core serves every instrument type, pinned to its rules forever.</p></div>
+      <div class="feat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2v6M12 2l-3 3M12 2l3 3"/><rect x="4" y="9" width="16" height="11" rx="1.5"/></svg><h3>Verifiable on Stellar</h3><p>One Groth16 proof verified by Stellar's native BN254 and Poseidon functions. <b>Cheap enough to run on-chain</b>, every settlement.</p></div>
     </div>
   </section>
 
-  <section id="trust">
-    <div class="rail">
-      <div class="rail-label"><span class="plate">03</span>Why you<br>can trust it</div>
-      <div>
-        <h2>The reserve has exactly <em>one</em> way out.</h2>
-        <div class="rules">
-          <div class="rule"><div class="n">Funded first</div><h3>Money in before promises out</h3><p>Total protection sold can <b>never exceed</b> the reserve — checked the moment anyone buys.</p></div>
-          <div class="rule"><div class="n">Untouchable</div><h3>The reserve can't be pulled</h3><p>Held only in assets <b>no issuer can claw back or freeze</b>; the factory refuses anything else.</p></div>
-          <div class="rule"><div class="n">One exit</div><h3>Only a proof moves money</h3><p>The single path out is a <b>verified proof</b>. Not us, not an admin key. No proof, no payout.</p></div>
+  <section id="proof">
+    <div class="sec-top"><div><div class="label">Proof of concept</div><h2>A real default, settled on-chain</h2></div>
+      <p>Not a mockup. A live default and payout on Stellar testnet, verifiable on the explorer.</p></div>
+    <div class="settle">
+      <div class="left">
+        <span class="tag settled"><span class="dot"></span> Verified on-chain · paid</span>
+        <h2>A bondholder went unpaid. The reserve <span class="alt">paid the cover buyer</span>.</h2>
+        <p>The settlement program proved exactly what was owed. The contract verified the proof and released the payout from the reserve. The cover amount stayed private throughout.</p>
+        <div class="pipe">
+          <span class="n">default</span><span class="a">›</span>
+          <span class="n">proof</span><span class="a">›</span>
+          <span class="n hot">verified on Stellar</span><span class="a">›</span>
+          <span class="n paid">payout</span>
         </div>
-        <p class="trustnote">The proof guarantees the <b>computation</b> is correct — the published rules, run over the supplied records, with no party able to inflate, favour, omit, or fabricate a payout. It does not by itself guarantee the records are complete; making the input data itself tamper-proof (attested feeds) is the next step on the way to a live issuance. <b>Truth by measurement, not by trust.</b></p>
+      </div>
+      <div class="right rcpt">
+        <div class="row"><span class="k">Event</span><span class="vv g">Settled</span></div>
+        <div class="row"><span class="k">Payout to buyer</span><span class="vv g" id="r-payout">800 XLM</span></div>
+        <div class="row"><span class="k">Reserve after</span><span class="vv" id="r-reserve">200 XLM</span></div>
+        <div class="row"><span class="k">Authorized by</span><span class="vv">ZK proof</span></div>
+        <div class="row"><span class="k">Network</span><span class="vv">Stellar Testnet</span></div>
+        <a class="txbtn" id="r-tx" href="#" target="_blank" rel="noopener">View transaction on the explorer ›</a>
       </div>
     </div>
   </section>
 </div>
 
 <footer>
-  PARALLAR · default protection, settled by proof · <span id="foot-net">Stellar testnet</span><br>
-  <a id="foot-factory" href="#" target="_blank" rel="noopener">factory on the explorer</a> · a verifiable settlement layer · <a href="https://github.com" id="foot-repo">source &amp; trust model</a>
+  <div class="foot-grid">
+    <span class="wordmark" style="font-size:18px">Para<span class="ll"><i></i><i></i></span>ar</span>
+    <div class="foot-links">
+      <a id="f-factory" href="#" target="_blank" rel="noopener">Factory</a>
+      <a id="f-verifier" href="#" target="_blank" rel="noopener">Verifier</a>
+      <a href="#how">How it works</a>
+      <a href="#proof">Live settlement</a>
+    </div>
+    <span class="mono">Verifiable settlement on Stellar · Testnet</span>
+  </div>
 </footer>
 
 <script type="module">
 const EXPLORER = "https://stellar.expert/explorer/testnet";
-const txl = (h) => `${EXPLORER}/tx/${h}`;
-const short = (s, n=5) => s ? `${s.slice(0,n)}…${s.slice(-4)}` : "—";
-const link = (id, kind="contract", n=5) => `<a class="addr" href="${EXPLORER}/${kind}/${id}" target="_blank" rel="noopener" title="${id}">${short(id,n)}</a>`;
+const short = (s, n=4) => s ? `${s.slice(0,n)}…${s.slice(-4)}` : "";
 const el = (h) => { const t=document.createElement('template'); t.innerHTML=h.trim(); return t.content.firstChild; };
 
-function renderReceipt(d){
-  const s = d.live_settlement; if(!s) return;
-  document.getElementById('receipt-host').appendChild(el(`<div class="receipt">
-    <div class="tag"><span class="dot"></span> verified on-chain · paid out</div>
-    <div class="head">A bond holder went unpaid — so the reserve <em>paid the protection buyer</em>.</div>
-    <p>A holder was owed their coupon and didn't receive it. The settlement program proved exactly what was owed, the contract checked the proof, and the buyer was paid from the reserve — without ever revealing how much protection anyone held.</p>
-    <div class="flowline">
-      <span class="n">holder unpaid</span><span class="ar">→</span>
-      <span class="n">proof generated</span><span class="ar">→</span>
-      <span class="n hot">proof verified on Stellar</span><span class="ar">→</span>
-      <span class="n paid">buyer paid · reserve <span id="reserve-move">1,000 → 200</span></span>
-    </div>
-    <div class="txrow">
-      <span class="k">the transaction</span>
-      <a href="${txl(s.settle_tx)}" target="_blank" rel="noopener">${short(s.settle_tx,8)}</a>
-      <span class="livechip" id="settle-live">on-chain</span>
-      <span style="color:var(--faint);font-size:13px">— click to see the transfer + settlement events on the explorer</span>
-    </div>
-  </div>`));
-}
-
-function renderInstruments(d){
-  const host = document.getElementById('insts');
-  const settledId = d.live_settlement?.instrument;
+function renderMarkets(d, live){
+  const host = document.getElementById('mkt-rows');
+  host.innerHTML = '';
   d.instruments.forEach((ins,i)=>{
-    const isSettled = ins.instrument_id === settledId;
-    host.appendChild(el(`<div class="inst ${isSettled?'settled':''}">
-      <div class="what">Protection instrument #${i+1}${isSettled?' — the one that settled':''}
-        <small>vault ${link(ins.vault)} · settlement ${link(ins.settlement)}</small></div>
-      <div class="st"><span class="v" id="st-${i}">${isSettled?'settled · paid out':'awaiting deadline'}</span></div>
+    const st = live?.[i];
+    const reserve = st ? st.collateral : ins.reserve;
+    const cover = st ? st.cover : ins.cover;
+    const settled = st ? st.settled : !!ins.settled;
+    const status = settled
+      ? `<span class="tag settled"><span class="dot"></span> Settled</span>`
+      : `<span class="tag active"><span class="dot"></span> Active</span>`;
+    host.appendChild(el(`<div class="mkt-row">
+      <div class="name">credit_v1 #${i+1}<small>vault ${short(ins.vault)} · settlement ${short(ins.settlement)}</small></div>
+      <div class="asset"><span class="coin"></span> XLM</div>
+      <div class="num">${reserve} <small>XLM</small></div>
+      <div class="num">${cover} <small>XLM</small></div>
+      <div>${status}</div>
     </div>`));
   });
 }
 
-// best-effort live chain reads — degrades gracefully to the recorded deployment
-async function liveReads(d){
-  const ns = document.getElementById('net-state');
+async function load(){
+  let d;
+  try { d = await (await fetch('../deployments/testnet.json')).json(); }
+  catch(e){ document.getElementById('mkt-note').innerHTML = '<span class="err">Serve from the repo root (make frontend) to load on-chain state.</span>'; return; }
+
+  // static wiring (links + receipt) so the page is complete even without live RPC
+  document.getElementById('nav-explorer').href = `${EXPLORER}/contract/${d.contracts.factory}`;
+  document.getElementById('f-factory').href = `${EXPLORER}/contract/${d.contracts.factory}`;
+  document.getElementById('f-verifier').href = `${EXPLORER}/contract/${d.contracts.groth16_verifier}`;
+  if(d.live_settlement) document.getElementById('r-tx').href = `${EXPLORER}/tx/${d.live_settlement.settle_tx}`;
+  document.getElementById('s-mkts').textContent = d.instruments.length;
+  document.getElementById('s-settled').textContent = d.instruments.filter(x=>x.settled).length;
+  document.getElementById('s-tvl').innerHTML = `${d.instruments.reduce((a,x)=>a+(x.reserve||0),0)} <span class="u">XLM</span>`;
+  const sj = d.instruments.find(x=>x.settled);
+  if(sj){ document.getElementById('r-reserve').textContent = `${sj.reserve} XLM`; document.getElementById('r-payout').textContent = `${sj.cover} XLM`; }
+  renderMarkets(d, null);
+  document.getElementById('mkt-note').textContent = 'Reserve and cover update live from testnet.';
+
+  // live on-chain reads (best effort, degrades to recorded values)
   try{
     const sdk = (await import('https://esm.sh/@stellar/stellar-sdk@13')).default;
     const { rpc, Contract, TransactionBuilder, Account, Networks, scValToNative, nativeToScVal } = sdk;
@@ -248,29 +322,23 @@ async function liveReads(d){
       if(rpc.Api.isSimulationSuccess(sim) && sim.result) return scValToNative(sim.result.retval);
       throw new Error('sim');
     };
-    ns.textContent = 'live ✓';
-    await Promise.all(d.instruments.map(async (ins,i)=>{
-      try{
-        const settled = await read(ins.settlement,'is_settled',[nativeToScVal(1,{type:'u32'})]);
-        const coll = await read(ins.vault,'total_collateral');
-        const node = document.getElementById('st-'+i);
-        if(node) node.textContent = settled ? `settled · reserve now ${coll}` : `live · reserve ${coll} · awaiting deadline`;
-        if(settled){ const rm=document.getElementById('reserve-move'); if(rm) rm.textContent = `1,000 → ${coll}`; }
-      }catch(e){}
-    }));
-  }catch(e){ ns.textContent='from records'; console.warn('live reads unavailable; showing the recorded deployment', e); }
+    const live = await Promise.all(d.instruments.map(async ins => ({
+      collateral: String(await read(ins.vault,'total_collateral')),
+      cover: String(await read(ins.vault,'total_cover')),
+      settled: await read(ins.settlement,'is_settled',[nativeToScVal(1,{type:'u32'})]),
+    })));
+    document.getElementById('net-state').textContent = 'live ✓';
+    document.getElementById('s-verifier').textContent = 'live ✓';
+    const tvl = live.reduce((a,x)=>a+Number(x.collateral||0),0);
+    document.getElementById('s-tvl').innerHTML = `${tvl} <span class="u">XLM</span>`;
+    document.getElementById('s-settled').textContent = live.filter(x=>x.settled).length;
+    renderMarkets(d, live);
+    // receipt: reflect the settled market's live reserve
+    const si = d.instruments.findIndex(x=>x.instrument_id===d.live_settlement?.instrument);
+    if(si>=0){ document.getElementById('r-reserve').textContent = `${live[si].collateral} XLM`; document.getElementById('r-payout').textContent = `${live[si].cover} XLM`; }
+  }catch(e){ document.getElementById('net-state').textContent='records'; console.warn('live reads unavailable; showing recorded deployment', e); }
 }
-
-(async function(){
-  try{
-    const d = await (await fetch('../deployments/testnet.json')).json();
-    document.getElementById('foot-factory').href = `${EXPLORER}/contract/${d.contracts.factory}`;
-    renderReceipt(d); renderInstruments(d); liveReads(d);
-  }catch(e){
-    document.querySelector('.wrap').appendChild(el(`<p class="err">Could not load the deployment — serve from the repo root (<span class="mono">make frontend</span>) and open /frontend/.</p>`));
-    console.error(e);
-  }
-})();
+load();
 </script>
 </body>
 </html>
