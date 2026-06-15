@@ -144,3 +144,11 @@
   - Robustness: recorded `reserve`/`cover`/`settled` added to `deployments/testnet.json` so the markets table + stats show real numbers even when the esm.sh CDN flakes; live RPC reads override and flip the verifier to `live ✓` when available. Verified rendering (hero + stats + markets + steps + features + settlement) via the preview tool.
 - **Next:** N=10 proof-gen on the x86 box; video + DoraHacks submission (founder).
 - **Blocked:** none.
+
+## 2026-06-15 (cont.) — R24: frontend made dual-sided + testnet-honest
+- **Done (per feedback: it is a double-sided protocol, and a testnet hackathon build has no TVL / live protections):**
+  - Added a prominent **"Two sides"** section so the page serves both audiences equally: **For bondholders · Buy cover** (protect a bond position; automatic proof-settled payout; cover size private) and **For underwriters · Provide the reserve** (back payouts, earn premium yield; non-custodial; solvency enforced on-chain), each with its own accent (brass / teal). The hero sub now leads with the two-sided framing.
+  - Removed launched-protocol framing inappropriate for a testnet build: dropped the **"Reserve (TVL)"** stat and the live-markets table. Stats are now honest testnet facts (Instruments deployed · Settlement proven on-chain · On-chain verifier live · Network Testnet); the deployment is reframed as **"Deployed and proven on Stellar testnet"** with a Deployed/Settled instruments table (not a market to deposit into) and an explicit "hackathon build on testnet, not a launched market" note.
+  - Cache-busted the deployment fetch + set the settled stat from the live reads (a stale browser cache had shown 0). **Zero em/en-dashes, zero "TVL"** (grep-verified). Verified rendering (hero, stats, two-sides, steps, deployed table, settlement) via the preview tool; live RPC reads connect (verifier `live ✓`).
+- **Next:** N=10 proof-gen on the x86 box; video + DoraHacks submission (founder).
+- **Blocked:** none.
