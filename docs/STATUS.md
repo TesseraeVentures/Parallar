@@ -258,3 +258,14 @@
   Two architectural laws intact throughout; credit_v1 image_id unchanged.
 - **Founder/x86 remainder:** live weather proof+deploy, live partial-default proof, the N=10 proof-gen wall-clock, the dApp wallet smoke-test, video, DoraHacks, `v0.3-p0` tag.
 - **Blocked:** none for buildable items.
+
+## 2026-06-15 (cont.) — R34: audit-readiness pack (property tests + CI + threat model)
+
+**Build-beyond-P0 follow-on (next-steps program), item 1 of 4: rigor + backability.**
+- **Done:**
+  - **Property tests (proptest)** over both guests' published rules — fuzz randomized books and assert the invariants ALWAYS hold: Σ payouts ≤ collateral and ≤ Σ cover; a fully-paid book is unprovable (NoDefault) / rainfall meeting the trigger is unprovable (NoBreach); determinism; tampered position_root always rejected. credit guest 22→26 tests, weather 16→19. (`#[cfg(test)]` so image_ids are unaffected.)
+  - **CI** (`.github/workflows/ci.yml`): native contract suite + guest determination/property tests, plus a hygiene job that FAILS the build if a `mock-verify` path reappears in settlement (Law #1 guard), if the frontend gains an em/en dash, or if a DoD artifact is missing. Fast — no risc0 toolchain (the ELF/host tests run on the x86 box).
+  - **`SECURITY.md`**: the threat model + trust boundary, faithful to TECH_SPEC §1 (correct computation over supplied inputs, not input canonicity; G1 hardens it), the two laws, the tested invariants, the real-vs-mocked summary, and disclosure.
+  - Fixed em/en dashes that had crept into frontend JS comments + app.html (now CI-guarded). Verified dApp still loads + the in-browser commitment parity holds.
+- **Next (next-steps program):** G1 attested feeds (in-guest issuer-signature verification), G2 escape hatch (claim_direct), verify-it-yourself guide.
+- **Blocked:** none for buildable items.

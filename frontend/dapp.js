@@ -1,12 +1,12 @@
 // Parallar interactive testnet dApp.
 //
-// Connect Freighter, deposit collateral (underwriter), buy cover (bondholder) — real signed
+// Connect Freighter, deposit collateral (underwriter), buy cover (bondholder): real signed
 // transactions on Stellar testnet against the deployed contracts. READ + COMMIT ONLY: the only
 // writes are vault.deposit and vault.buy_protection, neither of which can move the reserve to a
 // payee. Payouts happen solely through a settlement that verifies a proof on-chain (Law #1).
 //
-// The cover commitment is computed in-browser by commit.wasm — the guest's actual Poseidon
-// function compiled to wasm — so a bought position is byte-identically settleable (privacy
+// The cover commitment is computed in-browser by commit.wasm, the guest's actual Poseidon
+// function compiled to wasm, so a bought position is byte-identically settleable (privacy
 // honored, not faked).
 
 const EXPLORER = "https://stellar.expert/explorer/testnet";
@@ -120,7 +120,7 @@ async function doBuy() {
     const hash = await invoke(vault, "buy_protection", args);
     out(
       "buy-out",
-      `<span class="g">bought ${cover} of cover — your size is private (only the commitment is on-chain).</span>\n` +
+      `<span class="g">bought ${cover} of cover. Your size is private (only the commitment is on-chain).</span>\n` +
         `commitment ${toHex(c)}\n` +
         `SAVE YOUR OPENING (needed to settle):\n  cover = ${cover}\n  salt  = ${toHex(salt)}\n` +
         `<a href="${EXPLORER}/tx/${hash}" target="_blank" rel="noopener">view tx ↗</a>`
@@ -128,7 +128,7 @@ async function doBuy() {
     refreshLive();
   } catch (e) {
     const m = e?.message ?? String(e);
-    const hint = /insolvent|exceed/i.test(m) ? "  (cover must fit under the reserve — deposit collateral first)" : "";
+    const hint = /insolvent|exceed/i.test(m) ? "  (cover must fit under the reserve; deposit collateral first)" : "";
     out("buy-out", "buy failed: " + m + hint, "err");
   }
 }

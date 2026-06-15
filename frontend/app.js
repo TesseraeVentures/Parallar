@@ -1,4 +1,4 @@
-// Parallar frontend — shared on-chain data loader.
+// Parallar frontend: shared on-chain data loader.
 // Reads the committed deployment record, then best-effort confirms state live
 // from testnet RPC. Every write is element-guarded, so the same script drives
 // every page; a page simply omits the ids it does not use.
@@ -11,7 +11,7 @@ const href = (id, h) => { const e = $(id); if (e) e.href = h; };
 const short = (s, n = 4) => (s ? `${s.slice(0, n)}…${s.slice(-4)}` : "");
 const el = (h) => { const t = document.createElement('template'); t.innerHTML = h.trim(); return t.content.firstChild; };
 
-// compact instrument table (home + testnet) — #dep-rows
+// compact instrument table (home + testnet): #dep-rows
 function renderDeployed(d, live) {
   const host = $('dep-rows'); if (!host) return;
   host.innerHTML = '';
@@ -29,7 +29,7 @@ function renderDeployed(d, live) {
   });
 }
 
-// detailed instrument table (testnet page) — #inst-rows
+// detailed instrument table (testnet page): #inst-rows
 function renderInstrumentsDetailed(d, live) {
   const host = $('inst-rows'); if (!host) return;
   host.innerHTML = '';

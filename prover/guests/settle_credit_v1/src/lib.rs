@@ -342,3 +342,5 @@ pub fn settle(inputs: &Inputs) -> Result<(Vec<Allocation>, Journal), SettleError
 
 #[cfg(test)]
 mod test;
+#[cfg(test)]
+mod prop_test;

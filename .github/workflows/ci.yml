@@ -1,0 +1,52 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: contracts + guests (native + property tests)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      # The four Soroban contracts: native test suite (testutils host) — no wasm target or
+      # stellar-cli needed for `cargo test`.
+      - name: contracts — native test suite
+        run: cargo test --locked
+      # The determination guests, incl. the proptest property suite. Native only — the RISC Zero
+      # ELF/host tests need the risc0 toolchain and run on the x86 proving box, not in CI.
+      - name: guests — determination logic + property tests
+        working-directory: prover
+        run: cargo test --locked -p settle-credit-v1 -p settle-weather-v1
+
+  hygiene:
+    name: invariants of the build itself
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # ARCHITECTURAL LAW #1: the settlement contract must have NO mock-verify path — a verified
+      # proof is the sole payout authorization. A reintroduced stub must fail the build.
+      - name: settlement has no mock-verify path
+        run: |
+          if grep -rniE 'mock[-_]?verify' contracts/settlement/; then
+            echo "::error::mock-verify must not exist in the settlement contract"; exit 1
+          fi
+          echo "ok: real verification only"
+      # House style: no em/en dashes in the judge-facing frontend.
+      - name: frontend has no em/en dashes
+        run: |
+          if grep -rlP '[\x{2014}\x{2013}]' frontend/*.html frontend/*.css frontend/*.js; then
+            echo "::error::em/en dash found in frontend"; exit 1
+          fi
+          echo "ok: no em/en dashes"
+      # The fresh-clone Definition-of-Done artifacts must exist.
+      - name: required artifacts present
+        run: |
+          for f in demo.sh reset.sh README.md deployments/testnet.json frontend/commit.wasm; do
+            test -f "$f" || { echo "::error::missing $f"; exit 1; }
+          done
+          echo "ok: artifacts present"
