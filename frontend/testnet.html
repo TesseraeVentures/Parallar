@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>On testnet · Parallar</title>
+<meta name="description" content="Parallar deployed on Stellar testnet: a factory, a Groth16 verifier, three factory-deployed credit_v1 instruments, and one real default-to-payout settled and verified on-chain. Every contract and transaction is linked on the explorer.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@300;400&family=Instrument+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<nav>
+  <a class="wordmark" href="index.html">Para<span class="ll"><i></i><i></i></span>ar</a>
+  <span class="links">
+    <a href="bondholders.html">For bondholders</a>
+    <a href="underwriters.html">For underwriters</a>
+    <a href="how-it-works.html">How it works</a>
+    <a href="testnet.html" class="active">On testnet</a>
+  </span>
+  <span class="right">
+    <span class="netpill"><span class="dot"></span> Stellar Testnet <span id="net-state" style="color:var(--green)">·</span></span>
+    <a class="btn ghost" id="nav-explorer" href="#" target="_blank" rel="noopener">Explorer</a>
+  </span>
+</nav>
+
+<div class="wrap">
+  <header class="page-hero">
+    <a class="backlink" href="index.html">‹ Back to overview</a>
+    <div class="eyebrow"><span class="dot"></span> Live on Stellar testnet</div>
+    <h1>Deployed, and proven with a <span class="alt">real settlement</span>.</h1>
+    <p class="lead">This is a hackathon build on Stellar testnet, not a launched market.<br>
+       The contracts are live, and a full default-to-payout has executed on-chain.<br>
+       Every address and transaction below is yours to verify on the explorer.</p>
+  </header>
+
+  <section class="first">
+    <div class="sec-top"><div><div class="label">Contracts</div><h2>What is deployed</h2></div>
+      <p>One factory, one verifier, one settlement type.<br>
+         Every instrument is an instance of that type.</p>
+    </div>
+    <div class="addr-list">
+      <div class="addr-row"><span class="lbl">Factory and registry<small>deploys and cross-binds every instrument</small></span><a id="c-factory" href="#" target="_blank" rel="noopener">…</a></div>
+      <div class="addr-row"><span class="lbl">Groth16 verifier<small>checks one proof with native BN254 + Poseidon</small></span><a id="c-verifier" href="#" target="_blank" rel="noopener">…</a></div>
+      <div class="addr-row"><span class="lbl">Collateral asset<small>native XLM, claw-proof and freeze-proof</small></span><a id="c-sac" href="#" target="_blank" rel="noopener">…</a></div>
+      <div class="addr-row"><span class="lbl">Settlement type · <span id="c-typeid" class="mono">credit_v1</span><small>guest image id the live instruments are pinned to</small></span><span id="c-imageid" class="mono" style="color:var(--dim)">…</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-top"><div><div class="label">Instruments</div><h2>Three, factory-deployed</h2></div>
+      <p>The same generic core, instantiated three times.<br>
+         Adding one is a single transaction.</p>
+    </div>
+    <div class="dep full">
+      <div class="dep-head"><div>#</div><div>Vault</div><div>Reserve</div><div>Cover</div><div>Settlement</div><div>Status</div></div>
+      <div id="inst-rows"></div>
+      <div class="dep-note" id="dep-note">Factory-deployed credit_v1 instruments. The third has settled; the others demonstrate the factory and the one-transaction replication.</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-top"><div><div class="label">The settlement</div><h2>A real default-to-payout</h2></div>
+      <p>A bondholder went unpaid.<br>
+         The reserve paid the cover buyer, and only a proof made it happen.</p>
+    </div>
+    <div class="settle">
+      <div class="left">
+        <span class="tag settled"><span class="dot"></span> Verified on-chain · paid</span>
+        <h3>One coupon missed. The reserve <span class="alt">paid the cover buyer</span>.</h3>
+        <p>The settlement program proved exactly what was owed for the epoch, the contract verified the Groth16 proof on Stellar, and the payout left the reserve. The cover amount stayed private throughout. No admin touched it.</p>
+        <div class="pipe">
+          <span class="n">default</span><span class="a">›</span>
+          <span class="n">proof</span><span class="a">›</span>
+          <span class="n hot">verified on Stellar</span><span class="a">›</span>
+          <span class="n paid">payout</span>
+        </div>
+      </div>
+      <div class="right rcpt">
+        <div class="row"><span class="k">Event</span><span class="vv g">Settled</span></div>
+        <div class="row"><span class="k">Paid to cover buyer</span><span class="vv g" id="r-payout">800</span></div>
+        <div class="row"><span class="k">Reserve after payout</span><span class="vv" id="r-reserve">200</span></div>
+        <div class="row"><span class="k">Authorized by</span><span class="vv">ZK proof</span></div>
+        <div class="row"><span class="k">Network</span><span class="vv">Stellar Testnet</span></div>
+        <a class="txbtn" id="r-tx" href="#" target="_blank" rel="noopener">View the transaction on the explorer ›</a>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:24px"><b>The scenario.</b> One holder was owed a coupon worth 10% of a 10,000 position and received nothing, a full default for the epoch. The cover buyer held 800 of cover against a 1,000 reserve. On settlement the buyer was paid 800, leaving 200, and the epoch was marked settled. The events emitted: a transfer from the vault to the buyer, an allocations-paid record, and a Settled marker.</div>
+  </section>
+
+  <section>
+    <div class="sec-top"><div><div class="label">Honest by default</div><h2>What is real, and what is mocked</h2></div>
+      <p>The verification is real. The framing around it is labelled.</p>
+    </div>
+    <div class="two-col">
+      <div class="prose">
+        <h3>Real</h3>
+        <p>The four contracts, the factory deployment, the on-chain solvency checks, and the Groth16 proof are real. The settled instrument used real config roots, and its proof was <b>verified on-chain by the deployed verifier</b> before the reserve paid out.</p>
+      </div>
+      <div class="prose">
+        <h3>Mocked, and labelled</h3>
+        <p>Two of the three instruments use placeholder roots, so they are correctly <b>not settleable</b>. The reference bond is modeled on a live Stellar corporate issuance, unnamed. A proof guarantees computation over the inputs it was supplied, <b>not that those inputs are the canonical truth</b>; hardening the input source is the path to a pilot.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-top"><div><div class="label">Next</div><h2>Read the mechanism, or pick a side</h2></div></div>
+    <div class="hero-cta">
+      <a class="btn" href="how-it-works.html">How it works</a>
+      <a class="btn ghost" href="bondholders.html">For bondholders</a>
+      <a class="btn ghost" href="underwriters.html">For underwriters</a>
+    </div>
+  </section>
+</div>
+
+<footer>
+  <div class="foot-grid">
+    <a class="wordmark" href="index.html" style="font-size:18px">Para<span class="ll"><i></i><i></i></span>ar</a>
+    <div class="foot-links">
+      <a href="bondholders.html">For bondholders</a>
+      <a href="underwriters.html">For underwriters</a>
+      <a href="how-it-works.html">How it works</a>
+      <a href="testnet.html">On testnet</a>
+      <a id="f-factory" href="#" target="_blank" rel="noopener">Factory ↗</a>
+      <a id="f-verifier" href="#" target="_blank" rel="noopener">Verifier ↗</a>
+    </div>
+    <span class="mono">Verifiable settlement on Stellar · Testnet build</span>
+  </div>
+</footer>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

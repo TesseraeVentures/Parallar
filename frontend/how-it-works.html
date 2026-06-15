@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How it works · Parallar</title>
+<meta name="description" content="How Parallar settles a bond default: underwriters fund a reserve, bondholders buy private cover, anyone proves who is owed with a zero-knowledge proof, and the contract verifies one proof on Stellar before releasing payouts.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@300;400&family=Instrument+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<nav>
+  <a class="wordmark" href="index.html">Para<span class="ll"><i></i><i></i></span>ar</a>
+  <span class="links">
+    <a href="bondholders.html">For bondholders</a>
+    <a href="underwriters.html">For underwriters</a>
+    <a href="how-it-works.html" class="active">How it works</a>
+    <a href="testnet.html">On testnet</a>
+  </span>
+  <span class="right">
+    <span class="netpill"><span class="dot"></span> Stellar Testnet <span id="net-state" style="color:var(--green)">·</span></span>
+    <a class="btn ghost" id="nav-explorer" href="#" target="_blank" rel="noopener">Explorer</a>
+  </span>
+</nav>
+
+<div class="wrap">
+  <header class="page-hero">
+    <a class="backlink" href="index.html">‹ Back to overview</a>
+    <div class="eyebrow"><span class="dot"></span> The mechanism</div>
+    <h1>Coverage, <span class="alt">settled by proof</span>.</h1>
+    <p class="lead">There is no claims department, no committee, and no admin key.<br>
+       A default either produces a valid proof of who is owed, or it does not.<br>
+       The contract verifies that one proof on Stellar, then pays from the reserve.</p>
+  </header>
+
+  <section class="first">
+    <div class="sec-top"><div><div class="label">The flow</div><h2>Four steps, one of them is a proof</h2></div></div>
+    <div class="steps">
+      <div class="scard"><div class="n">01 / Underwrite</div><h3>Fund the reserve</h3><p>Underwriters deposit collateral into a non-custodial vault and earn premiums. <b>Cover sold can never exceed the reserve</b>, checked on every purchase.</p></div>
+      <div class="scard"><div class="n">02 / Cover</div><h3>Buy protection</h3><p>Bondholders buy cover against default and pay a premium. The <b>amount each holder buys stays private</b>, stored only as a Poseidon commitment.</p></div>
+      <div class="scard"><div class="n">03 / Prove</div><h3>Settle a default</h3><p>Anyone runs the settlement program off-chain. It reads the on-chain payment record and <b>proves who is owed</b>, by a published formula, in zero knowledge.</p></div>
+      <div class="scard"><div class="n">04 / Payout</div><h3>Verify and pay</h3><p>The contract verifies the proof on Stellar and releases each payout from the reserve. <b>A verified proof is the only thing that can move it.</b></p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-top"><div><div class="label">The rule</div><h2>What a settlement actually computes</h2></div>
+      <p>The formula is published and version-pinned.<br>
+         The proof attests that the payouts followed it exactly.</p>
+    </div>
+    <div class="prose">
+      <p>For an epoch, each owed party has an <b>expected coupon</b>. The settlement program reconstructs, from observed chain data, the <b>qualifying payments</b> that actually arrived on an asset-received basis. The difference is the <b>shortfall</b>.</p>
+    </div>
+    <div class="formula">
+      <div class="eq">shortfall = owed − qualifying_payments_received</div>
+      <div class="eq" style="margin-top:12px">payout(buyer) = cover(buyer) × (shortfall ÷ owed)</div>
+      <div class="cap">Each cover buyer is paid their committed cover, scaled by the realized shortfall. The sum of all payouts can never exceed the reserve.</div>
+    </div>
+    <div class="prose">
+      <p>If the issuer paid in full, the shortfall is zero, every payout is zero, and <b>there is nothing to settle</b>. The program will not produce a proof for a non-default, so no payout can be authorized. That is the property that keeps the design honest: protection that did not trigger cannot be claimed.</p>
+    </div>
+    <div class="callout"><b>Qualifying payments are measured carefully.</b> Receipts count on an asset-received basis across classic operations and SAC transfers, muxed addresses are normalized to the base account, and a clawed-back coupon counts as a shortfall, not a payment. The rule is the same one the proof enforces.</div>
+  </section>
+
+  <section>
+    <div class="sec-top"><div><div class="label">The proof</div><h2>What the zero-knowledge proof guarantees</h2></div>
+      <p>And, just as importantly, what it does not.</p>
+    </div>
+    <div class="two-col">
+      <div class="prose">
+        <h3>What it proves</h3>
+        <p>The proof attests that the published settlement program ran over the supplied inputs and produced exactly these payouts. It binds the result to the <b>positions committed on-chain</b>, to the <b>instrument's pinned rules</b>, and to the <b>payment snapshot</b> it was given. Tamper with any of those and verification fails.</p>
+        <p>The contract checks a single Groth16 proof using Stellar's native BN254 and Poseidon functions. One verification authorizes the whole settlement.</p>
+      </div>
+      <div class="prose">
+        <h3>What it does not prove</h3>
+        <p>A proof guarantees correct computation <b>over the inputs it was supplied</b>, not that those inputs are the canonical truth of the world. The honest trust assumption is the integrity of the payment snapshot fed to the program.</p>
+        <p>On this build the snapshot is assembled from observed chain data; a production deployment hardens that source. Parallar states this plainly rather than overclaiming that a proof certifies reality.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-top"><div><div class="label">The architecture</div><h2>One generic core, every instrument</h2></div>
+      <p>Four contracts, separated on purpose.<br>
+         Each instrument is an instance, not a fork.</p>
+    </div>
+    <div class="feats">
+      <div class="feat"><h3>Factory and registry</h3><p>A registry holds instrument <b>types</b>; the factory deploys an instance by cloning a generic vault and settlement contract and cross-binding them. Adding a second instrument is <b>one transaction</b>.</p></div>
+      <div class="feat"><h3>Vault</h3><p>Holds the reserve and the private cover commitments. Deposits and withdrawals are open; <b>only a verified settlement can move funds to a payee</b>. Solvency is enforced on every purchase.</p></div>
+      <div class="feat"><h3>Settlement</h3><p>Verifies one proof against the instrument's <b>pinned image id</b>, checks the bindings, and executes the payouts. No admin path, no pause-and-pay, no override.</p></div>
+      <div class="feat"><h3>Guest program</h3><p>The per-type rules, compiled to a zkVM image. New rules mean a <b>new type entry with a new image id</b>; live instruments stay pinned to theirs forever. Rules are never upgraded in place.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-top"><div><div class="label">Guarantees</div><h2>What cannot happen</h2></div></div>
+    <div class="qa">
+      <div class="item"><div class="q">No payout without a verified proof</div><div class="a">There is no getter that pays from public state, no plaintext cover, and no settlement override. <b>Verification is the sole authorization.</b></div></div>
+      <div class="item"><div class="q">One settlement per epoch</div><div class="a">An epoch settles once. Replaying the same proof, or settling before the deadline, reverts.</div></div>
+      <div class="item"><div class="q">A non-default cannot be claimed</div><div class="a">If the trigger did not occur, the program produces no proof. <b>There is no input that fakes a default into existence.</b></div></div>
+      <div class="item"><div class="q">Payouts cannot exceed the reserve</div><div class="a">The sum of payouts is capped at the collateral, and stale or tampered roots are rejected at verification.</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-top"><div><div class="label">Next</div><h2>Pick your side, or watch it run</h2></div></div>
+    <div class="hero-cta">
+      <a class="btn" href="bondholders.html">For bondholders</a>
+      <a class="btn ghost" href="underwriters.html">For underwriters</a>
+      <a class="btn ghost" href="testnet.html">See it on testnet</a>
+    </div>
+  </section>
+</div>
+
+<footer>
+  <div class="foot-grid">
+    <a class="wordmark" href="index.html" style="font-size:18px">Para<span class="ll"><i></i><i></i></span>ar</a>
+    <div class="foot-links">
+      <a href="bondholders.html">For bondholders</a>
+      <a href="underwriters.html">For underwriters</a>
+      <a href="how-it-works.html">How it works</a>
+      <a href="testnet.html">On testnet</a>
+      <a id="f-factory" href="#" target="_blank" rel="noopener">Factory ↗</a>
+      <a id="f-verifier" href="#" target="_blank" rel="noopener">Verifier ↗</a>
+    </div>
+    <span class="mono">Verifiable settlement on Stellar · Testnet build</span>
+  </div>
+</footer>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

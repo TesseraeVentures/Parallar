@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>For bondholders · Parallar</title>
+<meta name="description" content="Buy cover on a tokenized bond position with Parallar. If the issuer defaults, you are paid from a pre-funded reserve through a zero-knowledge proof, not a claims process. Your cover size stays private on-chain.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@300;400&family=Instrument+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<nav>
+  <a class="wordmark" href="index.html">Para<span class="ll"><i></i><i></i></span>ar</a>
+  <span class="links">
+    <a href="bondholders.html" class="active">For bondholders</a>
+    <a href="underwriters.html">For underwriters</a>
+    <a href="how-it-works.html">How it works</a>
+    <a href="testnet.html">On testnet</a>
+  </span>
+  <span class="right">
+    <span class="netpill"><span class="dot"></span> Stellar Testnet <span id="net-state" style="color:var(--green)">·</span></span>
+    <a class="btn ghost" id="nav-explorer" href="#" target="_blank" rel="noopener">Explorer</a>
+  </span>
+</nav>
+
+<div class="wrap">
+  <header class="page-hero">
+    <a class="backlink" href="index.html">‹ Back to overview</a>
+    <div class="eyebrow"><span class="dot" style="background:var(--brass);box-shadow:0 0 7px var(--brass)"></span> For bondholders</div>
+    <h1>Cover for a bond position, <span class="alt">paid by proof</span>.</h1>
+    <p class="lead">Hold a tokenized bond and worried about a missed coupon?<br>
+       Buy cover and pay a premium.<br>
+       If the issuer defaults, you are paid from a reserve that was funded before the cover was ever sold.</p>
+    <div class="hero-cta" style="margin-top:28px">
+      <a class="btn" href="how-it-works.html">How a payout works</a>
+      <a class="btn ghost" href="testnet.html">See a real payout on testnet</a>
+    </div>
+  </header>
+
+  <section class="first">
+    <div class="sec-top"><div><div class="label">Why buy cover here</div><h2>Protection that settles itself</h2></div>
+      <p>No adjuster, no waiting on a decision.<br>
+         The default is what triggers the payout.</p>
+    </div>
+    <div class="feats">
+      <div class="feat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 13l4 4L19 7"/></svg><h3>Automatic, proof-settled payout</h3><p>On a default there is <b>no claim to file</b>. Anyone can run the settlement, and a verified proof releases your payout from the reserve.</p></div>
+      <div class="feat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 018 0v3"/></svg><h3>Your position stays private</h3><p>How much cover you buy is stored only as a <b>Poseidon commitment</b>. The protocol enforces the totals without ever revealing your size.</p></div>
+      <div class="feat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg><h3>Funded before it is sold</h3><p>Cover can never exceed the reserve behind it. You are backed by collateral that is <b>already on-chain</b>, in claw-proof, freeze-proof assets.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-top"><div><div class="label">Your payout</div><h2>What happens when a bond defaults</h2></div>
+      <p>Four steps. You only act in the first one.</p>
+    </div>
+    <div class="steps">
+      <div class="scard"><div class="n">01 / You</div><h3>Buy cover</h3><p>You buy cover on your position and pay a premium. Your <b>cover size is committed privately</b>; only an aggregate is public.</p></div>
+      <div class="scard"><div class="n">02 / The issuer</div><h3>Misses a coupon</h3><p>An expected coupon does not arrive in full by the deadline. The shortfall is measured from <b>on-chain payment data</b>.</p></div>
+      <div class="scard"><div class="n">03 / Anyone</div><h3>Proves it</h3><p>The settlement program proves who is owed and by how much, in zero knowledge, by the <b>published formula</b>.</p></div>
+      <div class="scard"><div class="n">04 / The contract</div><h3>Pays you</h3><p>Stellar verifies the proof and the reserve <b>pays your cover</b>, scaled to the realized shortfall. No one had to approve it.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-top"><div><div class="label">The number</div><h2>How your payout is sized</h2></div>
+      <p>The formula is published and pinned to the instrument.<br>
+         A proof attests it was followed exactly.</p>
+    </div>
+    <div class="formula">
+      <div class="eq">your payout = your cover × (shortfall ÷ owed)</div>
+      <div class="cap">A full default pays your cover in full; a partial default pays it pro-rata. The sum of all payouts can never exceed the reserve.</div>
+    </div>
+    <div class="callout">If the issuer pays on time, the shortfall is zero and there is nothing to settle. <b>Protection that did not trigger cannot be claimed</b>, by anyone, which is exactly what keeps the reserve sound for the holders who do need it.</div>
+  </section>
+
+  <section>
+    <div class="sec-top"><div><div class="label">Questions</div><h2>What bondholders ask</h2></div></div>
+    <div class="qa">
+      <div class="item"><div class="q">Do I have to file a claim?</div><div class="a">No. There is no claims process and no operator to convince. A default is settled by <b>anyone running the proof</b>, and the contract pays you on verification.</div></div>
+      <div class="item"><div class="q">Can anyone see how much cover I hold?</div><div class="a">No. Your cover is stored as a commitment. The protocol checks that total cover never exceeds the reserve <b>without seeing each holder's amount</b>.</div></div>
+      <div class="item"><div class="q">What if there is not enough in the reserve?</div><div class="a">Cover can never be sold beyond the reserve in the first place, and total payouts are capped at the collateral. Solvency is <b>enforced on-chain</b>, not promised.</div></div>
+      <div class="item"><div class="q">Could an admin block or redirect my payout?</div><div class="a">There is no admin path to funds. The only way the reserve moves to a payee is a <b>verified settlement proof</b>. No pause-and-pay, no override.</div></div>
+      <div class="item"><div class="q">Is this live?</div><div class="a">This is a testnet build. The contracts are deployed and a full default-to-payout has already executed on-chain. <a href="testnet.html">See it on testnet ›</a></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-top"><div><div class="label">Next</div><h2>See it, or back the other side</h2></div></div>
+    <div class="hero-cta">
+      <a class="btn" href="how-it-works.html">How it works</a>
+      <a class="btn ghost" href="underwriters.html">For underwriters</a>
+      <a class="btn ghost" href="testnet.html">On testnet</a>
+    </div>
+  </section>
+</div>
+
+<footer>
+  <div class="foot-grid">
+    <a class="wordmark" href="index.html" style="font-size:18px">Para<span class="ll"><i></i><i></i></span>ar</a>
+    <div class="foot-links">
+      <a href="bondholders.html">For bondholders</a>
+      <a href="underwriters.html">For underwriters</a>
+      <a href="how-it-works.html">How it works</a>
+      <a href="testnet.html">On testnet</a>
+      <a id="f-factory" href="#" target="_blank" rel="noopener">Factory ↗</a>
+      <a id="f-verifier" href="#" target="_blank" rel="noopener">Verifier ↗</a>
+    </div>
+    <span class="mono">Verifiable settlement on Stellar · Testnet build</span>
+  </div>
+</footer>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

@@ -162,3 +162,12 @@
   - Zero em/en-dashes (grep-verified). Verified via the preview: renders cleanly, live RPC reads connect (verifier live).
 - **Next:** N=10 proof-gen on the x86 box; video + DoraHacks submission (founder).
 - **Blocked:** none.
+
+## 2026-06-15 (cont.) — R26: frontend made multi-page + orphan/subheader polish
+- **Done (per feedback: kill remaining orphans, distribute subheader sentences, build the linked pages):**
+  - Orphans fixed structurally: added `text-wrap:balance` to all headings (kills "bonds" in the hero h1 and "proof" in the how-it-works h2 without manual breaks) and `text-wrap:pretty` to body copy; widened the hero h1 to 18ch so it lands as two balanced lines ("Default protection" / "for tokenized bonds."). Section subheaders now distribute their sentences across lines via `<br>` (Overview, How it works, On testnet).
+  - Converted the single page into a multi-page site. Extracted the shared design system to `frontend/styles.css` and the on-chain data loader to `frontend/app.js` (element-guarded so every page reuses it). Nav + footer now link real pages, not anchors; homepage sections link out ("For bondholders ›", "For underwriters ›", "Read the full mechanism ›", "See everything that is live ›").
+  - Built the four linked pages, consistent with the design system and dual-sided / testnet-honest / no-dashes constraints: **how-it-works.html** (four-step flow, published shortfall/pro-rata formula, what a ZK proof does vs does not guarantee — faithful to TECH_SPEC §1, architecture, guarantees), **bondholders.html** (cover-buyer landing + payout walkthrough + FAQ), **underwriters.html** (reserve/premium landing + capital-protection invariants + risk stated plainly), **testnet.html** (data-driven: contracts, detailed instruments table, the live settlement, real-vs-mocked honesty note).
+  - No proof-generation time quoted anywhere. Zero em/en-dashes across all five pages (verified). Verified every page in the preview: CSS/app.js load, active-nav states, headings balance with no orphans, testnet page populates contracts + 3 instruments + live settlement, live RPC reads connect (`live ✓`).
+- **Next:** N=10 proof-gen on the x86 box; video + DoraHacks submission (founder).
+- **Blocked:** none.

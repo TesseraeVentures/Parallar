@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>For underwriters · Parallar</title>
+<meta name="description" content="Underwrite default protection on tokenized bonds with Parallar. Fund a non-custodial reserve, earn premiums from cover buyers, and stay protected by on-chain solvency: only a verified zero-knowledge proof can ever move your capital.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@300;400&family=Instrument+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<nav>
+  <a class="wordmark" href="index.html">Para<span class="ll"><i></i><i></i></span>ar</a>
+  <span class="links">
+    <a href="bondholders.html">For bondholders</a>
+    <a href="underwriters.html" class="active">For underwriters</a>
+    <a href="how-it-works.html">How it works</a>
+    <a href="testnet.html">On testnet</a>
+  </span>
+  <span class="right">
+    <span class="netpill"><span class="dot"></span> Stellar Testnet <span id="net-state" style="color:var(--green)">·</span></span>
+    <a class="btn ghost" id="nav-explorer" href="#" target="_blank" rel="noopener">Explorer</a>
+  </span>
+</nav>
+
+<div class="wrap">
+  <header class="page-hero">
+    <a class="backlink" href="index.html">‹ Back to overview</a>
+    <div class="eyebrow"><span class="dot" style="background:var(--teal);box-shadow:0 0 7px var(--teal)"></span> For underwriters</div>
+    <h1>Back the reserve, <span class="alt">earn the premiums</span>.</h1>
+    <p class="lead">Supply the collateral that backs payouts, and earn the premiums that cover buyers pay.<br>
+       Your capital sits in a non-custodial vault.<br>
+       Only a verified proof can move it, never an operator and never an admin.</p>
+    <div class="hero-cta" style="margin-top:28px">
+      <a class="btn" href="how-it-works.html">How settlement works</a>
+      <a class="btn ghost" href="testnet.html">See the reserve on testnet</a>
+    </div>
+  </header>
+
+  <section class="first">
+    <div class="sec-top"><div><div class="label">Why underwrite here</div><h2>Yield, without handing over custody</h2></div>
+      <p>You earn premiums for taking real default risk.<br>
+         The protocol, not a counterparty, holds the rules.</p>
+    </div>
+    <div class="feats">
+      <div class="feat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--teal)"><path d="M12 2v6M9 5l3-3 3 3"/><rect x="4" y="9" width="16" height="11" rx="1.5"/></svg><h3>Premium yield</h3><p>Cover buyers pay premiums to be protected. As an underwriter you <b>earn that flow</b> for backing the reserve.</p></div>
+      <div class="feat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--teal)"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg><h3>Non-custodial by construction</h3><p>Your deposit lives in a vault that <b>only a verified settlement can pay out</b>. There is no operator key and no pause-and-pay.</p></div>
+      <div class="feat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--teal)"><path d="M5 13l4 4L19 7"/></svg><h3>Solvency enforced on-chain</h3><p>Total cover can <b>never exceed your reserve</b>, checked on every purchase. You are never short by construction, not by trust.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-top"><div><div class="label">Your capital</div><h2>How the reserve is protected</h2></div>
+      <p>Three guarantees stand between your deposit and a wrongful payout.</p>
+    </div>
+    <div class="qa">
+      <div class="item"><div class="q">Only a proof can move it</div><div class="a">There is no getter that pays from public state and no admin override. The reserve moves to a payee <b>only when the settlement contract verifies a valid proof</b> on Stellar.</div></div>
+      <div class="item"><div class="q">Cover is capped at the reserve</div><div class="a">Every cover purchase is checked against the collateral. The aggregate of sold cover <b>can never exceed what you have funded</b>, so payouts cannot outrun the reserve.</div></div>
+      <div class="item"><div class="q">Claw-proof, freeze-proof collateral</div><div class="a">The factory rejects collateral assets that can be clawed back or frozen. Your reserve is held in assets <b>nobody can pull out from under it</b>.</div></div>
+      <div class="item"><div class="q">A non-default cannot drain you</div><div class="a">If the issuer paid on time, no proof exists and nothing settles. You only ever pay <b>genuine, proven shortfalls</b>, sized by the published formula.</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-top"><div><div class="label">Withdrawals</div><h2>Liquidity on your terms</h2></div>
+      <p>Open when nothing is settling.<br>
+         Locked only by an in-flight settlement, never by an operator.</p>
+    </div>
+    <div class="prose">
+      <p>Deposits and withdrawals are permissionless. Outside an active settlement you can <b>add to or pull from the reserve freely</b>, subject only to the solvency floor that keeps sold cover backed. There is no lockup imposed by a manager, because there is no manager.</p>
+    </div>
+    <div class="formula">
+      <div class="eq">sold cover ≤ reserve   ·   Σ payouts ≤ collateral</div>
+      <div class="cap">The two invariants the vault enforces on every action. Withdraw down to the floor that keeps outstanding cover backed; never below it.</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-top"><div><div class="label">The risk</div><h2>Said plainly</h2></div></div>
+    <div class="prose">
+      <p>Underwriting default protection means <b>you pay valid defaults</b>. When a covered bond genuinely misses a coupon, the reserve pays the cover buyers, and that is the risk you are compensated for through premiums. Parallar does not hide that, it makes it precise: payouts are sized by a published formula and authorized by a proof, so you are never paying more than what was proven owed, and never paying a default that did not happen.</p>
+      <p>This is a hackathon build on Stellar testnet, not a launched market. There is no real capital at stake yet. <a href="how-it-works.html">Read exactly what a proof does and does not guarantee ›</a></p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-top"><div><div class="label">Next</div><h2>See it, or cover the other side</h2></div></div>
+    <div class="hero-cta">
+      <a class="btn" href="how-it-works.html">How it works</a>
+      <a class="btn ghost" href="bondholders.html">For bondholders</a>
+      <a class="btn ghost" href="testnet.html">On testnet</a>
+    </div>
+  </section>
+</div>
+
+<footer>
+  <div class="foot-grid">
+    <a class="wordmark" href="index.html" style="font-size:18px">Para<span class="ll"><i></i><i></i></span>ar</a>
+    <div class="foot-links">
+      <a href="bondholders.html">For bondholders</a>
+      <a href="underwriters.html">For underwriters</a>
+      <a href="how-it-works.html">How it works</a>
+      <a href="testnet.html">On testnet</a>
+      <a id="f-factory" href="#" target="_blank" rel="noopener">Factory ↗</a>
+      <a id="f-verifier" href="#" target="_blank" rel="noopener">Verifier ↗</a>
+    </div>
+    <span class="mono">Verifiable settlement on Stellar · Testnet build</span>
+  </div>
+</footer>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
