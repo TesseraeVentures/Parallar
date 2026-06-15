@@ -211,3 +211,13 @@
 - **Founder x86 flow (turnkey):** `gen_weather_scenario` (real testnet addrs) → `deploy_weather.sh` → fund vault + buy_protection(commitment) → `prove --guest weather` → `submit`. Deploy needs no x86; only the proof does.
 - **Next:** centerpiece 3 scale half — a 1k-holder credit determination run for real determination numbers (executor, no proving, fully doable here); then the interactive testnet dApp; then live partial-default + verifier-router topology scripts.
 - **Blocked:** live weather proof needs the x86 box (founder). Everything up to it is built, tested, and turnkey.
+
+## 2026-06-15 (cont.) — R30: scale benchmark — determination cycles (hardware-independent)
+
+**Build-beyond-P0, centerpiece 3 (scale half) — done, fully measured here (no x86 needed).**
+- **Done:**
+  - `prover/host/tests/scale.rs`: runs the credit + weather guests in the RISC Zero EXECUTOR over 10/100/1000 inputs and reports zkVM cycle counts (user cycles + Σ 2^po2 proving cycles). Cycles are deterministic + hardware-independent, so these are representative measured on this machine.
+  - **Measured:** credit_v1 determination 10/100/1000 holders = 2.2M / 3.6M / 17.5M user cycles (≈15k cycles per added bondholder); weather_v1 10/100/1000 observations = 2.1M / 2.7M / 8.5M. On-chain Groth16 verify stays FLAT at ~35M insns regardless — unbounded private determination off-chain, constant-size settlement on-chain (the structural ZK payoff, now quantified).
+  - README Benchmarks + demo.sh beat 7 now carry the scale table. This closes the gap-analysis "no scale numbers" finding honestly without x86 (the x86 N=10 is still the separate proof-gen wall-clock, founder).
+- **Next:** centerpiece 4 — the interactive testnet dApp (read+commit, Law-1-safe), fully doable here; then live partial-default + verifier-router topology scripts.
+- **Blocked:** none for the items I can do solo. Live weather proof + the x86 N=10 wall-clock remain founder/x86.

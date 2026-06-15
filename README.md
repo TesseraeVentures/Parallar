@@ -103,7 +103,16 @@ All ids + the reproducible deploy script are in [deployments/testnet.json](deplo
 |---|---|---|
 | On-chain Groth16 verify | **≈ 35M CPU insns** (Bn254Pairing 17.5M + G2-subgroup 11.8M + G1Mul 5.8M) | ~3× headroom under Soroban's ~100M/tx budget — hardware-independent (runs on-chain) |
 
-Proof-generation timings (N=10 + a 1k-holder extrapolation, per TECH_SPEC §10.7) are captured on representative x86 proving hardware with `parallar-prover bench --inputs witness.json --n 10`. We don't quote a dev-loop figure: proof generation needs x86, and an Apple-Silicon-under-Rosetta-emulation number isn't representative of real proving hardware.
+**Determination scales with the book; on-chain settlement does not.** zkVM *cycle counts* are deterministic and hardware-independent, so these are representative measured on any machine (unlike proving wall-clock):
+
+| Determination (zkVM user cycles) | 10 | 100 | 1,000 |
+|---|---|---|---|
+| `credit_v1` (bondholders) | 2.2M | 3.6M | 17.5M |
+| `weather_v1` (observations) | 2.1M | 2.7M | 8.5M |
+
+The off-chain determination grows with the book (≈15k cycles per added bondholder), while **on-chain Groth16 verification stays flat at ~35M insns** — settlement cost is constant in the size of the thing being settled. This is the structural payoff: unbounded private determination off-chain, one constant-size proof on-chain. Reproduce: `cargo test -p parallar-prover-host --test scale -- --ignored --nocapture`.
+
+Proof-generation *wall-clock* (N=10 + a 1k-holder extrapolation, per TECH_SPEC §10.7) is captured on representative x86 proving hardware with `parallar-prover bench --inputs witness.json --n 10`. We don't quote a dev-loop figure: proof generation needs x86, and an Apple-Silicon-under-Rosetta-emulation number isn't representative of real proving hardware.
 
 ## Instance #2 (`weather_v1`) — same core, different guest
 

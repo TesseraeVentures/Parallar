@@ -124,7 +124,8 @@ note "parity-proven: weather's Poseidon commitment + position/allocation roots +
 
 # ── 7. benchmarks ─────────────────────────────────────────────────────────────
 beat "Benchmarks"
-note "on-chain verify   ≈ 35M CPU insns  (Bn254Pairing 17.5M + G2-subgroup 11.8M + G1Mul 5.8M); ~3× headroom under ~100M/tx — hardware-independent"
+note "on-chain verify   ≈ 35M CPU insns  (Bn254Pairing 17.5M + G2-subgroup 11.8M + G1Mul 5.8M); ~3× headroom under ~100M/tx — hardware-independent, FLAT in holder count"
+note "determination     zkVM cycles (hardware-independent): credit_v1 10/100/1000 holders = 2.2M/3.6M/17.5M — grows with the book while verify stays flat (cargo test --test scale -- --ignored)"
 note "proof generation  measured on representative x86 hardware via 'parallar-prover bench' (N=10 + 1k extrapolation); proving needs x86, so no dev-loop figure is quoted"
 
 printf "\n${bold}${grn}  ✓ Parallar demo complete — every beat ran against real code.${rst}\n"
