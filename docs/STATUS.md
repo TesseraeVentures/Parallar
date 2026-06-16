@@ -490,3 +490,13 @@ The founder flagged the three RUNBOOK "remaining ops" notes — all now closed (
 - Verified: claim generator runs; scale.rs compiles + solvency cycle runs; deploy scripts syntax-clean.
 - **Now genuinely turnkey for the founder:** every guest has a generator + CLI path; every family has a deploy scaffold; cycle benches cover the new determination + confidential paths. Remaining is purely x86 execution (real proofs, live settlements, wall-clock N=10, video) + recording the deploy-script live dry-run tweaks.
 - **Blocked:** none.
+
+## 2026-06-16 (cont.) — R60: server build-out + clean www/app domain split
+
+Founder is transferring to a Hetzner (x86) box + setting up parallar.com.
+- **`scripts/provision_server.sh`:** one-command fresh-box build-out (Ubuntu/Hetzner) — installs rust + risc0 (rzup) + stellar-cli + the wasm target, builds contracts + the 6-guest zkVM methods, runs check_image_ids.sh + the full test suite. The Hetzner box doubles as the PROVING box (x86-native, no Rosetta) and the web host.
+- **Clean www/app split (founder's choice):** the marketing site and the dApp are genuinely separate subdomains. `scripts/build_web.sh` builds two docroots from the flat `frontend/` source — `dist/www` (5 marketing pages + app.js) and `dist/app` (app.html→index.html + dapp.js + commit.wasm) — and rewires the shared nav's cross-links to absolute cross-subdomain URLs (www's "Try it"→app.parallar.com; app's nav→www.parallar.com). Source stays flat so local dev (`make frontend`) keeps the seamless integrated nav. Verified: dist/app has ONLY the 4 dApp files (no marketing pages); links rewired correctly. `dist/` gitignored.
+- **`deploy/nginx/parallar.conf`:** vhosts — apex→www redirect, www (dist/www), app (dist/app, wasm MIME), TLS via certbot.
+- **`docs/DEPLOYMENT.md`:** transfer → provision → DNS (subdomain table: www + app needed; docs recommended; api NOT needed — no backend) → nginx + certbot → esm.sh-vendoring hardening → go-live checklist.
+- **Subdomains:** `www` (site) + `app` (dApp) required; apex→www; `docs` optional (good for the SDF "verify it yourself" story); **no `api`** — the dApp is client-side RPC + Freighter.
+- **Blocked:** none. Domain purchase + DNS are the founder's (account actions); the repo ships the scripts + config + runbook.
