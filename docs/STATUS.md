@@ -434,3 +434,12 @@
 - 73 contract tests + solvency 11 green. confidential_vault is in the CI fast job via `--workspace`.
 - **Next:** wire solvency_v1 into methods (ELF + image_id) + a host prove fn; confidential-tranche variant; G4 record-date guest; G2 factory deploy path.
 - **Blocked:** none for buildable items (real solvency PROOF generation needs x86; the ELF build is local).
+
+## 2026-06-16 (cont.) — R53: solvency_v1 wired to the zkVM (image_id + host + guard)
+
+- **solvency_v1 now provable end-to-end:** added a `SolvencyRequest` dispatch enum (Buy | Withdraw); created the `guest-solvency` zkVM wrapper (`prover/methods/guest-solvency`) + registered it in the methods list. The methods build mints **`SOLVENCY_V1` image_id `c0b358d4606fa821…`** — and credit_v1 stays `705ddac4…` (adding a guest doesn't perturb the others; versioning law intact, confirmed by the guard).
+- **Host prove path:** `prove_solvency_buy` / `prove_solvency_withdraw` (`prover/host`) return a `SolvencyProofArtifact` (seal + journal + digest, no cover) that the confidential_vault consumes. Two executor parity tests (buy + withdraw) confirm the zkVM guest commits the same journal as the native check — run locally; the Groth16 prove step runs on x86.
+- **Guard:** `scripts/check_image_ids.sh` now asserts all 5 image_ids (incl. solvency) — passing.
+- This closes the skeptic's "solvency_v1 has no ELF/image_id, the only guest not provable end-to-end" finding. G3 is now BUILT end-to-end (guest + image_id + host + the confidential_vault consumer). PRODUCTION_GAP G3 updated.
+- **Next:** confidential-tranche variant; G4 record-date guest; G2 factory deploy path. **Remaining (x86):** generate a real Groth16 solvency proof + a live confidential settlement.
+- **Blocked:** none for buildable items.

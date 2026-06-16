@@ -174,5 +174,14 @@ pub fn check_withdraw(inp: &WithdrawInputs) -> Result<WithdrawJournal, SolvencyE
     Ok(WithdrawJournal { cover_commitment: inp.cover_commitment, collateral_after: inp.collateral_after })
 }
 
+/// The guest entry: a confidential purchase or a confidential withdrawal. The zkVM wrapper reads
+/// this, runs the matching check, and commits the journal (112 bytes for buy, 48 for withdraw — the
+/// vault decodes by length, so the two proofs cannot be confused).
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub enum SolvencyRequest {
+    Buy(SolvencyInputs),
+    Withdraw(WithdrawInputs),
+}
+
 #[cfg(test)]
 mod test;

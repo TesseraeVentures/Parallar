@@ -66,6 +66,18 @@ pub struct ProofArtifact {
     pub allocations: Vec<AllocationOut>,
 }
 
+/// A solvency proof (Option C confidential cover, G3) — what `confidential_vault.
+/// buy_protection_proven(seal, journal, premium)` and `withdraw_proven(seal, journal)` consume. The
+/// cover and the running totals are NOT here (they stay hidden); only the seal, the committed
+/// solvency journal (112 bytes for a purchase, 48 for a withdrawal), and its digest.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct SolvencyProofArtifact {
+    pub seal: String,           // 260-byte selector-wrapped Groth16 seal, hex
+    pub image_id: String,       // the pinned SOLVENCY_V1 image id, hex
+    pub journal: String,        // the committed solvency journal, hex
+    pub journal_digest: String, // sha256(journal), hex
+}
+
 /// Prepend the verifier selector to a raw 256-byte Groth16 seal → the 260-byte seal the
 /// RISC Zero router expects (it dispatches on `seal[0..4]`). Inverse is dropping the prefix.
 pub fn wrap_seal(raw_seal: &[u8]) -> Vec<u8> {
@@ -294,6 +306,61 @@ pub fn prove_claim_credit_v1(
         epoch: native_journal.epoch,
         total_payout: native_journal.total_payout,
         allocations,
+    })
+}
+
+/// Option C confidential cover (G3): prove a PURCHASE preserves solvency over the HIDDEN running
+/// aggregate (`new_total = old_total + cover <= collateral`) and binds the buyer's position
+/// commitment. Verified against the `SOLVENCY_V1` image_id; the cover never enters the journal.
+/// The confidential vault advances its stored commitment on this proof.
+pub fn prove_solvency_buy(
+    inputs: &solvency_v1::SolvencyInputs,
+) -> anyhow::Result<SolvencyProofArtifact> {
+    let native = solvency_v1::check(inputs)
+        .map_err(|e| anyhow::anyhow!("native solvency check failed: {e:?}"))?;
+    prove_solvency(solvency_v1::SolvencyRequest::Buy(inputs.clone()), &native.to_bytes())
+}
+
+/// Option C: prove a WITHDRAWAL preserves solvency — the hidden aggregate still fits under the
+/// post-withdrawal collateral, so the vault can release collateral without breaking the invariant.
+pub fn prove_solvency_withdraw(
+    inputs: &solvency_v1::WithdrawInputs,
+) -> anyhow::Result<SolvencyProofArtifact> {
+    let native = solvency_v1::check_withdraw(inputs)
+        .map_err(|e| anyhow::anyhow!("native withdraw check failed: {e:?}"))?;
+    prove_solvency(solvency_v1::SolvencyRequest::Withdraw(inputs.clone()), &native.to_bytes())
+}
+
+fn prove_solvency(
+    request: solvency_v1::SolvencyRequest,
+    native_journal: &[u8],
+) -> anyhow::Result<SolvencyProofArtifact> {
+    use parallar_methods::{SOLVENCY_V1_GUEST_ELF, SOLVENCY_V1_GUEST_ID};
+    use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts};
+
+    let env = ExecutorEnv::builder().write(&request)?.build()?;
+    let receipt = default_prover()
+        .prove_with_opts(env, SOLVENCY_V1_GUEST_ELF, &ProverOpts::groth16())?
+        .receipt;
+    receipt.verify(SOLVENCY_V1_GUEST_ID)?;
+    anyhow::ensure!(
+        receipt.journal.bytes.as_slice() == native_journal,
+        "guest-committed solvency journal != native journal"
+    );
+
+    let raw_seal = receipt
+        .inner
+        .groth16()
+        .map_err(|e| anyhow::anyhow!("not a groth16 receipt: {e:?}"))?
+        .seal
+        .clone();
+    let image_id = risc0_zkvm::sha::Digest::from(SOLVENCY_V1_GUEST_ID);
+    let journal_digest: [u8; 32] = Sha256::digest(&receipt.journal.bytes).into();
+    Ok(SolvencyProofArtifact {
+        seal: hex::encode(wrap_seal(&raw_seal)),
+        image_id: hex::encode(image_id.as_bytes()),
+        journal: hex::encode(&receipt.journal.bytes),
+        journal_digest: hex::encode(journal_digest),
     })
 }
 
@@ -804,5 +871,54 @@ mod claim_credit_v1_test {
         let exec_env = ExecutorEnv::builder().write(&inputs).unwrap().build().unwrap();
         let session = default_executor().execute(exec_env, CLAIM_CREDIT_V1_GUEST_ELF).unwrap();
         assert_eq!(session.journal.bytes.as_slice(), &native_journal[..]);
+    }
+
+    // ---- solvency_v1 (Option C confidential cover, G3): the zkVM guest commits the same journal
+    //      the native check does, for both the purchase and the withdrawal request. Runs in the
+    //      executor (no x86 prover needed); the Groth16 prove path is exercised on the x86 box. ----
+    #[test]
+    fn solvency_buy_zkvm_guest_journal_matches_native() {
+        use parallar_methods::SOLVENCY_V1_GUEST_ELF;
+        use risc0_zkvm::{default_executor, ExecutorEnv};
+        let old_salt = [1u8; 32];
+        let new_salt = [2u8; 32];
+        let salt = [7u8; 32];
+        let buyer = vec![0x12u8; 40];
+        let inputs = solvency_v1::SolvencyInputs {
+            collateral: 1000,
+            prev_cover_commitment: solvency_v1::commit_total(0, &old_salt),
+            new_cover_commitment: solvency_v1::commit_total(600, &new_salt),
+            position_commitment: settle_credit_v1::commitment(&buyer, 600, &salt),
+            old_total: 0,
+            old_salt,
+            new_salt,
+            cover: 600,
+            buyer,
+            salt,
+        };
+        let native = solvency_v1::check(&inputs).unwrap().to_bytes();
+        let req = solvency_v1::SolvencyRequest::Buy(inputs);
+        let exec_env = ExecutorEnv::builder().write(&req).unwrap().build().unwrap();
+        let session = default_executor().execute(exec_env, SOLVENCY_V1_GUEST_ELF).unwrap();
+        assert_eq!(session.journal.bytes.as_slice(), &native[..], "buy journal parity");
+    }
+
+    #[test]
+    fn solvency_withdraw_zkvm_guest_journal_matches_native() {
+        use parallar_methods::SOLVENCY_V1_GUEST_ELF;
+        use risc0_zkvm::{default_executor, ExecutorEnv};
+        let salt = [9u8; 32];
+        let total = 600i128;
+        let inputs = solvency_v1::WithdrawInputs {
+            collateral_after: 700,
+            cover_commitment: solvency_v1::commit_total(total, &salt),
+            total,
+            salt,
+        };
+        let native = solvency_v1::check_withdraw(&inputs).unwrap().to_bytes();
+        let req = solvency_v1::SolvencyRequest::Withdraw(inputs);
+        let exec_env = ExecutorEnv::builder().write(&req).unwrap().build().unwrap();
+        let session = default_executor().execute(exec_env, SOLVENCY_V1_GUEST_ELF).unwrap();
+        assert_eq!(session.journal.bytes.as_slice(), &native[..], "withdraw journal parity");
     }
 }
