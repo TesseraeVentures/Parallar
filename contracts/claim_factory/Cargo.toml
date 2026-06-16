@@ -1,0 +1,21 @@
+[package]
+name = "parallar-claim-factory"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# ClaimFactory (PRODUCTION_GAP G2) — deploys the CLAIMABLE instrument family: a generic vault +
+# the ClaimableSettlement variant (permissionless settle + buyer self-claim after a keeper-grace
+# window), cross-bound in one tx. A NEW factory version; the base ParallarFactory + its frozen
+# InstrumentType surface are untouched (Law #2). Reuses the base factory's config_hash /
+# instrument_id derivation so a claimable instrument binds proofs exactly as a standard one does.
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+doctest = false
+
+[dependencies]
+soroban-sdk = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }

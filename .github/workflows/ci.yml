@@ -18,7 +18,7 @@ jobs:
       # Contracts that test against the in-process host. The factory + yield_factory tests use
       # `contractimport!` and need built wasm, so they run in the `contracts-wasm` job below.
       - name: contracts — native suites
-        run: cargo test --locked --workspace --exclude parallar-factory --exclude parallar-yield-factory
+        run: cargo test --locked --workspace --exclude parallar-factory --exclude parallar-yield-factory --exclude parallar-claim-factory
       # Determination guests + the relocated property-test crate (native). The RISC Zero ELF/host
       # tests need the risc0 toolchain and run on the x86 box. proptest lives in parallar-proptests,
       # NEVER in a guest crate (a guest dev-dep would shift its ELF/image_id).
@@ -39,8 +39,8 @@ jobs:
       # first (cargo handles the Soroban wasm target directly; no stellar-cli needed in CI).
       - name: build contract wasm
         run: cargo build --locked --release --target wasm32v1-none
-      - name: factory + yield_factory deploy tests
-        run: cargo test --locked -p parallar-factory -p parallar-yield-factory
+      - name: factory + yield_factory + claim_factory deploy tests
+        run: cargo test --locked -p parallar-factory -p parallar-yield-factory -p parallar-claim-factory
 
   hygiene:
     name: invariants of the build itself

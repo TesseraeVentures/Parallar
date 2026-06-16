@@ -461,3 +461,12 @@
 - PRODUCTION_GAP G4 → BUILT. **Next:** G2 claimable-family factory deploy path (4/4). **Remaining (x86):** live credit_v3 settlement.
 - Note: cleared the rebuildable contract `target/` to recover disk (Mac at ~100%); contracts rebuild on demand.
 - **Blocked:** none for buildable items.
+
+## 2026-06-16 (cont.) — R56: G2 claimable-family factory deploy path (build sequence 4/4 — COMPLETE)
+
+- **`contracts/claim_factory` (`parallar-claim-factory`, a NEW factory version):** deploys the CLAIMABLE family — a vault + `ClaimableSettlement` (permissionless settle + buyer self-claim after a keeper-grace window), cross-bound in one tx. `register_claimable_type` records BOTH guest image_ids (settle + claim) + the grace window; `deploy_claimable` deploys + cross-binds behind the eligibility gate. Reuses the base factory's byte-identical config_hash / instrument_id derivation (reimplemented locally — depending on the factory rlib collides export symbols in the cdylib). 3 tests: cross-bound family, ineligible-collateral reject, immutable type.
+- The base ParallarFactory + its frozen InstrumentType surface are untouched (Law #2); this is a sibling factory, matching the yield_factory pattern. Closes the review's "claim_settlement is built but unreachable via any deploy path" finding. PRODUCTION_GAP G2 deploy path → BUILT.
+- CI: claim_factory joins the contracts-wasm job (it uses contractimport!). 83 contract tests green (12 crates).
+- **BUILD SEQUENCE COMPLETE:** (1) G3 confidential-cover vault + solvency wiring; (2) confidential-tranche variant; (3) G4 record-date guest credit_v3; (4) G2 claimable factory.
+- **Remaining = x86/founder only:** real Groth16 proofs (solvency, credit_v3) + live testnet settlements; the demo video; the N=10 benchmark recapture. Note: cleared rebuildable target/ dirs to manage disk (Mac near-full).
+- **Blocked:** none for buildable items.
