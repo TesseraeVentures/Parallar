@@ -36,7 +36,7 @@ seal + the journal). The witness generators are `#[ignore]` tests run with `--ig
 | `credit_v2` (G1 attested) | `--test gen_new_scenarios gen_credit_v2_witness` | `… --guest credit-v2 …` |
 | `credit_v3` (G4 record-date) | `--test gen_new_scenarios gen_credit_v3_witness` | `… --guest credit-v3 …` |
 | `solvency_v1` (G3 confidential) | `--test gen_new_scenarios gen_solvency_witnesses` | `parallar-prover prove-solvency --inputs buy_witness.json --out buy_proof.json` |
-| `claim_credit_v1` (G2 escape hatch) | *(see note)* | `… --guest claim …` |
+| `claim_credit_v1` (G2 escape hatch) | `--test gen_new_scenarios gen_claim_witness` | `… --guest claim …` |
 
 Example — generate + prove the record-date (`credit_v3`) instrument:
 
@@ -57,14 +57,13 @@ cargo run -p parallar-prover-host -- prove-solvency \
     --inputs /tmp/parallar_solvency/buy_witness.json --out /tmp/solvency_buy_proof.json
 ```
 
-**Notes / known gaps (all small, x86-box work):**
+**Notes:**
 - The new generators (`gen_new_scenarios`) use **deterministic synthetic** inputs (issuer demo key
   `[42;32]`, synthetic buyer) — perfect for proving + benchmarking the pipeline. For a
   **testnet-settleable** scenario (real `G…` buyer in the position commitment, the real issuer
   signing key), adapt them the way `gen_scenario.rs` reads `SCENARIO_*` env addresses.
-- **`claim_credit_v1` has no dedicated generator yet** — the CLI path (`--guest claim`) is wired,
-  but you must hand-build a `ClaimInputs` witness (public commitments + the claimant's own opening +
-  the folded `position_root`). Mirror the `claim_inputs()` test helper in `prover/host/src/lib.rs`.
+- All 6 guests now have a witness generator and a CLI path; `gen_solvency_witnesses` also prints the
+  `initial_cover_commitment` the `confidential_vault` (and `deploy_confidential.sh`) needs.
 - `history-builder` assembles a `credit_v1` witness from a payment-scan + a params template
   (`parallar-prover history-builder --scan … --params … --out witness.json`).
 
@@ -81,11 +80,11 @@ cd prover && cargo test -p parallar-prover-host --test scale -- --ignored --noca
 cargo run -p parallar-prover-host -- bench --guest credit --inputs witness.json --n 10
 ```
 
-**Gap:** `scale.rs` benches only `credit_v1` + `weather_v1` today; `bench` (CLI) now covers
-credit/weather/credit-v2/credit-v3/claim. Add scale rows + a solvency wall-clock path if you want
-cycle figures for every guest — otherwise quote credit_v1 + weather and note the others are the
-same determination order of magnitude. **Capture the numbers into a committed file** (the DoD asks
-for printed benchmarks; none is committed yet) and confirm the README rows match the live output.
+`scale.rs` now reports cycle counts for `credit_v1`, `weather_v1`, `credit_v3` (attested record-date,
+incl. in-circuit Ed25519), and `solvency_v1` (confidential, constant-size — ~2.7M user cycles);
+`bench` (CLI) covers all 6 guests. **Capture the wall-clock N=10 numbers into a committed file**
+(the DoD asks for printed benchmarks; none is committed yet) and confirm the README determination
+table matches the live `scale.rs` output (re-check the credit_v1/weather row labels).
 
 ## 3 · Deploy to testnet
 
@@ -95,15 +94,18 @@ for printed benchmarks; none is committed yet) and confirm the README rows match
 ./scripts/ttl_monitor.sh        # keep the deployed instruments' archival state alive (run periodically)
 ```
 
-**Gap — the new families have no deploy script yet** (test-green only, never on testnet):
-`yield_factory` (protected + tranched — 5-arg constructor, `register_tier`, `set_tranched_wasm`,
-`deploy_protected`/`deploy_tranched`), `claim_factory` (`register_claimable_type` +
-`deploy_claimable`), and the confidential vaults (NOT factory-deployed — each `init` takes a
-hand-computed `initial_cover_commitment = commit_total(0, salt0)`, printed by the solvency
-generator). To deploy one live, drive `stellar contract deploy/invoke` directly per the contract's
-`init`/constructor signature, then settle with the matching proof from §1. Add `deploy_yield.sh` /
-`deploy_claim.sh` / `deploy_confidential.sh` (mirror `deploy_testnet.sh`) if you want them turnkey,
-and extend `ttl_monitor.sh` + `deployments/testnet.json` to track the new instruments.
+The new families now have deploy scaffolds, mirroring `deploy_testnet.sh`:
+
+```bash
+./scripts/deploy_yield.sh         # yield_factory → register_tier + deploy_protected (+ deploy_tranched note)
+./scripts/deploy_claim.sh         # claim_factory → register_claimable_type + deploy_claimable
+./scripts/deploy_confidential.sh  # confidential_vault + settlement, cross-bound (uses the printed initial_cover_commitment)
+```
+
+These are **untested against live testnet** (the contracts are test-green; only the live deploy is
+unrun) — dry-run the invokes once and adjust arg formatting to your stellar-cli version before a
+real run. After deploying, **record the ids in `deployments/testnet.json` and extend
+`ttl_monitor.sh`** to keep the new instruments' archival state alive.
 
 ## 4 · Record the demo (the 2–3 min DoD video)
 

@@ -480,3 +480,13 @@
 - **Earlier today (R57):** the final 8-agent audit returned GO-with-quick-fixes; fixed the one CI hole (credit_v3 untested) + reconciled the stale scope docs (PRD/PRODUCTION_GAP/README/VERIFY).
 - **Verdict: push-ready** once the founder is content with the demo scope. Remaining is genuinely x86/founder-only: real Groth16 proofs, live testnet settlements of the new families, the N=10 wall-clock capture, the video, DoraHacks submission.
 - **Blocked:** none for buildable items. (Disk: the 6-guest methods build is at this Mac's limit; `cargo clean` between phases.)
+
+## 2026-06-16 (cont.) — R59: closed the 3 remaining ops gaps (claim generator + scale rows + deploy scripts)
+
+The founder flagged the three RUNBOOK "remaining ops" notes — all now closed (buildable, local):
+- **Claim witness generator:** `gen_claim_witness` added to `gen_new_scenarios.rs` (single-buyer claim: public commitments + the claimant's own opening + folded position_root). Verified: emits `/tmp/parallar_claim/witness.json`. All 6 guests now have a generator + CLI path.
+- **Benchmark coverage:** `scale.rs` gains `credit_v3_determination_scale` (attested record-date, incl. in-circuit Ed25519, 10/100/1000) + `solvency_cycle_cost` (confidential proof, constant-size — verified ~2.7M user / 3.1M proving cycles). `bench` CLI already covers all 6.
+- **Deploy scripts:** `scripts/deploy_yield.sh` (yield_factory → register_tier + deploy_protected), `deploy_claim.sh` (claim_factory → register_claimable_type + deploy_claimable), `deploy_confidential.sh` (confidential_vault + settlement cross-bound, with the generator's initial_cover_commitment). All bash -n clean; mirror deploy_testnet.sh; marked untested-vs-live (dry-run first). RUNBOOK updated.
+- Verified: claim generator runs; scale.rs compiles + solvency cycle runs; deploy scripts syntax-clean.
+- **Now genuinely turnkey for the founder:** every guest has a generator + CLI path; every family has a deploy scaffold; cycle benches cover the new determination + confidential paths. Remaining is purely x86 execution (real proofs, live settlements, wall-clock N=10, video) + recording the deploy-script live dry-run tweaks.
+- **Blocked:** none.

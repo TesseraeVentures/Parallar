@@ -143,3 +143,58 @@ fn gen_solvency_witnesses() {
     println!("  confidential_vault init arg initial_cover_commitment = commit_total(0,[1;32]) = {}", hex::encode(sv::commit_total(0, &old_salt)));
     println!("  prove: parallar-prover prove-solvency --inputs {out}/buy_witness.json --out buy_proof.json");
 }
+
+/// claim_credit_v1 (G2 escape hatch): a SINGLE buyer's claim witness — the public commitments of
+/// all buyers + the claimant's own opening + the folded position_root. Two buyers; buyer 0 claims.
+#[test]
+#[ignore = "one-off witness generator"]
+fn gen_claim_witness() {
+    use claim_credit_v1::{claim, ClaimInputs};
+    use settle_credit_v1::{
+        commitment, config_hash, derive_instrument_id, position_root, snapshot_root, terms_hash,
+        ConfigFields, Holder, Payment, Position, Terms,
+    };
+    let out = out_dir("claim");
+    let snapshot = vec![
+        Holder { id: [1; 32], balance: 10_000, has_trustline: true, frozen: false },
+        Holder { id: [2; 32], balance: 10_000, has_trustline: true, frozen: false },
+    ];
+    let payments = vec![Payment { holder: [2; 32], amount: 1000, paid_at: 400, clawed_back: false }]; // h1 unpaid -> default
+    let terms = Terms { coupon_rate_bps: 1000 };
+    let pos0 = Position { buyer: vec![0x10u8; 40], cover: 600, salt: [1; 32] };
+    let pos1 = Position { buyer: vec![0x20u8; 40], cover: 400, salt: [2; 32] };
+    let positions = vec![pos0.clone(), pos1.clone()];
+    let commitments = vec![
+        commitment(&pos0.buyer, pos0.cover, &pos0.salt),
+        commitment(&pos1.buyer, pos1.cover, &pos1.salt),
+    ];
+    let config = ConfigFields {
+        reference_asset_xdr: vec![0xAA, 1, 2, 3],
+        terms_hash: terms_hash(&terms),
+        schedule_root: [0x55; 32],
+        snapshot_root: snapshot_root(&snapshot),
+        collateral_token_xdr: vec![0xBB, 4, 5, 6],
+        premium_bps: 200,
+        epoch_deadlines: vec![(1u32, 500u64)],
+    };
+    let type_id_xdr = vec![0xCCu8, 1, 2, 3, 4];
+    let inputs = ClaimInputs {
+        instrument_id: derive_instrument_id(&type_id_xdr, 1, &config_hash(&config)),
+        type_id_xdr,
+        rules_version: 1,
+        config,
+        epoch: 1,
+        deadline: 500,
+        terms,
+        collateral: 2000,
+        snapshot,
+        payments,
+        commitments,
+        claimant_index: 0,
+        claimant: pos0,
+        position_root: position_root(&positions),
+    };
+    claim(&inputs).expect("native claim must succeed");
+    std::fs::write(format!("{out}/witness.json"), serde_json::to_string_pretty(&inputs).unwrap()).unwrap();
+    println!("claim witness -> {out}/witness.json | prove: parallar-prover prove --guest claim --inputs {out}/witness.json --out claim_proof.json");
+}
