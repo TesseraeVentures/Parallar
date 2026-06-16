@@ -1,0 +1,10 @@
+# Cloudflare Workers Static Assets — serves the BUILT dApp (dist/app; app.html as index.html).
+# In the parallar-app Worker → Settings → Build:
+#   Build command:  bash scripts/build_web.sh
+#   Deploy command: npx wrangler deploy -c wrangler.app.toml
+# .wasm is served as application/wasm automatically (the in-browser Poseidon commitment).
+name = "parallar-app"
+compatibility_date = "2025-09-01"
+
+[assets]
+directory = "./dist/app"

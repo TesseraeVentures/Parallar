@@ -1,0 +1,11 @@
+# Cloudflare Workers Static Assets — serves the BUILT marketing site (dist/www).
+# In the parallar-www Worker → Settings → Build:
+#   Build command:  bash scripts/build_web.sh        (generates dist/www + dist/app)
+#   Deploy command: npx wrangler deploy -c wrangler.www.toml
+# An assets-only Worker (no `main` script): Cloudflare serves the directory's files directly,
+# with index.html at the root. dist/ is gitignored, so the build command must run first.
+name = "parallar-www"
+compatibility_date = "2025-09-01"
+
+[assets]
+directory = "./dist/www"
