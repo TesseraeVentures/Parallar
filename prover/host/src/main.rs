@@ -13,8 +13,8 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
 use parallar_prover_host::{
-    prove_credit_v2_settlement, prove_credit_v3_settlement, prove_settlement,
-    prove_weather_settlement, ProofArtifact,
+    prove_claim_credit_v1, prove_credit_v2_settlement, prove_credit_v3_settlement, prove_settlement,
+    prove_solvency_buy, prove_solvency_withdraw, prove_weather_settlement, ProofArtifact,
 };
 use settle_credit_v1::Inputs;
 use std::path::PathBuf;
@@ -42,6 +42,8 @@ enum GuestKind {
     /// settle_credit_v3 — attested + record-date (G4): the issuer signs the per-epoch holder set.
     #[value(name = "credit-v3")]
     Credit3,
+    /// claim_credit_v1 — the single-buyer escape-hatch claim (G2); consumed by claim_direct.
+    Claim,
 }
 
 #[derive(Subcommand)]
@@ -57,6 +59,18 @@ enum Cmd {
         /// Which guest type the witness targets.
         #[arg(long, value_enum, default_value_t = GuestKind::Credit)]
         guest: GuestKind,
+    },
+    /// Run the solvency_v1 guest (G3 confidential cover) under the real Groth16 prover. The witness
+    /// is a `SolvencyRequest` (Buy or Withdraw) — `confidential_vault` consumes the resulting
+    /// SolvencyProofArtifact via buy_protection_proven / withdraw_proven. Distinct artifact shape
+    /// (no allocations) from the settlement guests, hence its own subcommand.
+    ProveSolvency {
+        /// Witness JSON — a `solvency_v1::SolvencyRequest` (Buy{..} or Withdraw{..}).
+        #[arg(long)]
+        inputs: PathBuf,
+        /// Where to write the solvency proof artifact JSON.
+        #[arg(long, default_value = "solvency_proof.json")]
+        out: PathBuf,
     },
     /// Submit a proof artifact to a deployed settlement contract via stellar-cli.
     Submit {
@@ -109,6 +123,7 @@ enum Cmd {
 fn main() -> Result<()> {
     match Cli::parse().cmd {
         Cmd::Prove { inputs, out, guest } => cmd_prove(inputs, out, guest),
+        Cmd::ProveSolvency { inputs, out } => cmd_prove_solvency(inputs, out),
         Cmd::Submit { artifact, settlement, source, network, dry_run } => {
             cmd_submit(artifact, settlement, source, network, dry_run)
         }
@@ -163,6 +178,11 @@ fn cmd_prove(inputs_path: PathBuf, out: PathBuf, guest: GuestKind) -> Result<()>
                 serde_json::from_str(&raw).context("parsing credit_v3 witness JSON")?;
             prove_credit_v3_settlement(&inputs)?
         }
+        GuestKind::Claim => {
+            let inputs: claim_credit_v1::ClaimInputs =
+                serde_json::from_str(&raw).context("parsing claim witness JSON")?;
+            prove_claim_credit_v1(&inputs)?
+        }
     };
 
     std::fs::write(&out, serde_json::to_string_pretty(&artifact)?)
@@ -175,6 +195,27 @@ fn cmd_prove(inputs_path: PathBuf, out: PathBuf, guest: GuestKind) -> Result<()>
         artifact.epoch,
         artifact.total_payout,
         artifact.allocations.len(),
+    );
+    Ok(())
+}
+
+fn cmd_prove_solvency(inputs_path: PathBuf, out: PathBuf) -> Result<()> {
+    use solvency_v1::SolvencyRequest;
+    let raw = std::fs::read_to_string(&inputs_path)
+        .with_context(|| format!("reading witness {}", inputs_path.display()))?;
+    let req: SolvencyRequest = serde_json::from_str(&raw).context("parsing solvency witness JSON")?;
+    let artifact = match req {
+        SolvencyRequest::Buy(i) => prove_solvency_buy(&i)?,
+        SolvencyRequest::Withdraw(i) => prove_solvency_withdraw(&i)?,
+    };
+    std::fs::write(&out, serde_json::to_string_pretty(&artifact)?)
+        .with_context(|| format!("writing artifact {}", out.display()))?;
+    eprintln!(
+        "✓ solvency proof → {} | seal={}B image_id={} journal={}B (cover hidden)",
+        out.display(),
+        hex::decode(&artifact.seal).map(|s| s.len()).unwrap_or(0),
+        artifact.image_id,
+        hex::decode(&artifact.journal).map(|s| s.len()).unwrap_or(0),
     );
     Ok(())
 }
@@ -218,6 +259,12 @@ fn cmd_bench(inputs_path: PathBuf, n: u32, guest: GuestKind) -> Result<()> {
                     serde_json::from_str(&raw).context("parsing credit_v3 witness JSON")?;
                 let scale = inputs.snapshot.len();
                 ("holders", scale, Box::new(move || prove_credit_v3_settlement(&inputs)))
+            }
+            GuestKind::Claim => {
+                let inputs: claim_credit_v1::ClaimInputs =
+                    serde_json::from_str(&raw).context("parsing claim witness JSON")?;
+                let scale = inputs.snapshot.len();
+                ("holders", scale, Box::new(move || prove_claim_credit_v1(&inputs)))
             }
         };
 

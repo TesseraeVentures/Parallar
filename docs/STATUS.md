@@ -470,3 +470,13 @@
 - **BUILD SEQUENCE COMPLETE:** (1) G3 confidential-cover vault + solvency wiring; (2) confidential-tranche variant; (3) G4 record-date guest credit_v3; (4) G2 claimable factory.
 - **Remaining = x86/founder only:** real Groth16 proofs (solvency, credit_v3) + live testnet settlements; the demo video; the N=10 benchmark recapture. Note: cleared rebuildable target/ dirs to manage disk (Mac near-full).
 - **Blocked:** none for buildable items.
+
+## 2026-06-16 (cont.) — R58: founder ops toolchain (witness generators + CLI completion + RUNBOOK)
+
+**Answering "are the setup/testing scripts in place to make proof-gen, benchmarking, demo recording straightforward" — the audit found them PARTIAL; this closes the buildable gaps.**
+- **Witness generators for the new proof types:** `prover/host/tests/gen_new_scenarios.rs` emits prove-ready witnesses for credit_v2 (G1), credit_v3 (G4 record-date), and solvency_v1 (G3 — buy + withdraw, plus the printed `initial_cover_commitment` for the confidential_vault init arg). Deterministic synthetic inputs (issuer demo key) so a founder can prove + benchmark with one command, no setup. Verified: all 3 generators run green, 4 witness JSONs emitted.
+- **CLI completion:** all 6 guests now reachable. Added `GuestKind::Claim` (prove/bench) and a `prove-solvency` subcommand (solvency's SolvencyProofArtifact is distinct — no allocations). credit_v2/v3 were already wired (R55).
+- **`docs/RUNBOOK.md`:** the x86 founder runbook — one-time setup, proof-gen per guest (table + worked examples), benchmarking (cycle + wall-clock), deploy, demo recording (with the layer-story shot list + the explicit demo-scope decision the audit asked for), submit. Honestly flags the remaining small gaps: claim has no generator yet (CLI path wired; mirror the test helper), the new families have no deploy script (drive stellar-cli per init), scale.rs benches only credit_v1/weather.
+- **Earlier today (R57):** the final 8-agent audit returned GO-with-quick-fixes; fixed the one CI hole (credit_v3 untested) + reconciled the stale scope docs (PRD/PRODUCTION_GAP/README/VERIFY).
+- **Verdict: push-ready** once the founder is content with the demo scope. Remaining is genuinely x86/founder-only: real Groth16 proofs, live testnet settlements of the new families, the N=10 wall-clock capture, the video, DoraHacks submission.
+- **Blocked:** none for buildable items. (Disk: the 6-guest methods build is at this Mac's limit; `cargo clean` between phases.)
