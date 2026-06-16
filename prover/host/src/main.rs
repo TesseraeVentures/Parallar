@@ -13,7 +13,8 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
 use parallar_prover_host::{
-    prove_credit_v2_settlement, prove_settlement, prove_weather_settlement, ProofArtifact,
+    prove_credit_v2_settlement, prove_credit_v3_settlement, prove_settlement,
+    prove_weather_settlement, ProofArtifact,
 };
 use settle_credit_v1::Inputs;
 use std::path::PathBuf;
@@ -38,6 +39,9 @@ enum GuestKind {
     /// settle_credit_v2 — attested credit (G1): the issuer signs the payment snapshot.
     #[value(name = "credit-v2")]
     Credit2,
+    /// settle_credit_v3 — attested + record-date (G4): the issuer signs the per-epoch holder set.
+    #[value(name = "credit-v3")]
+    Credit3,
 }
 
 #[derive(Subcommand)]
@@ -154,6 +158,11 @@ fn cmd_prove(inputs_path: PathBuf, out: PathBuf, guest: GuestKind) -> Result<()>
                 serde_json::from_str(&raw).context("parsing credit_v2 witness JSON")?;
             prove_credit_v2_settlement(&inputs)?
         }
+        GuestKind::Credit3 => {
+            let inputs: settle_credit_v3::Inputs =
+                serde_json::from_str(&raw).context("parsing credit_v3 witness JSON")?;
+            prove_credit_v3_settlement(&inputs)?
+        }
     };
 
     std::fs::write(&out, serde_json::to_string_pretty(&artifact)?)
@@ -203,6 +212,12 @@ fn cmd_bench(inputs_path: PathBuf, n: u32, guest: GuestKind) -> Result<()> {
                     serde_json::from_str(&raw).context("parsing credit_v2 witness JSON")?;
                 let scale = inputs.snapshot.len();
                 ("holders", scale, Box::new(move || prove_credit_v2_settlement(&inputs)))
+            }
+            GuestKind::Credit3 => {
+                let inputs: settle_credit_v3::Inputs =
+                    serde_json::from_str(&raw).context("parsing credit_v3 witness JSON")?;
+                let scale = inputs.snapshot.len();
+                ("holders", scale, Box::new(move || prove_credit_v3_settlement(&inputs)))
             }
         };
 

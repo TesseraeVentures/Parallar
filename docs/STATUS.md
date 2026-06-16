@@ -452,3 +452,12 @@
 - 80 contract tests green (11 crates).
 - **Next:** G4 record-date guest (credit_v3); G2 claimable-family factory deploy path.
 - **Blocked:** none for buildable items.
+
+## 2026-06-16 (cont.) — R55: G4 record-date guest credit_v3 (build sequence 3/4)
+
+- **`settle_credit_v3` (NEW guest type, image_id `dd07a743…`):** extends credit_v2's attestation to the PER-EPOCH holder snapshot (record-date model for TRADED bonds). The issuer signs `sha256(epoch ‖ snapshot_digest ‖ payments_digest)` — whoever holds on the record date is the attested set; the snapshot is no longer pinned to `config.snapshot_root`; the epoch is in the signed message (no cross-epoch replay). Reuses credit_v1's generic primitives → the same vault/settlement/factory accept it unchanged.
+- 8 native tests: attested record-date default settles; tampered-holder-set rejected (THE record-date guarantee); tampered-payments rejected; cross-epoch-replay rejected; wrong-key rejected; fully-paid unprovable; terms bind the key; two DIFFERENT record-date sets settle across epochs (the headline — holder set not fixed at issuance).
+- **Wired to the zkVM:** image_id minted (credit_v1 stays `705ddac4…`); host `prove_credit_v3_settlement` + CLI `--guest credit-v3` (prove + bench) + executor parity test; `check_image_ids.sh` now guards all 6 image_ids.
+- PRODUCTION_GAP G4 → BUILT. **Next:** G2 claimable-family factory deploy path (4/4). **Remaining (x86):** live credit_v3 settlement.
+- Note: cleared the rebuildable contract `target/` to recover disk (Mac at ~100%); contracts rebuild on demand.
+- **Blocked:** none for buildable items.

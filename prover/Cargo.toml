@@ -3,6 +3,6 @@
 # guest logic as Sprint 2 proceeds.
 [workspace]
 resolver = "2"
-members = ["guests/settle_credit_v1", "guests/settle_weather_v1", "guests/settle_credit_v2", "guests/claim_credit_v1", "guests/solvency_v1", "proptests", "host", "methods"]
+members = ["guests/settle_credit_v1", "guests/settle_weather_v1", "guests/settle_credit_v2", "guests/settle_credit_v3", "guests/claim_credit_v1", "guests/solvency_v1", "proptests", "host", "methods"]
 # methods/guest is cross-compiled for the zkVM target by risc0-build, not a native member.
-exclude = ["methods/guest", "methods/guest-weather", "methods/guest-credit-v2", "methods/guest-claim-credit-v1"]
+exclude = ["methods/guest", "methods/guest-weather", "methods/guest-credit-v2", "methods/guest-claim-credit-v1", "methods/guest-solvency", "methods/guest-credit-v3"]

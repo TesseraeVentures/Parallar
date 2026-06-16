@@ -1,0 +1,22 @@
+[package]
+name = "settle-credit-v3"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# Instance #1, ATTESTED + RECORD-DATE (PRODUCTION_GAP G4). credit_v2 attests the PAYMENT snapshot
+# but fixes the HOLDER snapshot at issuance (snapshot_root == config.snapshot_root) — wrong for a
+# TRADED bond whose holder set changes every epoch. credit_v3 extends the issuer attestation to
+# cover the PER-EPOCH holder snapshot too: the issuer signs (epoch ‖ snapshot_digest ‖
+# payments_digest), so whoever holds on the record date is the set the settlement pays over, and
+# the keeper cannot fabricate the holder set any more than it can fabricate payments.
+#
+# A SEPARATE type with its own image_id (the versioning law); credit_v1/v2 source is never touched.
+# REUSES credit_v1's exact generic primitives, so the same vault/settlement/factory accept it.
+
+[dependencies]
+sha2 = "0.10"
+serde = { version = "1.0", features = ["derive"] }
+settle-credit-v1 = { path = "../settle_credit_v1" }
+# verify-only: no default features (avoids the rng/getrandom path) so it cross-compiles to the zkVM.
+ed25519-dalek = { version = "2", default-features = false }

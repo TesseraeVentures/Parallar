@@ -2435,8 +2435,10 @@ dependencies = [
  "serde_json",
  "settle-credit-v1",
  "settle-credit-v2",
+ "settle-credit-v3",
  "settle-weather-v1",
  "sha2",
+ "solvency-v1",
  "soroban-sdk",
  "stellar-strkey 0.0.13",
 ]
@@ -3501,6 +3503,16 @@ dependencies = [
 
 [[package]]
 name = "settle-credit-v2"
+version = "0.0.0"
+dependencies = [
+ "ed25519-dalek",
+ "serde",
+ "settle-credit-v1",
+ "sha2",
+]
+
+[[package]]
+name = "settle-credit-v3"
 version = "0.0.0"
 dependencies = [
  "ed25519-dalek",

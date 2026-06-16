@@ -27,8 +27,8 @@
 
 ## G4 — Holder-set dynamics
 
-**Today:** holder snapshot fixed at issuance.
-**Production:** per-epoch snapshots (record-date model — matches real bond mechanics anyway) committed via G1's attestation path.
+**Today:** credit_v1/v2 fix the holder snapshot at issuance (`snapshot_root == config.snapshot_root`).
+**BUILT — `settle_credit_v3` (record-date model):** a NEW guest type (image_id `dd07a743…`) extending credit_v2's attestation to the PER-EPOCH holder snapshot: the issuer signs `sha256(epoch ‖ snapshot_digest ‖ payments_digest)`, so whoever holds on each epoch's record date is the attested set the settlement pays over — correct for a TRADED bond. The per-epoch snapshot is no longer pinned to `config.snapshot_root`; the epoch is in the signed message (no cross-epoch replay). 8 native tests (incl. tampered-holder-set rejected, cross-epoch-replay rejected, and two different record-date sets settling across epochs); wired to the zkVM (host `prove_credit_v3_settlement` + CLI `--guest credit-v3` + executor parity test; guarded in `check_image_ids.sh`). Reuses credit_v1's generic primitives, so the same vault/settlement/factory accept it unchanged. **Remaining (x86):** a live testnet settlement of a credit_v3 instrument.
 
 ## G5 — Audit · BLOCKING for pilot
 

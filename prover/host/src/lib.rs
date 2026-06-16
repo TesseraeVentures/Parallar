@@ -264,6 +264,56 @@ pub fn prove_credit_v2_settlement(
     })
 }
 
+/// Instance #1, ATTESTED + RECORD-DATE (G4): run the `settle_credit_v3` guest under the real
+/// Groth16 prover. Identical pipeline to [`prove_credit_v2_settlement`], pinned to credit_v3's own
+/// image id. The proof certifies, in-circuit, that the PER-EPOCH (record-date) holder snapshot AND
+/// the payments were signed by the committed issuer key for this epoch.
+pub fn prove_credit_v3_settlement(
+    inputs: &settle_credit_v3::Inputs,
+) -> anyhow::Result<ProofArtifact> {
+    use parallar_methods::{SETTLE_CREDIT_V3_GUEST_ELF, SETTLE_CREDIT_V3_GUEST_ID};
+    use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts};
+
+    let (allocs, native_journal) = settle_credit_v3::settle(inputs)
+        .map_err(|e| anyhow::anyhow!("native credit_v3 settle failed: {e:?}"))?;
+    let native_journal_bytes = native_journal.to_bytes();
+
+    let env = ExecutorEnv::builder().write(inputs)?.build()?;
+    let receipt = default_prover()
+        .prove_with_opts(env, SETTLE_CREDIT_V3_GUEST_ELF, &ProverOpts::groth16())?
+        .receipt;
+
+    receipt.verify(SETTLE_CREDIT_V3_GUEST_ID)?;
+    anyhow::ensure!(
+        receipt.journal.bytes.as_slice() == &native_journal_bytes[..],
+        "guest-committed journal != native credit_v3 settle journal"
+    );
+
+    let raw_seal = receipt
+        .inner
+        .groth16()
+        .map_err(|e| anyhow::anyhow!("not a groth16 receipt: {e:?}"))?
+        .seal
+        .clone();
+    let image_id = risc0_zkvm::sha::Digest::from(SETTLE_CREDIT_V3_GUEST_ID);
+    let journal_digest: [u8; 32] = Sha256::digest(&receipt.journal.bytes).into();
+
+    let allocations = allocs
+        .iter()
+        .map(|a| Ok(AllocationOut { payee: address_xdr_to_strkey(&a.buyer)?, amount: a.amount }))
+        .collect::<anyhow::Result<Vec<_>>>()?;
+
+    Ok(ProofArtifact {
+        seal: hex::encode(wrap_seal(&raw_seal)),
+        image_id: hex::encode(image_id.as_bytes()),
+        journal: hex::encode(&receipt.journal.bytes),
+        journal_digest: hex::encode(journal_digest),
+        epoch: native_journal.epoch,
+        total_payout: native_journal.total_payout,
+        allocations,
+    })
+}
+
 /// Escape hatch (G2): run the `claim_credit_v1` guest under the real Groth16 prover — a SINGLE
 /// buyer's allocation proof, verified against the CLAIM image_id. Same pipeline as the settlement
 /// provers, one payout. The claimable settlement variant's `claim_direct` consumes this artifact.
@@ -901,6 +951,54 @@ mod claim_credit_v1_test {
         let exec_env = ExecutorEnv::builder().write(&req).unwrap().build().unwrap();
         let session = default_executor().execute(exec_env, SOLVENCY_V1_GUEST_ELF).unwrap();
         assert_eq!(session.journal.bytes.as_slice(), &native[..], "buy journal parity");
+    }
+
+    #[test]
+    fn credit_v3_zkvm_guest_journal_matches_native() {
+        // record-date (G4): the zkVM guest commits the same journal as the native check, over an
+        // issuer-attested per-epoch (snapshot + payments). Executor run; Groth16 prove is on x86.
+        use ed25519_dalek::{Signer, SigningKey};
+        use parallar_methods::SETTLE_CREDIT_V3_GUEST_ELF;
+        use risc0_zkvm::{default_executor, ExecutorEnv};
+        use settle_credit_v3 as v3;
+
+        let sk = SigningKey::from_bytes(&[42u8; 32]);
+        let snapshot = vec![
+            v3::Holder { id: [1; 32], balance: 10_000, has_trustline: true, frozen: false },
+            v3::Holder { id: [2; 32], balance: 10_000, has_trustline: true, frozen: false },
+        ];
+        let payments = vec![v3::Payment { holder: [2; 32], amount: 1000, paid_at: 400, clawed_back: false }];
+        let positions = vec![v3::Position { buyer: vec![0x12u8; 40], cover: 800, salt: [7; 32] }];
+        let terms = v3::Terms { coupon_rate_bps: 1000, issuer_pubkey: sk.verifying_key().to_bytes() };
+        let config = v3::ConfigFields {
+            reference_asset_xdr: vec![0xAA, 1, 2, 3],
+            terms_hash: v3::terms_hash(&terms),
+            schedule_root: [0x55; 32],
+            snapshot_root: [0x33; 32],
+            collateral_token_xdr: vec![0xBB, 4, 5, 6],
+            premium_bps: 200,
+            epoch_deadlines: vec![(1u32, 500u64)],
+        };
+        let type_id_xdr = vec![0xCCu8, 1, 2, 3, 4];
+        let inputs = v3::Inputs {
+            type_id_xdr: type_id_xdr.clone(),
+            rules_version: 1,
+            instrument_id: v3::derive_instrument_id(&type_id_xdr, 1, &v3::config_hash(&config)),
+            config,
+            epoch: 1,
+            deadline: 500,
+            terms,
+            collateral: 2000,
+            attestation: sk.sign(&v3::record_date_msg(1, &snapshot, &payments)).to_bytes().to_vec(),
+            snapshot,
+            payments,
+            positions: positions.clone(),
+            position_root: v3::position_root(&positions),
+        };
+        let native = v3::settle(&inputs).unwrap().1.to_bytes();
+        let exec_env = ExecutorEnv::builder().write(&inputs).unwrap().build().unwrap();
+        let session = default_executor().execute(exec_env, SETTLE_CREDIT_V3_GUEST_ELF).unwrap();
+        assert_eq!(session.journal.bytes.as_slice(), &native[..]);
     }
 
     #[test]
