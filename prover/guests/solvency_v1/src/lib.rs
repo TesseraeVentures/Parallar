@@ -122,5 +122,57 @@ pub fn check(inp: &SolvencyInputs) -> Result<SolvencyJournal, SolvencyError> {
     })
 }
 
+// ─────────────────────────── withdrawal solvency (the symmetric check) ───────────────────────────
+//
+// A purchase grows the hidden aggregate (proven ≤ collateral). A withdrawal shrinks the reserve, so
+// it must prove the SAME hidden aggregate still fits under the post-withdrawal collateral — without
+// revealing it. The vault's withdraw entrypoint verifies this, checks the commitment matches what it
+// stored, and that collateral_after == total_collateral − amount.
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct WithdrawInputs {
+    // --- public ---
+    pub collateral_after: i128,     // total_collateral − the withdrawal amount
+    pub cover_commitment: [u8; 32], // the vault's stored running-cover commitment
+    // --- private witness ---
+    pub total: i128,    // the hidden running aggregate the commitment opens to
+    pub salt: [u8; 32], // its opening salt
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct WithdrawJournal {
+    pub cover_commitment: [u8; 32],
+    pub collateral_after: i128,
+}
+
+impl WithdrawJournal {
+    /// 48-byte layout: cover_commitment(32) ‖ collateral_after(16 BE). Length-distinct from the
+    /// 112-byte purchase journal, so the vault's withdraw entrypoint can never accept a buy proof.
+    pub fn to_bytes(&self) -> [u8; 48] {
+        let mut b = [0u8; 48];
+        b[0..32].copy_from_slice(&self.cover_commitment);
+        b[32..48].copy_from_slice(&self.collateral_after.to_be_bytes());
+        b
+    }
+}
+
+/// Verify a withdrawal preserves solvency: the stored aggregate (hidden) still fits under the
+/// post-withdrawal collateral. Reveals neither the aggregate nor the salt. Any `Err` is a guest
+/// panic (no proof can exist), so the vault cannot release collateral that breaks the invariant.
+pub fn check_withdraw(inp: &WithdrawInputs) -> Result<WithdrawJournal, SolvencyError> {
+    if inp.total < 0 || inp.collateral_after < 0 {
+        return Err(SolvencyError::BadInput);
+    }
+    // the stored commitment opens to the claimed aggregate
+    if commit_total(inp.total, &inp.salt) != inp.cover_commitment {
+        return Err(SolvencyError::PrevMismatch);
+    }
+    // SOLVENCY after the withdrawal: the reserve still covers the whole outstanding book
+    if inp.total > inp.collateral_after {
+        return Err(SolvencyError::Insolvent);
+    }
+    Ok(WithdrawJournal { cover_commitment: inp.cover_commitment, collateral_after: inp.collateral_after })
+}
+
 #[cfg(test)]
 mod test;

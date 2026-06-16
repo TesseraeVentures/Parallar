@@ -976,6 +976,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "parallar-confidential-vault"
+version = "0.0.0"
+dependencies = [
+ "soroban-sdk",
+]
+
+[[package]]
 name = "parallar-factory"
 version = "0.0.0"
 dependencies = [

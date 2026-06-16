@@ -424,3 +424,13 @@
 - **Verified green:** 63 contract tests + 68 guest/proptest tests; frontend dash-free; demo.sh syntax ok; settlement mock-verify-free. Law #1/#2 independently grep-confirmed intact across all 9 contracts.
 - **Remaining (x86/founder):** demo video (DoD), 2nd guest type proven live on testnet, scale.rs N=10 recapture + row-label check. **Remaining (buildable):** add onchain_verify to a CI job (#9). **Do NOT build:** the confidential-cover/tranche/record-date items (correctly remaining; keep as the SDF pilot workplan).
 - **Blocked:** none for buildable items.
+
+## 2026-06-16 (cont.) — R52: G3 confidential-cover vault (consumes solvency_v1)
+
+**Full production build-out (founder override: build the whole protocol, keep the demo tight separately).**
+- **solvency_v1 extended:** added the symmetric WITHDRAW check (`check_withdraw` / `WithdrawInputs` / `WithdrawJournal`, a length-distinct 48-byte journal vs the 112-byte buy journal) — proves the hidden aggregate still fits under post-withdrawal collateral, hiding the aggregate. 11 guest tests (buy + withdraw, insolvent-unprovable, wrong-opening, no-leak).
+- **`contracts/confidential_vault` (NEW instrument-family version):** keeps the running AGGREGATE cover as a Poseidon COMMITMENT (no public total_cover getter). `buy_protection_proven` verifies a solvency_v1 purchase proof (advances the commitment, folds position_root, collects a DECLARED premium distributed rewards-per-share); `withdraw_proven` verifies a withdrawal proof (reserve can't drop below the hidden book); `pay_allocations` stays settlement-only + proof-gated (Law #1). 10 tests incl. forged-proof revert, wrong-prev-commitment, collateral>reserve, wrong-journal-length, premium distribution, proven withdrawal, and the Law #1 negative-auth test.
+- **Honest scope (documented in the contract):** per-buyer position committed + aggregate book hidden (proven adequate); the declared premium is public but the chain never computes premium=cover×bps, so it doesn't reveal cover (adequacy priced by the keeper that supplies the aggregate opening — solvency_v1's coordination model). TTL discipline applied from the start (the tranched_vault lesson).
+- 73 contract tests + solvency 11 green. confidential_vault is in the CI fast job via `--workspace`.
+- **Next:** wire solvency_v1 into methods (ELF + image_id) + a host prove fn; confidential-tranche variant; G4 record-date guest; G2 factory deploy path.
+- **Blocked:** none for buildable items (real solvency PROOF generation needs x86; the ELF build is local).

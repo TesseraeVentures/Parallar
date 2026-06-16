@@ -1,0 +1,23 @@
+[package]
+name = "parallar-confidential-vault"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# ConfidentialVault — Option C confidential cover (PRODUCTION_GAP G3). The vault keeps the running
+# AGGREGATE cover as a Poseidon COMMITMENT (never a public total). Each purchase carries a
+# solvency_v1 proof that the new aggregate <= collateral (cover + totals hidden); each withdrawal
+# carries a proof that the aggregate still fits under the post-withdrawal collateral. The chain
+# verifies ONE Groth16 proof and advances the commitment — per-purchase cover and the running book
+# never appear in plaintext on-chain. A NEW instrument-family version; the four frozen surfaces are
+# untouched. Default payouts stay settlement-only + proof-gated (Law #1).
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+doctest = false
+
+[dependencies]
+soroban-sdk = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }

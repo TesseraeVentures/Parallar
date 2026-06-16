@@ -80,3 +80,39 @@ fn the_cover_never_appears_in_the_journal() {
     // the cover's byte pattern must not appear anywhere in the public journal
     assert!(!bytes.windows(cover_be.len()).any(|w| w == cover_be), "cover must not leak into the journal");
 }
+
+fn w_inputs(total: i128, collateral_after: i128) -> WithdrawInputs {
+    let salt = [9u8; 32];
+    WithdrawInputs { collateral_after, cover_commitment: commit_total(total, &salt), total, salt }
+}
+
+#[test]
+fn solvent_withdrawal_proves() {
+    // aggregate 600 (hidden); after the withdrawal collateral_after 700 >= 600 -> proves.
+    let j = check_withdraw(&w_inputs(600, 700)).expect("a solvent withdrawal proves");
+    assert_eq!(j.collateral_after, 700);
+    assert_eq!(j.cover_commitment, commit_total(600, &[9u8; 32]));
+    assert_eq!(j.to_bytes().len(), 48, "length-distinct from the 112-byte buy journal");
+}
+
+#[test]
+fn withdrawal_below_aggregate_is_unprovable() {
+    // collateral_after 599 < aggregate 600 -> no proof can exist, so the vault can't release it.
+    assert_eq!(check_withdraw(&w_inputs(600, 599)), Err(SolvencyError::Insolvent));
+    // exactly at the aggregate is fine
+    check_withdraw(&w_inputs(600, 600)).expect("collateral_after == aggregate is solvent");
+}
+
+#[test]
+fn withdraw_wrong_aggregate_opening_rejected() {
+    let mut i = w_inputs(600, 700);
+    i.cover_commitment = [0xAB; 32]; // not the stored aggregate
+    assert_eq!(check_withdraw(&i), Err(SolvencyError::PrevMismatch));
+}
+
+#[test]
+fn withdraw_aggregate_never_appears_in_the_journal() {
+    let j = check_withdraw(&w_inputs(777, 1000)).unwrap();
+    let agg_be = 777i128.to_be_bytes();
+    assert!(!j.to_bytes().windows(agg_be.len()).any(|w| w == agg_be), "aggregate must not leak");
+}
