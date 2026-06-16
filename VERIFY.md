@@ -47,7 +47,9 @@ cd prover && cargo build -p parallar-methods
 ```
 `SETTLE_CREDIT_V1_GUEST_ID` must hash to the deployed image_id (`705ddac4…`). This proves the
 source in this repo is exactly the guest the live instruments are pinned to. (Needs the RISC Zero
-toolchain; `weather_v1` = `d31246e6…`, `credit_v2` = `d07e6aaf…`.)
+toolchain.) `scripts/check_image_ids.sh` guards all six pinned ids: `credit_v1` = `705ddac4…`,
+`weather_v1` = `d31246e6…`, `credit_v2` = `d07e6aaf…`, `credit_v3` = `dd07a743…` (record-date, G4),
+`claim_credit_v1` = `b4319def…` (escape hatch, G2), `solvency_v1` = `c0b358d4…` (confidential cover, G3).
 
 ## 6 · Reproduce the determination + invariants
 ```bash

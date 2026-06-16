@@ -24,7 +24,7 @@ jobs:
       # NEVER in a guest crate (a guest dev-dep would shift its ELF/image_id).
       - name: guests + property tests (native)
         working-directory: prover
-        run: cargo test --locked -p settle-credit-v1 -p settle-weather-v1 -p settle-credit-v2 -p claim-credit-v1 -p solvency-v1 -p parallar-proptests
+        run: cargo test --locked -p settle-credit-v1 -p settle-weather-v1 -p settle-credit-v2 -p settle-credit-v3 -p claim-credit-v1 -p solvency-v1 -p parallar-proptests
 
   contracts-wasm:
     name: factory deploy tests (build wasm for contractimport!)

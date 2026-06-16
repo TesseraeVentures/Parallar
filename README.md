@@ -76,7 +76,7 @@ The proofs guarantee correct *computation over supplied inputs*, not input canon
 ```bash
 # prerequisites: rust, stellar-cli — docs/TECH_SPEC.md §2
 make demo          # fresh-clone, one command: the full verified scenario (below)
-make test          # build all four contracts to wasm + run the full suite
+make test          # build all contracts to wasm + run the full suite (12 contracts, 6 guests)
 make verify        # independently check the live settlement + determination — see VERIFY.md
 ```
 
@@ -139,10 +139,10 @@ A new guest is a **new `image_id`, i.e. a new registered type** — never an in-
 
 ## Roadmap
 
-[PRODUCTION_GAP.md](docs/PRODUCTION_GAP.md) in full; headlines: attested history feeds (G1) → buyer-held openings + escape-hatch self-claims (G2) → audit (G5) → testnet pilot on a mirrored real issuance → the **yield router** (wrap a bond, receive the protected share class: gross coupon in, premium to the reserve, net yield out — e.g. 14% → 12% protected) → further instrument types on the unchanged core: `weather_v1` (parametric index settlement) and `trade_settlement_v1` (commodity provisional-to-final invoicing — pricing, quality, demurrage — with buyer funds as the funded reserve) → multi-tranche vaults → regulated wrapper via Bermuda's BMA (P)SPI framework.
+[PRODUCTION_GAP.md](docs/PRODUCTION_GAP.md) in full. **Built since the freeze (under override):** attested feeds (G1 — `credit_v2` issuer-signed payments, `credit_v3` per-epoch record-date), the escape hatch (G2 — `claim_direct` + `claim_factory`), confidential cover (G3 — `solvency_v1` + `confidential_vault`), the **yield router/factory** (G11/G12 — wrap a bond into the protected share class: gross coupon in, premium to the reserve, net yield out, e.g. 14% → 12% protected; risk-tiered factory), instance #2 (`weather_v1`), and first-loss **tranches** incl. a confidential variant (G14). **Ahead (founder/external):** real Groth16 proofs + live testnet settlements of the new families → audit (G5) → testnet pilot on a mirrored real issuance → `trade_settlement_v1` (instance #3 — commodity provisional-to-final invoicing) → regulated wrapper via Bermuda's BMA (P)SPI framework.
 
 ## Repo map
 
-`demo.sh` · `reset.sh` · `Makefile` · `contracts/` (factory, bond, vault, settlement) · `prover/` (`guests/settle_credit_v1`, `host` + `parallar-prover` CLI, `methods`) · `frontend/` (live testnet console) · `deployments/` (testnet ids) · `scripts/` (deploy_testnet.sh) · `spikes/poseidon_parity/` · `docs/` (PRD, TECH_SPEC, SPRINT_PLAN, PRODUCTION_GAP, STATUS) · `site/` (landing page) · `deck/` · `external/` (vendored Nethermind RISC Zero verifier, commit-pinned, gitignored)
+`demo.sh` · `reset.sh` · `Makefile` · `contracts/` — the frozen core (factory, bond, vault, settlement) + the instrument-family versions built on the same surfaces (claim_settlement, yield_vault, yield_router, yield_factory, tranched_vault, confidential_vault, confidential_tranched_vault, claim_factory) · `prover/` (`guests/`: settle_credit_v1/v2/v3, settle_weather_v1, claim_credit_v1, solvency_v1; `host` + `parallar-prover` CLI; `methods`; `proptests`) · `frontend/` (live testnet console) · `deployments/` (testnet ids) · `scripts/` (deploy_testnet.sh, deploy_weather.sh, verify.sh, check_image_ids.sh, ttl_monitor.sh) · `spikes/poseidon_parity/` · `docs/` (PRD, TECH_SPEC, SPRINT_PLAN, PRODUCTION_GAP, ECONOMICS, OPERATIONS, STATUS) · `site/` (landing page) · `deck/` · `external/` (vendored Nethermind RISC Zero verifier, commit-pinned, gitignored)
 
 MIT

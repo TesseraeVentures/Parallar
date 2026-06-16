@@ -6,6 +6,8 @@
 **Owner:** Ben (solo founder + Claude Code)
 **Status:** Approved for build
 
+> **Scope note (updated 2026-06-16).** This is the v0.3 June-13 baseline. Under explicit human override *after* the P0 freeze, the protocol was built out well beyond this document: instance #2 (weather), attested feeds (`credit_v2`/`credit_v3`, G1/G4), the self-claim escape hatch (`claim_direct`, G2), confidential cover (`solvency_v1` + `confidential_vault`, G3), first-loss tranches incl. a confidential variant (G14), and the yield router/factory distribution layer (G11/G12). Several §4 non-goals and §6/§8 entries below therefore **lag the code**. [PRODUCTION_GAP.md](PRODUCTION_GAP.md) + [STATUS.md](STATUS.md) are the live source of truth for built-vs-remaining; the two architectural laws and the four frozen surfaces held through every addition.
+
 **Change log v0.2 → v0.3:**
 - Reframed: Parallar is a **verifiable settlement layer** — a factory-deployed family of instruments sharing one settlement architecture. Credit protection is instance #1; weather/parametric indices are named instance #2.
 - **Factory model is P0 (R7):** instrument types registered (guest image ID + WASM hashes + rules version); instrument instances (vault + settlement pair) deployed and cross-bound in one transaction via the Soroban deployer pattern.
@@ -34,7 +36,7 @@ Solving this per-instrument is wasteful and unauditable. The cost of not solving
 The layer has three parts:
 1. **The factory/registry** — instrument *types* are registered (a settlement guest's image ID + contract WASM hashes + a published-rules version). Instrument *instances* (a vault + settlement pair bound to a reference asset and trigger config) deploy in one transaction.
 2. **The settlement core** — generic vault (Poseidon-committed positions, public aggregates) and settlement contract (Groth16 verification against the type's pinned image ID, binding checks, replay guard, allocation execution). Identical for every instrument type.
-3. **Pluggable settlement guests** — per-type RISC Zero programs encoding the determination + payout rules. **Instance #1 (built):** parametric credit protection — scan bond payment history across N holders, detect missed/short coupon, pay pro-rata to shortfall over committed covers. **Instance #2 (named, not built):** parametric weather/index protection on the same core.
+3. **Pluggable settlement guests** — per-type RISC Zero programs encoding the determination + payout rules. **Instance #1 (built):** parametric credit protection — scan bond payment history across N holders, detect missed/short coupon, pay pro-rata to shortfall over committed covers. **Instance #2 (BUILT under override):** parametric weather/index protection on the same core — `settle_weather_v1` (image_id `d31246e6`), parity-tested byte-identical to credit_v1's generic surfaces.
 
 ZK is structurally necessary, twice, for every instrument type: the determination is too heavy for on-chain execution, and payout over hidden positions is impossible on-chain by construction. Remove the proof and no instrument in the family can exist.
 
@@ -55,12 +57,12 @@ ZK is structurally necessary, twice, for every instrument type: the determinatio
 
 | Non-goal | Why |
 |----------|-----|
-| Instance #2 (weather) and #3 (trade settlement) implementation | Named + interface-proven via instance #1; building them is post-hackathon |
-| Attested/oracle data feeds | PRODUCTION_GAP G1 — documented trust boundary, not hackathon code |
-| Buyer-held openings & self-claim escape hatch (`claim_direct`) | PRODUCTION_GAP G2 — demo keeper reads openings from a local file; documented boundary, not hackathon code |
+| Instance #3 (trade settlement) implementation | Post-hackathon (instance #2 weather was **BUILT** under override — `settle_weather_v1`, G8) |
+| Full oracle/attested data integration | First cut **BUILT** under override (`credit_v2` issuer-signed payments, `credit_v3` per-epoch record-date — G1/G4); full Reflector/RedStone wiring is post-hackathon |
+| Buyer-held openings & self-claim escape hatch (`claim_direct`) | **BUILT** under override (`claim_credit_v1` + `claim_settlement` + `claim_factory` deploy path — G2); production wallet-held openings remain post-hackathon |
 | Real client bond integration | No client paper in a public repo; mock issuance modeled on a live Stellar corporate bond, unnamed |
 | Audit, key management, mainnet | Sequenced after ecosystem support + counterparty commitment (PRODUCTION_GAP G5–G7) |
-| Multi-tranche vaults, bonding curves, pricing engine | v0.4+; vault interface designed not to preclude them |
+| Bonding curves, standalone pricing engine | v0.4+ (multi-tranche vaults were **BUILT** under override — `tranched_vault` + `confidential_tranched_vault`, G14; `yield_factory` does tier-band risk pricing, not a bonding curve) |
 | Rollup/L2 ambitions | Parallar is a settlement layer *on* Stellar, not a parallel chain. Never imply otherwise |
 | Sequencer/batching | One-shot settlement per epoch is the model |
 
@@ -103,7 +105,10 @@ P1:
 | R9 | Frontend: registry view + instrument page + settlement flow (read-only, 1-day cap) |
 | R10 | `demo.sh`/`reset.sh` **fresh-clone hardening only** — a working `demo.sh` already ships at P0 freeze; treat hardening as P0-adjacent (the video depends on it) but not a gate under a slip |
 
-### P2 — Designed-for, documented, not built
+### P2 — Designed-for (much of this was BUILT under override post-freeze — see PRODUCTION_GAP/STATUS)
+
+> Built since this list was written: the yield router / protected share class (`yield_vault` + `yield_router` + `yield_factory`, G11/G12), instance #2 (`settle_weather_v1`), `credit_principal_v1` (demonstrated as a `credit_v1` config at 100% over the maturity epoch — no new guest), attested feeds (G1), and the escape hatch (G2). Items genuinely still unbuilt: instance #3 (trade settlement), premium/secondary markets, governance over type registration.
+
 
 - **Yield router / protected share class (the distribution layer):** holders wrap bond tokens into a protected receipt (pBOND); coupons route through a waterfall — premium to the protection vault, net yield to the holder (e.g., 14% gross → 12% protected) — with cover auto-sized to wrapped balance and auto-renewed per epoch. Sits upstream of the unchanged settlement core. **Economics:** premium flows primarily to protection sellers; Parallar's take is the layered fee model in TECH_SPEC §5A — a ~12% base rail fee on all premium plus a +10–15% distribution fee on premium it originates via the protected share class (blended ≈22–27% on distributed flow), with structuring fees and ~10% of reserve float yield on top — this is Parallar's revenue model. Two honest tensions documented in TECH_SPEC §5A: router-visible balances (resolved as two product lines: transparent protected share class vs sealed bespoke cover) and premium-in-arrears (priced in, or one epoch escrowed upfront)
 - Instance #2: weather/index settlement guest on the unchanged core (whether.market convergence)
@@ -119,14 +124,14 @@ P1:
 
 ## 8. Open Questions
 
-| Question | Owner | Blocking? |
+| Question | Owner | Status |
 |----------|-------|-----------|
-| Groth16 wrap path (local x86 vs remote proving) | Sprint 0, founder + CC | Yes |
-| Poseidon parity guest↔host parameterization | Sprint 0 spike, CC | Yes |
-| Nethermind verifier exact API | Sprint 0, CC | Yes |
-| Soroban deployer pattern specifics: init-in-deploy atomicity, wasm-hash upload flow | Sprint 0 read + Sprint 1 spike, CC | Yes (R7 design) |
-| Solvency option C/B/A (TECH_SPEC §3.2) | Decide June 17 | Yes |
-| Registry governance for type registration (admin key for MVP; what for production?) | Founder, post-hackathon (PRODUCTION_GAP G6) | No |
+| Groth16 wrap path (local x86 vs remote proving) | Sprint 0 | **RESOLVED** — local x86 via Rosetta; 260-byte selector-wrapped seal, selector `73c457ba` |
+| Poseidon parity guest↔host parameterization | Sprint 0 spike | **RESOLVED** — Poseidon2 BN254 t=3 parity GREEN (guest↔host↔wasm) |
+| Nethermind verifier exact API | Sprint 0 | **RESOLVED** — `verify(seal, image_id, journal_digest)`; runs on-chain ~35M insns |
+| Soroban deployer pattern: init-in-deploy atomicity, wasm-hash upload flow | Sprint 1 spike | **RESOLVED** — atomic deploy+cross-init works (R7 + every factory since) |
+| Solvency option C/B/A (TECH_SPEC §3.2) | June 17 | **RESOLVED** — Option B shipped; Option C also BUILT (`solvency_v1` + `confidential_vault`, G3) |
+| Registry governance for type registration (admin key for MVP; what for production?) | Founder, post-hackathon (PRODUCTION_GAP G6) | Open (non-blocking) |
 
 ## 9. Timeline
 
