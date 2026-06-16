@@ -1,0 +1,12 @@
+Parallar — a verifiable settlement layer on Stellar.
+Copyright 2026 Parallar.
+
+Licensed under the Apache License, Version 2.0 (the "License"); see the LICENSE file.
+
+"Parallar" and the Parallar logo are trademarks of the project author. The Apache-2.0
+license covers the source code only and grants NO rights to the name, logo, or marks
+(see Apache-2.0 §6, "Trademarks").
+
+This repository vendors third-party components under their own licenses — notably the
+Nethermind RISC Zero Groth16 verifier under external/ (commit-pinned; see STATUS.md and
+docs/VERIFY.md). Those components are not relicensed by this NOTICE.

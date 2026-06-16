@@ -153,4 +153,6 @@ A new guest is a **new `image_id`, i.e. a new registered type** — never an in-
 
 `demo.sh` · `reset.sh` · `Makefile` · `contracts/` — the frozen core (factory, bond, vault, settlement) + the instrument-family versions built on the same surfaces (claim_settlement, yield_vault, yield_router, yield_factory, tranched_vault, confidential_vault, confidential_tranched_vault, claim_factory) · `prover/` (`guests/`: settle_credit_v1/v2/v3, settle_weather_v1, claim_credit_v1, solvency_v1; `host` + `parallar-prover` CLI; `methods`; `proptests`) · `frontend/` (live testnet console) · `deployments/` (testnet ids) · `scripts/` (deploy_testnet.sh, deploy_weather.sh, verify.sh, check_image_ids.sh, ttl_monitor.sh) · `spikes/poseidon_parity/` · `docs/` (PRD, TECH_SPEC, SPRINT_PLAN, PRODUCTION_GAP, ECONOMICS, OPERATIONS, STATUS) · `site/` (landing page) · `deck/` · `external/` (vendored Nethermind RISC Zero verifier, commit-pinned, gitignored)
 
-MIT
+## License
+
+**Apache License 2.0** — see [LICENSE](LICENSE) and [NOTICE](NOTICE). The source is open; **"Parallar" is a trademark of the author** (Apache-2.0 §6 grants no rights to the name or marks). The vendored Nethermind RISC Zero verifier under `external/` carries its own upstream license (commit-pinned; see [docs/STATUS.md](docs/STATUS.md) and [VERIFY.md](VERIFY.md)).
