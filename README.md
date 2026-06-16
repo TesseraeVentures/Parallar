@@ -24,7 +24,7 @@ A factory of instruments sharing one provable settlement core:
 
 - **Registry/Factory** — instrument *types* are registered: a settlement guest's image ID + version-pinned published rules + contract WASM hashes. Instrument *instances* (vault + settlement pair, cross-bound) deploy in **one transaction** via the Soroban deployer pattern. New guest version = new type; live instruments are pinned to their settlement logic forever — immutability institutions can underwrite against.
 - **Generic core** — a vault holding seller collateral (public) and buyer positions as **Poseidon commitments only** (cover sizes never touch public state), and a settlement contract whose sole authorization path is verifying a Groth16 proof against the type's pinned image ID. No admin path exists.
-- **Pluggable guests** — per-type RISC Zero programs. **Instance #1 (this repo):** parametric credit protection. The guest scans real payment history across all bondholders, establishes the coupon was missed or short-paid, opens every position commitment privately, computes payouts pro-rata to the default's severity, and proves the entire settlement. **Instance #2 (specified):** parametric weather/index protection — same core, different guest.
+- **Pluggable guests** — per-type RISC Zero programs. **Instance #1 (this repo):** parametric credit protection. The guest scans real payment history across all bondholders, establishes the coupon was missed or short-paid, opens every position commitment privately, computes payouts pro-rata to the default's severity, and proves the entire settlement. **Instance #2 (built):** parametric weather/index protection — same core, different guest (`settle_weather_v1`, image_id `d31246e6…`; section below).
 
 ```
 factory.deploy_instrument(credit_v1, config)          ← one tx, instrument live
@@ -101,6 +101,8 @@ cargo run -p parallar-prover-host --bin parallar-prover -- prove  --inputs witne
 cargo run -p parallar-prover-host --bin parallar-prover -- submit --artifact proof.json --settlement <C…>
 ```
 
+Witness generation for every guest, benchmarking, and the full x86 proving + testnet-deploy flow are in **[docs/RUNBOOK.md](docs/RUNBOOK.md)**; server + domain setup is in **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**.
+
 ## Live on testnet
 
 The full stack is deployed on Stellar testnet, and a real settlement has executed on-chain — a Groth16 proof **verified by the deployed verifier**, paying a buyer from hidden positions:
@@ -151,7 +153,7 @@ A new guest is a **new `image_id`, i.e. a new registered type** — never an in-
 
 ## Repo map
 
-`demo.sh` · `reset.sh` · `Makefile` · `contracts/` — the frozen core (factory, bond, vault, settlement) + the instrument-family versions built on the same surfaces (claim_settlement, yield_vault, yield_router, yield_factory, tranched_vault, confidential_vault, confidential_tranched_vault, claim_factory) · `prover/` (`guests/`: settle_credit_v1/v2/v3, settle_weather_v1, claim_credit_v1, solvency_v1; `host` + `parallar-prover` CLI; `methods`; `proptests`) · `frontend/` (live testnet console) · `deployments/` (testnet ids) · `scripts/` (deploy_testnet.sh, deploy_weather.sh, verify.sh, check_image_ids.sh, ttl_monitor.sh) · `spikes/poseidon_parity/` · `docs/` (PRD, TECH_SPEC, SPRINT_PLAN, PRODUCTION_GAP, ECONOMICS, OPERATIONS, STATUS) · `site/` (landing page) · `deck/` · `external/` (vendored Nethermind RISC Zero verifier, commit-pinned, gitignored)
+`demo.sh` · `reset.sh` · `Makefile` · `contracts/` — the frozen core (factory, bond, vault, settlement) + the instrument-family versions built on the same surfaces (claim_settlement, yield_vault, yield_router, yield_factory, tranched_vault, confidential_vault, confidential_tranched_vault, claim_factory) · `prover/` (`guests/`: settle_credit_v1/v2/v3, settle_weather_v1, claim_credit_v1, solvency_v1; `host` + `parallar-prover` CLI; `methods`; `proptests`) · `frontend/` (live testnet console) · `deployments/` (testnet ids) · `scripts/` (deploy_testnet.sh, deploy_weather.sh, verify.sh, check_image_ids.sh, ttl_monitor.sh) · `spikes/poseidon_parity/` · `docs/` (PRD, TECH_SPEC, SPRINT_PLAN, PRODUCTION_GAP, ECONOMICS, OPERATIONS, RUNBOOK, DEPLOYMENT, STATUS) · `site/` (landing page) · `deck/` · `external/` (vendored Nethermind RISC Zero verifier, commit-pinned, gitignored)
 
 ## License
 
