@@ -443,3 +443,12 @@
 - This closes the skeptic's "solvency_v1 has no ELF/image_id, the only guest not provable end-to-end" finding. G3 is now BUILT end-to-end (guest + image_id + host + the confidential_vault consumer). PRODUCTION_GAP G3 updated.
 - **Next:** confidential-tranche variant; G4 record-date guest; G2 factory deploy path. **Remaining (x86):** generate a real Groth16 solvency proof + a live confidential settlement.
 - **Blocked:** none for buildable items.
+
+## 2026-06-16 (cont.) — R54: confidential-tranche variant (build sequence 2/4)
+
+- **`contracts/confidential_tranched_vault` (NEW instrument-family version):** composes the two built primitives — CONFIDENTIAL cover (aggregate is a Poseidon commitment, advanced by a solvency_v1 proof on buy/withdraw; no public total_cover) + FIRST-LOSS TRANCHES (per-tranche share model, junior-first absorption, premium split by weight). The solvency bound is on the TOTAL reserve (Σ tranche collateral); tranches only order loss absorption, so one solvency_v1 proof serves the tranched reserve unchanged.
+- 7 tests: confidential buy advances the hidden commitment + splits premium 3:1 by tranche weight; junior-first loss under confidential cover; proven tranche withdrawal (collateral_after must match the real post-withdraw reserve); forged-proof / wrong-prev / collateral-after-mismatch reverts; Law #1 negative-auth test. TTL discipline from the start.
+- Law #1 intact: pay_allocations settlement-only + proof-gated (junior-first is a pure accounting waterfall); solvency proofs gate buy/withdraw, never a payout.
+- 80 contract tests green (11 crates).
+- **Next:** G4 record-date guest (credit_v3); G2 claimable-family factory deploy path.
+- **Blocked:** none for buildable items.

@@ -1,0 +1,23 @@
+[package]
+name = "parallar-confidential-tranched-vault"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+# ConfidentialTranchedVault — the full institutional picture: CONFIDENTIAL cover (the aggregate book
+# is a Poseidon commitment, proven adequate by solvency_v1, never a public total) layered over a
+# FIRST-LOSS TRANCHE structure (underwriters commit by seniority rank; a default is absorbed
+# junior-first; premium is risk-weighted by tranche). A NEW instrument-family version composing two
+# built primitives (confidential_vault + tranched_vault); the frozen surfaces are untouched.
+# Default payouts stay settlement-only + proof-gated (Law #1); buy/withdraw are gated by a solvency
+# proof that never reveals the cover or the running totals.
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+doctest = false
+
+[dependencies]
+soroban-sdk = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }
