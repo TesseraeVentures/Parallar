@@ -67,7 +67,15 @@ Every alternative settles by *someone's discretion*; Parallar settles by *proof*
 | Bond as a Stellar asset — 10 holders, genuine (incl. partial) coupon transfers | Holder snapshot fixed at issuance |
 | Poseidon-committed positions — cover sizes never touch public state | Flat premium (no pricing curve) |
 | RISC Zero settlement proofs — real Groth16 generation (STARK→SNARK, Rosetta x86) | Demo keeper reads buyers' commitment openings from a local file (→ buyer-held openings + self-claim escape hatch, **G2**) |
-| On-chain Groth16 verification is the settlement's **sole** payout path — a cross-contract call to the RISC Zero verifier router (Stellar's native BN254 pairing host fn; the journal is committed as its SHA-256 digest, Protocols 25–26); **no admin path exists** | Qualifying-payment history is supplied to the guest (not yet attested → **G1**) |
+| On-chain Groth16 verification is the settlement's **sole** payout path — a cross-contract call to the RISC Zero verifier router (Stellar's native BN254 pairing host fn — **CAP-0074, Final since Protocol 25, live on 26**; the journal is committed as its SHA-256 digest); **no admin path exists** | Qualifying-payment history is supplied to the guest for the deployed `credit_v1` (attested feeds are built as `credit_v2`/`credit_v3` → **G1/G4**) |
+
+**Relation to the Stellar privacy stack.** Parallar sits in the privacy doc's *build-your-own ZK
+primitives* tier: it deliberately uses a custom Poseidon2 (CAP-0075, Final) position commitment +
+the `solvency_v1` confidential-cover proof — **not** Confidential Tokens (parties-known /
+amounts-hidden) and **not** Privacy Pools (address/amount mixing), because the requirement —
+confidential cover sizes bound into a *verifiable settlement determination* — is a use case neither
+standard targets. If the Confidential Token standard finalizes, a per-buyer position could be
+re-expressed behind that interface without touching the four production surfaces.
 
 The proofs guarantee correct *computation over supplied inputs*, not input canonicity — see the trust model above and [PRODUCTION_GAP.md](docs/PRODUCTION_GAP.md).
 

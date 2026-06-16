@@ -30,7 +30,7 @@ Buy **parallar.com** at any registrar (you do this — it's a purchase). Then po
 | `parallar.com` (apex) | 301-redirect to `www` | **yes** |
 | `www.parallar.com` | the marketing / overview site (`frontend/index.html` + bondholders / underwriters / how-it-works / testnet) | **yes** |
 | `app.parallar.com` | the interactive dApp (`frontend/app.html` — Freighter connect, deposit, buy cover) | **yes** |
-| `docs.parallar.com` | public docs (render README / VERIFY / PRODUCTION_GAP) — strong for the "verify it yourself" + SDF-workplan story | recommended |
+| `docs.parallar.com` | optional — and if used, render ONLY public-confidence docs (the how-it-works deep-dive + the `VERIFY.md` "check it yourself" guide). **Do NOT publish `PRODUCTION_GAP.md` or `STATUS.md`** — those are the internal workplan + build log (the SDF grant conversation, shared selectively, not a public page that advertises what's unfinished). | optional |
 | `api.parallar.com` | — | **not needed** (no backend; the dApp is client-side RPC + Freighter) |
 
 `www` and `app` are **cleanly separated** — each subdomain has its own docroot. `scripts/build_web.sh`
