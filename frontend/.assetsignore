@@ -1,0 +1,2 @@
+# Cloudflare Workers Static Assets: don't serve the build-time crate source (it's not the site).
+commit-wasm/

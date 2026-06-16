@@ -1,11 +1,12 @@
-# Cloudflare Workers Static Assets — serves the BUILT marketing site (dist/www).
-# In the parallar-www Worker → Settings → Build:
-#   Build command:  bash scripts/build_web.sh        (generates dist/www + dist/app)
+# Cloudflare Workers Static Assets — SINGLE SURFACE. Serves the whole site + dApp from frontend/
+# on one domain (parallar.com / www.parallar.com); the dApp is parallar.com/app.html, reached by
+# the existing relative "Try it" nav. No build step needed (frontend/ is committed with working
+# relative links), so the Worker's Build command can be left blank.
 #   Deploy command: npx wrangler deploy -c wrangler.www.toml
-# An assets-only Worker (no `main` script): Cloudflare serves the directory's files directly,
-# with index.html at the root. dist/ is gitignored, so the build command must run first.
+# (The two-domain split — dist/www + dist/app via scripts/build_web.sh — remains available if ever
+#  wanted; it's a deploy choice, not a code change.)
 name = "parallar-www"
 compatibility_date = "2025-09-01"
 
 [assets]
-directory = "./dist/www"
+directory = "./frontend"
