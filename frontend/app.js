@@ -3,7 +3,9 @@
 // from testnet RPC. Every write is element-guarded, so the same script drives
 // every page; a page simply omits the ids it does not use.
 const EXPLORER = "https://stellar.expert/explorer/testnet";
-const DEPLOY_URL = "../deployments/testnet.json";
+// Absolute path: works in local dev (make frontend serves the repo root, where deployments/ sits)
+// AND on the deployed site (scripts/build_web.sh copies deployments/testnet.json into the served root).
+const DEPLOY_URL = "/deployments/testnet.json";
 
 const $   = (id) => document.getElementById(id);
 const set = (id, v) => { const e = $(id); if (e) e.textContent = v; };
