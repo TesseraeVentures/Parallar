@@ -129,6 +129,13 @@ section.first{border-top:none;margin-top:0;padding-top:64px}
 .feat p{font-size:14px;color:var(--dim)}
 .feat p b{color:var(--paper);font-weight:500}
 
+/* product-suite gallery (app page) */
+.prod .prod-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.prod-id{font-family:'Spline Sans Mono',monospace;font-size:11px;color:var(--brass);letter-spacing:.01em;word-break:break-word}
+.tag.built{color:var(--brass);border-color:var(--brass-dim)}
+.prod-foot{max-width:72ch;margin-top:24px;color:var(--faint);font-size:14px}
+.prod-foot code{font-family:'Spline Sans Mono',monospace;color:var(--brass);font-size:13px}
+
 /* deployed-on-testnet table */
 .dep{border:1px solid var(--hairline);border-radius:14px;overflow:hidden}
 .dep-head,.dep-row{display:grid;grid-template-columns:1.8fr 1fr 1.1fr 1fr;gap:16px;padding:15px 24px;align-items:center}

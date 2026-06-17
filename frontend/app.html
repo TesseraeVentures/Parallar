@@ -79,6 +79,62 @@
 
     <div class="callout"><b>Law of the protocol.</b> The only writes here are <b>deposit</b> and <b>buy_protection</b>; neither can move the reserve to a payee. Payouts happen solely through a settlement that verifies a zero-knowledge proof on-chain. There is no admin path, no "pay" button, and there cannot be one. <a href="how-it-works.html">How settlement works ›</a></div>
   </section>
+
+  <section>
+    <div class="sec-top">
+      <div>
+        <div class="label">Built on the same core</div>
+        <h2>The Parallar product suite</h2>
+      </div>
+      <p>One generic vault + settlement core carries a whole family of instruments — each a per-type RISC&nbsp;Zero guest proving its own published rule, on the same four frozen surfaces. <b>credit_v1</b> is live on testnet (above); the rest are built and tested in the repo, deployable the same way.</p>
+    </div>
+
+    <div class="feats prod-grid">
+      <div class="feat prod">
+        <div class="prod-top"><code class="prod-id">credit_v1</code><span class="tag settled"><span class="dot"></span> Live on testnet</span></div>
+        <h3>Credit default protection</h3>
+        <p>Parametric cover on a tokenized bond. The guest scans real coupon history across every holder, proves the shortfall, and pays <b>cover × shortfall ⁄ owed</b> — authorized by a proof, never a committee. The instance you interact with above.</p>
+      </div>
+
+      <div class="feat prod">
+        <div class="prod-top"><code class="prod-id">credit_v2 · credit_v3</code><span class="tag built"><span class="dot"></span> Built · tested</span></div>
+        <h3>Attested data feeds</h3>
+        <p>The issuer's payment snapshot is Ed25519-signed and the signature is checked <b>inside the proof</b> (v2); v3 binds a per-epoch record date. "Trust the keeper's data" becomes "trust the issuer's signature" — no keeper can fabricate or omit a payment and still produce a proof.</p>
+      </div>
+
+      <div class="feat prod">
+        <div class="prod-top"><code class="prod-id">solvency_v1 · confidential_vault</code><span class="tag built"><span class="dot"></span> Built · tested</span></div>
+        <h3>Confidential cover</h3>
+        <p>The total cover sold is a <b>Poseidon commitment — never public</b>. Buying and withdrawing are gated by a zero-knowledge solvency proof, so even aggregate exposure stays sealed while the cover&nbsp;≤&nbsp;reserve invariant still holds.</p>
+      </div>
+
+      <div class="feat prod">
+        <div class="prod-top"><code class="prod-id">tranched_vault</code><span class="tag built"><span class="dot"></span> Built · tested</span></div>
+        <h3>First-loss tranches</h3>
+        <p>A senior/junior capital structure: a default is absorbed <b>junior-first</b>, premium split by seniority weight. A confidential-tranche variant composes the waterfall with hidden cover sizes.</p>
+      </div>
+
+      <div class="feat prod">
+        <div class="prod-top"><code class="prod-id">claim_credit_v1 · claim_factory</code><span class="tag built"><span class="dot"></span> Built · tested</span></div>
+        <h3>Escape-hatch claim</h3>
+        <p>Permissionless settlement <b>plus a buyer self-claim</b> after a keeper-grace window — payout liveness without trusting any single operator. Same proof guarantee, two independent paths to it.</p>
+      </div>
+
+      <div class="feat prod">
+        <div class="prod-top"><code class="prod-id">yield_vault · yield_router · yield_factory</code><span class="tag built"><span class="dot"></span> Built · tested</span></div>
+        <h3>Protected yield</h3>
+        <p>Wrap a bond into a protected share class: gross coupon in → premium to the reserve → <b>net protected yield out</b> (e.g. 14%&nbsp;→&nbsp;12%). A risk-tiered factory prices the premium per tier.</p>
+      </div>
+
+      <div class="feat prod">
+        <div class="prod-top"><code class="prod-id">settle_weather_v1</code><span class="tag built"><span class="dot"></span> Built · instance #2</span></div>
+        <h3>Parametric weather / index</h3>
+        <p>The same generic core, a different guest: payout when a published index (e.g. rainfall over a window) breaches its threshold. Proof that Parallar is a <b>family of instruments</b>, not a single product.</p>
+      </div>
+    </div>
+
+    <p class="prod-foot">Every card above the dotted line is in this repository with passing tests. Going live for each is the same beat as <code>credit_v1</code>: register the type, then factory-deploy. See the <a href="how-it-works.html">mechanism</a> and the <a id="prod-explorer" href="#" target="_blank" rel="noopener">live contracts on the explorer ↗</a>.</p>
+  </section>
 </div>
 
 <footer>

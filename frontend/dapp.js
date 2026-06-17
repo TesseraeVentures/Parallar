@@ -11,7 +11,7 @@
 
 const EXPLORER = "https://stellar.expert/explorer/testnet";
 const RPC = "https://soroban-testnet.stellar.org";
-const DEPLOY_URL = "../deployments/testnet.json";
+const DEPLOY_URL = "/deployments/testnet.json"; // absolute: works in local dev + the deployed root
 
 const $ = (id) => document.getElementById(id);
 const short = (s, n = 5) => (s ? `${s.slice(0, n)}…${s.slice(-4)}` : "");
@@ -186,6 +186,7 @@ async function boot() {
   $("nav-explorer").href = `${EXPLORER}/contract/${deploy.contracts.factory}`;
   if ($("f-factory")) $("f-factory").href = `${EXPLORER}/contract/${deploy.contracts.factory}`;
   if ($("f-verifier")) $("f-verifier").href = `${EXPLORER}/contract/${deploy.contracts.groth16_verifier}`;
+  if ($("prod-explorer")) $("prod-explorer").href = `${EXPLORER}/contract/${deploy.contracts.factory}`;
   renderPicker(null);
 
   const loads = await Promise.allSettled([
