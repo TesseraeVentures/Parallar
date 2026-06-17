@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Parallar · default protection for tokenized bonds, settled by proof</title>
-<meta name="description" content="Parallar is default protection for tokenized bonds on Stellar. Bondholders buy cover against default; underwriters fund the reserve and earn premiums. Defaults settle through a zero-knowledge proof, not a claims process. Deployed and proven on testnet.">
+<title>Parallar · verifiable parametric protection for tokenised assets, settled by proof</title>
+<meta name="description" content="Parallar is a verifiable settlement rail for tokenised-asset risk on Stellar: buyers cover a position against a parametric trigger, underwriters fund a fully-collateralised reserve and earn premiums, and payouts settle through a zero-knowledge proof — not a claims process. Credit-default protection on tokenised bonds is the first instrument, live and proven on testnet.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Spectral:wght@300;400&family=Instrument+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -29,11 +29,11 @@
 <div class="wrap">
   <header class="hero">
     <div class="eyebrow"><span class="dot"></span> The first protection protocol on Stellar</div>
-    <h1>Default protection for <span class="alt">tokenized bonds</span>.</h1>
-    <p class="sub">Bondholders buy cover against default.<br>
-       Underwriters fund the reserve and earn premiums.<br>
-       When a bond defaults, payouts <strong>settle through a zero-knowledge proof</strong>, not a claims process.</p>
-    <p class="tags"><b>Non-custodial</b> · <b>Permissionless</b> · <b>Private positions</b> · <b>Proof-settled</b></p>
+    <h1>Parametric protection for <span class="alt">tokenised assets</span>.</h1>
+    <p class="sub">Buyers cover a position against a parametric trigger — a missed coupon, a breached index.<br>
+       Underwriters fund a <strong>fully-collateralised reserve</strong> and earn the premium.<br>
+       When a covered trigger fires, payouts <strong>settle through a zero-knowledge proof</strong>, not a claims process.</p>
+    <p class="tags"><b>Fully collateralised</b> · <b>Private positions</b> · <b>Proof-settled</b> · <b>Permissionless</b></p>
     <div class="hero-cta">
       <a class="btn" href="how-it-works.html">How it works</a>
       <a class="btn ghost" href="testnet.html">See it running on testnet</a>
@@ -62,12 +62,12 @@
       <div class="side buy">
         <div class="who">For bondholders · Buy cover</div>
         <h3>Protect a bond position</h3>
-        <p class="desc">Hold a tokenized bond and worried about default? Buy cover and pay a premium.<br>
+        <p class="desc">Hold a tokenised bond and worried about default? Buy cover and pay a premium.<br>
            If the issuer misses a coupon, you are paid from the reserve.<br>
            The amount is fixed by a published formula and a proof.</p>
         <ul>
           <li><span class="ck">+</span><span><b>Automatic, proof-settled payout</b> on default. No claim to file.</span></li>
-          <li><span class="ck">+</span><span>Your <b>cover size stays private</b>, stored only as a commitment.</span></li>
+          <li><span class="ck">+</span><span>Your <b>position is committed on-chain</b>; confidential cover keeps the totals private too.</span></li>
           <li><span class="ck">+</span><span>Backed by reserves that are <b>funded before</b> any cover is sold.</span></li>
         </ul>
         <a class="more" href="bondholders.html">For bondholders ›</a>
@@ -99,20 +99,23 @@
     </div>
     <div class="steps">
       <div class="scard"><div class="n">01 / Underwrite</div><h3>Fund the reserve</h3><p>Underwriters deposit collateral and earn premiums. <b>Cover sold can never exceed the reserve</b>, enforced on every purchase.</p></div>
-      <div class="scard"><div class="n">02 / Cover</div><h3>Buy protection</h3><p>Bondholders buy cover against default. The <b>amount each holder buys stays private</b>, stored only as a commitment.</p></div>
+      <div class="scard"><div class="n">02 / Cover</div><h3>Buy protection</h3><p>Buyers cover a position against the trigger. Each <b>position is committed on-chain</b>; confidential cover hides the totals too.</p></div>
       <div class="scard"><div class="n">03 / Prove</div><h3>Settle a default</h3><p>Anyone runs the settlement program. It reads the on-chain payment record and <b>proves who is owed</b> by a published formula, in zero knowledge.</p></div>
       <div class="scard"><div class="n">04 / Payout</div><h3>Verify and pay</h3><p>The contract verifies the proof on Stellar and releases each payout from the reserve. <b>This is the only way the reserve moves.</b></p></div>
     </div>
   </section>
 
   <section id="why">
-    <div class="sec-top"><div><div class="label">Properties</div><h2>Built for institutional credit, on-chain</h2></div></div>
+    <div class="sec-top">
+      <div><div class="label">One core, a family of instruments</div><h2>A settlement rail, not a single product</h2></div>
+      <p>The settlement core is trigger-agnostic. Credit-default on tokenised bonds is live; confidential cover, first-loss tranches, protected yield, and weather/index settle on the <b>same frozen surfaces</b>.</p>
+    </div>
     <div class="feats">
       <div class="feat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg><h3>Non-custodial and fully funded</h3><p>The reserve is held in <b>claw-proof, freeze-proof</b> assets. Total cover can never exceed reserves. No one can pull the pool.</p></div>
       <div class="feat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 13l4 4L19 7"/></svg><h3>Proof-settled, not adjudicated</h3><p>Payouts are authorized by a <b>verified zero-knowledge proof</b>, not a claims process. If a bond paid on time, no valid proof can exist.</p></div>
       <div class="feat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 018 0v3"/></svg><h3>Private positions</h3><p>How much cover each holder buys is sealed on-chain. The protocol enforces the totals <b>without ever seeing the parts</b>.</p></div>
       <div class="feat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/></svg><h3>Permissionless settlement</h3><p>Anyone can generate a proof and settle. There is <b>no privileged operator</b> and no admin override.</p></div>
-      <div class="feat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 7h16M4 12h16M4 17h10"/></svg><h3>Real-world assets</h3><p>Designed for <b>tokenized bonds and credit</b>. One generic core serves every instrument type, pinned to its rules forever.</p></div>
+      <div class="feat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 7h16M4 12h16M4 17h10"/></svg><h3>A family of instruments</h3><p>One <b>trigger-agnostic core</b> serves every instrument — credit-default (live), confidential cover, tranches, protected yield, weather/index — each pinned to its rules forever.</p></div>
       <div class="feat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2v6M9 5l3-3 3 3"/><rect x="4" y="9" width="16" height="11" rx="1.5"/></svg><h3>Verifiable on Stellar</h3><p>One proof verified by Stellar's native BN254 pairing host function. <b>Cheap enough to run on-chain</b>, every settlement.</p></div>
     </div>
   </section>

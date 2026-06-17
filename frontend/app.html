@@ -66,8 +66,8 @@
       </div>
 
       <div class="panel buy">
-        <h3>Buy cover · commit privately</h3>
-        <p class="hint">Buy protection. Your cover size is sealed as a Poseidon commitment computed in your browser (byte-identical to the settlement guest). The chain stores only the commitment. <b>Save your opening</b> to settle later.</p>
+        <h3>Buy cover · commit your position</h3>
+        <p class="hint">Buy protection. Your position is committed in your browser with the guest's exact Poseidon (byte-identical, so it's genuinely settleable) and folded into the on-chain position root. <b>Save your opening</b> (cover + salt) to settle later. On this transparent <code>credit_v1</code> instrument the cover amount is public; <b>confidential cover</b> (built — see the suite below) hides it behind a solvency proof.</p>
         <div class="field">
           <label for="cov-amt">Cover (XLM)</label>
           <input id="cov-amt" type="number" min="1" step="1" value="50" inputmode="numeric">
@@ -93,7 +93,7 @@
       <div class="feat prod">
         <div class="prod-top"><code class="prod-id">credit_v1</code><span class="tag settled"><span class="dot"></span> Live on testnet</span></div>
         <h3>Credit default protection</h3>
-        <p>Parametric cover on a tokenized bond. The guest scans real coupon history across every holder, proves the shortfall, and pays <b>cover × shortfall ⁄ owed</b> — authorized by a proof, never a committee. The instance you interact with above.</p>
+        <p>Parametric cover on a tokenised bond. The guest scans real coupon history across every holder, proves the shortfall, and pays <b>cover × shortfall ⁄ owed</b> — authorized by a proof, never a committee. The instance you interact with above.</p>
       </div>
 
       <div class="feat prod">
