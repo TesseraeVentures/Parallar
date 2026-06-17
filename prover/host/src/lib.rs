@@ -21,6 +21,10 @@ use soroban_sdk::{xdr::ToXdr, Address, Env, Symbol};
 /// per the normative rules in TECH_SPEC §10. See the module for the trust caveats.
 pub mod history_builder;
 
+/// Confidential-cover keeper/sequencer (G3): holds the hidden cover aggregate's opening, orders
+/// purchases, and constructs the per-buy/withdraw solvency inputs. See the module.
+pub mod keeper;
+
 /// Canonical Address XDR — exactly what the contracts fold via `addr.to_xdr(env)`.
 pub fn address_xdr(env: &Env, addr: &Address) -> Vec<u8> {
     addr.clone().to_xdr(env).iter().collect()
