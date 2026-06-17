@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>For bondholders · Parallar</title>
-<meta name="description" content="Buy cover on a tokenised bond position with Parallar. If the issuer defaults, you are paid from a pre-funded reserve through a zero-knowledge proof, not a claims process. Your cover size stays private on-chain.">
+<meta name="description" content="Buy cover on a tokenised bond position with Parallar. If the issuer defaults, you are paid from a pre-funded reserve through a zero-knowledge proof, not a claims process. Each position is committed on-chain; confidential cover keeps buyers' sizes private.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Spectral:wght@300;400&family=Instrument+Sans:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -47,7 +47,7 @@
     </div>
     <div class="feats">
       <div class="feat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 13l4 4L19 7"/></svg><h3>Automatic, proof-settled payout</h3><p>On a default there is <b>no claim to file</b>. Anyone can run the settlement, and a verified proof releases your payout from the reserve.</p></div>
-      <div class="feat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 018 0v3"/></svg><h3>Your position stays private</h3><p>How much cover you buy is stored only as a <b>Poseidon commitment</b>. The protocol enforces the totals without ever revealing your size.</p></div>
+      <div class="feat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V8a4 4 0 018 0v3"/></svg><h3>Private positions</h3><p>Your position is committed on-chain as a <b>Poseidon commitment</b>. With <b>confidential cover</b> — built — the protocol proves solvency without revealing any buyer's size or the running totals.</p></div>
       <div class="feat"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg><h3>Funded before it is sold</h3><p>Cover can never exceed the reserve behind it. You are backed by collateral that is <b>already on-chain</b>, in claw-proof, freeze-proof assets.</p></div>
     </div>
   </section>
@@ -57,7 +57,7 @@
       <p>Four steps. You only act in the first one.</p>
     </div>
     <div class="steps">
-      <div class="scard"><div class="n">01 / You</div><h3>Buy cover</h3><p>You buy cover on your position and pay a premium. Your <b>cover size is committed privately</b>; only an aggregate is public.</p></div>
+      <div class="scard"><div class="n">01 / You</div><h3>Buy cover</h3><p>You buy cover on your position and pay a premium. Your position is <b>committed on-chain</b>; confidential cover (built) hides the size and the totals.</p></div>
       <div class="scard"><div class="n">02 / The issuer</div><h3>Misses a coupon</h3><p>An expected coupon does not arrive in full by the deadline. The shortfall is measured from <b>on-chain payment data</b>.</p></div>
       <div class="scard"><div class="n">03 / Anyone</div><h3>Proves it</h3><p>The settlement program proves who is owed and by how much, in zero knowledge, by the <b>published formula</b>.</p></div>
       <div class="scard"><div class="n">04 / The contract</div><h3>Pays you</h3><p>Stellar verifies the proof and the reserve <b>pays your cover</b>, scaled to the realized shortfall. No one had to approve it.</p></div>
@@ -80,7 +80,7 @@
     <div class="sec-top"><div><div class="label">Questions</div><h2>What bondholders ask</h2></div></div>
     <div class="qa">
       <div class="item"><div class="q">Do I have to file a claim?</div><div class="a">No. There is no claims process and no operator to convince. A default is settled by <b>anyone running the proof</b>, and the contract pays you on verification.</div></div>
-      <div class="item"><div class="q">Can anyone see how much cover I hold?</div><div class="a">No. Your cover is stored as a commitment. The protocol checks that total cover never exceeds the reserve <b>without seeing each holder's amount</b>.</div></div>
+      <div class="item"><div class="q">Can anyone see how much cover I hold?</div><div class="a">Your position is committed on-chain. On the live <code>credit_v1</code> instrument the cover amount is public (a transparent aggregate); <b>confidential cover</b> — built — hides each buyer's size and the totals, with solvency still proven in zero knowledge.</div></div>
       <div class="item"><div class="q">What if there is not enough in the reserve?</div><div class="a">Cover can never be sold beyond the reserve in the first place, and total payouts are capped at the collateral. Solvency is <b>enforced on-chain</b>, not promised.</div></div>
       <div class="item"><div class="q">Could an admin block or redirect my payout?</div><div class="a">There is no admin path to funds. The only way the reserve moves to a payee is a <b>verified settlement proof</b>. No pause-and-pay, no override.</div></div>
       <div class="item"><div class="q">Is this live?</div><div class="a">This is a testnet build. The contracts are deployed and a full default-to-payout has already executed on-chain. <a href="testnet.html">See it on testnet ›</a></div></div>
