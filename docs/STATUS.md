@@ -526,3 +526,10 @@ Founder steered to the FULL confidential pBOND product (Product Vision doc; conf
   - `keeper-withdraw --state --collateral-after --out` → plan_withdraw → `prove_solvency_withdraw`; state unchanged.
 - Single-writer sequencer; advance-on-proof with a documented re-sync-to-on-chain-commitment requirement if a submit fails. Host bin compiles (incremental; methods cached). keeper-buy/withdraw proofs run on x86/Rosetta.
 - **Next:** RUNBOOK keeper workflow doc → deploy a confidential_vault live (friendbot + Rosetta, x86) wired to the keeper → interactive dApp (confidential buy/withdraw via the keeper) → confidential-yield vault (Milestone 2).
+
+## 2026-06-18 (cont.) — R75: RUNBOOK keeper workflow + Milestone-2 re-steer (confidential-yield → Phase 1)
+
+- Reading confidential_vault end-to-end confirmed it ALREADY delivers confidential cover (the Phase-0 ZK headline): hidden cover aggregate (Poseidon commitment), solvency-proven buy/withdraw, no total_cover getter, Law #1 intact. The R71/R74 keeper operates it.
+- **Re-steer (Product Vision §4, recorded in memory):** mandate-4 "wrap rate never publicly derivable" CANNOT be closed by a confidential-yield vault alone — pBOND is a normal token whose PUBLIC supply == the wrapped notional, so hiding it in the vault is pointless while the token leaks it. Fully hiding the wrap rate needs a **confidential pBOND token** = the vision's own deferred §8.10 research item. So a confidential-yield vault is NOT the right hackathon build (a big partial duplicate that still can't close the mandate). **Confidential-yield = Phase 1.**
+- **Highest-value remaining = confidential cover LIVE + interactive** (the named Phase-0 ZK target), now largely x86/founder-gated: keeper HTTP bridge [me] → deploy a confidential_vault via friendbot + Rosetta [x86] → dApp confidential buy/withdraw flow [me, testable once live].
+- Added the end-to-end **keeper workflow** to RUNBOOK §1 (keeper-init → deploy_confidential.sh → keeper-buy → submit → keeper-withdraw), with the single-writer + advance-on-proof + Phase-1 wrap-rate notes.

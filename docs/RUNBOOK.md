@@ -57,6 +57,40 @@ cargo run -p parallar-prover-host -- prove-solvency \
     --inputs /tmp/parallar_solvency/buy_witness.json --out /tmp/solvency_buy_proof.json
 ```
 
+### Confidential cover end-to-end — the keeper (the Phase-0 ZK headline, live)
+
+`prove-solvency` above proves a one-off witness. In practice the confidential vault keeps a *running*
+hidden cover aggregate, so each buy/withdraw must prove against the current opening. The **keeper**
+(a single-writer sequencer) holds that opening and drives it:
+
+```bash
+# 1. genesis: pick salt0 + the premium rate; prints initial_cover_commitment for the vault init
+parallar-prover keeper-init --salt0 <64-hex> --premium-bps 200 --state keeper_state.json
+
+# 2. deploy a confidential_vault with that commitment (friendbot + Rosetta):
+INITIAL_COVER_COMMITMENT=<printed> ./scripts/deploy_confidential.sh
+
+# 3. per confidential purchase — advance the aggregate + prove (real Groth16, x86/Rosetta), then
+#    submit the artifact to the deployed vault:
+parallar-prover keeper-buy --state keeper_state.json --buyer <Address-ScVal-XDR-hex> \
+    --cover 600 --collateral <vault total_collateral> --out buy_proof.json
+#    → prints the buyer's opening (cover + position_salt) to SAVE, and the premium
+stellar contract invoke --id <confidential_vault> --source <buyer> -- buy_protection_proven \
+    --buyer <G…> --seal <buy_proof.seal> --journal <buy_proof.journal> --premium <printed>
+
+# 4. confidential withdraw (aggregate unchanged; proves it still fits post-withdrawal):
+parallar-prover keeper-withdraw --state keeper_state.json --collateral_after <total − amount> --out w.json
+```
+
+**Single-writer:** run ONE keeper per instrument (the opening is shared mutable state). **On a failed
+submission**, re-sync `keeper_state.json` to the vault's on-chain `cover_commitment` before the next
+buy — the keeper advances optimistically on proof generation. The cover amount stays hidden on-chain
+throughout: this is the confidential-cover ZK headline.
+
+> **Scope note (Product Vision §4):** this hides the *cover* (positions + the running book). Hiding
+> the pBOND *wrap rate* as well needs a confidential pBOND token (hidden supply) — a Phase-1 research
+> item (the BMA confidential-token track), **not** the hackathon scope.
+
 **Notes:**
 - The new generators (`gen_new_scenarios`) use **deterministic synthetic** inputs (issuer demo key
   `[42;32]`, synthetic buyer) — perfect for proving + benchmarking the pipeline. For a
