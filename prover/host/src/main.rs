@@ -16,6 +16,7 @@ use parallar_prover_host::{
     prove_claim_credit_v1, prove_credit_v2_settlement, prove_credit_v3_settlement, prove_settlement,
     prove_solvency_buy, prove_solvency_withdraw, prove_weather_settlement, ProofArtifact,
 };
+use parallar_prover_host::keeper::{plan_buy, plan_withdraw, KeeperState};
 use settle_credit_v1::Inputs;
 use std::path::PathBuf;
 use std::process::Command;
@@ -118,6 +119,50 @@ enum Cmd {
         #[arg(long, default_value = "witness.json")]
         out: PathBuf,
     },
+    /// Initialise the confidential-cover keeper state for ONE instrument: writes the aggregate
+    /// opening (total=0, salt0) and prints `initial_cover_commitment` for the vault's `init`.
+    KeeperInit {
+        /// salt0 (32-byte hex) — the genesis opening salt; the vault is init'd with commit_total(0, salt0).
+        #[arg(long)]
+        salt0: String,
+        /// Premium rate in basis points (cover × bps / 10_000 = the buyer's upfront premium).
+        #[arg(long)]
+        premium_bps: u32,
+        /// Keeper state file to create.
+        #[arg(long, default_value = "keeper_state.json")]
+        state: PathBuf,
+    },
+    /// Confidential BUY: advance the hidden aggregate by `cover`, prove solvency under the real
+    /// Groth16 prover, and emit the SolvencyProofArtifact for `buy_protection_proven`. Advances the
+    /// keeper state on success. (Single-writer sequencer — see the keeper module.)
+    KeeperBuy {
+        /// Keeper state file (from keeper-init; advanced in place on success).
+        #[arg(long, default_value = "keeper_state.json")]
+        state: PathBuf,
+        /// Buyer address as the Address ScVal XDR, hex (what the dApp's commit.wasm uses).
+        #[arg(long)]
+        buyer: String,
+        /// Cover amount (hidden on-chain; the keeper learns it to maintain the aggregate).
+        #[arg(long)]
+        cover: i128,
+        /// The vault's current total_collateral (read from chain) — the public solvency bound.
+        #[arg(long)]
+        collateral: i128,
+        /// Where to write the solvency proof artifact.
+        #[arg(long, default_value = "buy_proof.json")]
+        out: PathBuf,
+    },
+    /// Confidential WITHDRAW: prove the (unchanged) hidden aggregate still fits under the
+    /// post-withdrawal collateral. State is NOT advanced (a withdrawal shrinks collateral, not cover).
+    KeeperWithdraw {
+        #[arg(long, default_value = "keeper_state.json")]
+        state: PathBuf,
+        /// total_collateral − the withdrawal amount.
+        #[arg(long)]
+        collateral_after: i128,
+        #[arg(long, default_value = "withdraw_proof.json")]
+        out: PathBuf,
+    },
 }
 
 fn main() -> Result<()> {
@@ -129,7 +174,111 @@ fn main() -> Result<()> {
         }
         Cmd::Bench { inputs, n, guest } => cmd_bench(inputs, n, guest),
         Cmd::HistoryBuilder { scan, params, out } => cmd_history_builder(scan, params, out),
+        Cmd::KeeperInit { salt0, premium_bps, state } => cmd_keeper_init(salt0, premium_bps, state),
+        Cmd::KeeperBuy { state, buyer, cover, collateral, out } => {
+            cmd_keeper_buy(state, buyer, cover, collateral, out)
+        }
+        Cmd::KeeperWithdraw { state, collateral_after, out } => {
+            cmd_keeper_withdraw(state, collateral_after, out)
+        }
     }
+}
+
+// ─────────────────────────── confidential-cover keeper CLI (G3) ───────────────────────────
+// Wraps the keeper sequencer (src/keeper.rs) over a JSON state file. keeper-buy/withdraw run the
+// REAL Groth16 prover (Docker/x86) on the constructed solvency inputs. Single-writer model: run one
+// keeper process per instrument. PRODUCTION note: keeper-buy advances the persisted state on
+// successful proof generation; if the on-chain buy_protection_proven submission then fails, re-sync
+// the state to the vault's on-chain CoverCommitment before the next buy (advance-on-confirmation).
+
+fn parse_salt32(s: &str) -> Result<[u8; 32]> {
+    let v = hex::decode(s).context("salt must be hex")?;
+    anyhow::ensure!(v.len() == 32, "salt must be 32 bytes (64 hex chars), got {}", v.len());
+    let mut a = [0u8; 32];
+    a.copy_from_slice(&v);
+    Ok(a)
+}
+
+/// 32 fresh bytes from the OS CSPRNG (the keeper runs on Unix/x86; no extra crate needed).
+fn random_salt32() -> Result<[u8; 32]> {
+    use std::io::Read;
+    let mut a = [0u8; 32];
+    std::fs::File::open("/dev/urandom")
+        .context("opening /dev/urandom")?
+        .read_exact(&mut a)
+        .context("reading /dev/urandom")?;
+    Ok(a)
+}
+
+fn load_keeper_state(p: &PathBuf) -> Result<KeeperState> {
+    let raw = std::fs::read_to_string(p)
+        .with_context(|| format!("reading keeper state {} (run keeper-init first)", p.display()))?;
+    serde_json::from_str(&raw).context("parsing keeper state JSON")
+}
+
+fn save_keeper_state(p: &PathBuf, s: &KeeperState) -> Result<()> {
+    std::fs::write(p, serde_json::to_string_pretty(s)?)
+        .with_context(|| format!("writing keeper state {}", p.display()))
+}
+
+fn cmd_keeper_init(salt0: String, premium_bps: u32, state: PathBuf) -> Result<()> {
+    let st = KeeperState::genesis(parse_salt32(&salt0)?, premium_bps);
+    save_keeper_state(&state, &st)?;
+    eprintln!(
+        "✓ keeper state → {} | premium_bps={premium_bps}\n  initial_cover_commitment = {}  (pass this to confidential_vault.init)",
+        state.display(),
+        hex::encode(st.commitment()),
+    );
+    Ok(())
+}
+
+fn cmd_keeper_buy(
+    state: PathBuf,
+    buyer: String,
+    cover: i128,
+    collateral: i128,
+    out: PathBuf,
+) -> Result<()> {
+    let st = load_keeper_state(&state)?;
+    let buyer_xdr = hex::decode(&buyer).context("--buyer must be hex (the Address ScVal XDR)")?;
+    let plan = plan_buy(&st, buyer_xdr, cover, collateral, random_salt32()?, random_salt32()?)?;
+
+    eprintln!("proving confidential buy — real Groth16 STARK→SNARK (needs Docker/x86; slow)…");
+    let artifact = prove_solvency_buy(&plan.inputs)?;
+    std::fs::write(&out, serde_json::to_string_pretty(&artifact)?)
+        .with_context(|| format!("writing artifact {}", out.display()))?;
+    save_keeper_state(&state, &plan.next)?; // advance-on-proof; re-sync if the submit fails (see note)
+
+    eprintln!(
+        "✓ buy proof → {} | premium={} new cover commitment={}",
+        out.display(),
+        plan.premium,
+        hex::encode(plan.next.commitment()),
+    );
+    eprintln!(
+        "  BUYER MUST SAVE THIS OPENING to settle later:  cover={cover}  position_salt={}",
+        hex::encode(plan.position_salt),
+    );
+    eprintln!(
+        "  then submit: parallar-prover ... (or stellar invoke buy_protection_proven --seal <artifact.seal> --journal <artifact.journal> --premium {})",
+        plan.premium,
+    );
+    Ok(())
+}
+
+fn cmd_keeper_withdraw(state: PathBuf, collateral_after: i128, out: PathBuf) -> Result<()> {
+    let st = load_keeper_state(&state)?;
+    let inputs = plan_withdraw(&st, collateral_after)?;
+    eprintln!("proving confidential withdraw — real Groth16 (needs Docker/x86; slow)…");
+    let artifact = prove_solvency_withdraw(&inputs)?;
+    std::fs::write(&out, serde_json::to_string_pretty(&artifact)?)
+        .with_context(|| format!("writing artifact {}", out.display()))?;
+    eprintln!(
+        "✓ withdraw proof → {} | aggregate unchanged (commitment {})",
+        out.display(),
+        hex::encode(st.commitment()),
+    );
+    Ok(())
 }
 
 fn cmd_history_builder(scan_path: PathBuf, params_path: PathBuf, out: PathBuf) -> Result<()> {

@@ -517,3 +517,12 @@ Founder steered to the FULL confidential pBOND product (Product Vision doc; conf
 - **Build-critical finding (memory: product-vision-steering):** "wrap rate never publicly derivable" (Vision §3) is NOT met — yield_router's routed cover is public; the confidential-yield vault (the 2×2 gap) is Milestone 2.
 - **DISK BLOCKER (hard):** this Mac can't reliably build the 6-guest methods crate (~5Gi+ peak; only ~5.6Gi frees after cleaning ALL rebuildables, and a partial build exhausts it). Methods build + any proof + host tests are now x86-only. Verified the keeper by building exactly once at 5.6Gi.
 - **Next:** keeper CLI (keeper-init/buy/withdraw over a state file, wiring the real prover) → website copy sweep (tokenised-assets rail framing) → deploy confidential+yield instruments (friendbot/Rosetta, x86) → interactive dApp.
+
+## 2026-06-18 — R74: confidential keeper CLI (keeper-init/buy/withdraw) — the G3 sequencer is operable
+
+- `prover/host/src/main.rs`: three subcommands over a JSON keeper-state file, wrapping the R71 sequencer.
+  - `keeper-init --salt0 --premium-bps --state` → genesis state + prints `initial_cover_commitment` for `confidential_vault.init`. **Verified end-to-end:** salt0=[1;32] → `2ad6a6d586890de4416eebb8533b89a09e9dbf7041886a2d63f621391d10cbf6`, identical to the R58 generator + deploy_confidential.sh default (the keeper is consistent with the system).
+  - `keeper-buy --state --buyer <xdr-hex> --cover --collateral --out` → plan_buy → real Groth16 (`prove_solvency_buy`) → SolvencyProofArtifact for `buy_protection_proven`; advances the persisted state. Salts drawn from /dev/urandom (no new dep).
+  - `keeper-withdraw --state --collateral-after --out` → plan_withdraw → `prove_solvency_withdraw`; state unchanged.
+- Single-writer sequencer; advance-on-proof with a documented re-sync-to-on-chain-commitment requirement if a submit fails. Host bin compiles (incremental; methods cached). keeper-buy/withdraw proofs run on x86/Rosetta.
+- **Next:** RUNBOOK keeper workflow doc → deploy a confidential_vault live (friendbot + Rosetta, x86) wired to the keeper → interactive dApp (confidential buy/withdraw via the keeper) → confidential-yield vault (Milestone 2).
